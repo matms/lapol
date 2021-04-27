@@ -1,0 +1,15 @@
+{
+  "name": "lapol",
+  "version": "0.0.1",
+  "description": "LaPoL is a document preparation system",
+  "main": "build/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node build/main.js"
+  },
+  "author": "matms",
+  "license": "UNLICENCED",
+  "devDependencies": {
+    "@types/node": "^15.0.1"
+  }
+}
