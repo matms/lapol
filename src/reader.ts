@@ -1,5 +1,24 @@
-const EOF_MARKER = "EOF";
+import { strict as assert } from "assert";
+
+const EOF_MARKER = Symbol("EOF");
 const DEFAULT_SPECIAL_CHARACTER = "◊";
+const DEFAULT_COMMENT_MARKER_CHAR = ";";
+
+const DEFAULT_SPECIAL_BRACE_INDICATOR = "|";
+const DEFAULT_OPEN_BRACE = "{";
+const DEFAULT_CLOSE_CURLY = "}";
+
+// TODO: Brace escape indicator!
+
+const OPEN_CURLY = "{";
+const CLOSE_CURLY = "}";
+
+class ParserError extends Error {
+    constructor(m: string) {
+        super(m);
+        Object.setPrototypeOf(this, ParserError.prototype);
+    }
+}
 
 enum AstNodeKind {
     AstStrNode = "AstStrNode",
@@ -10,29 +29,30 @@ enum AstNodeKind {
 interface AstStrNode {
     kind: AstNodeKind.AstStrNode;
     content: string;
-    source_start_col: number; // Counts from 1.
-    source_start_line: number; // Counts from 1.
+    sourceStartCol: number; // Counts from 1.
+    sourceStartLine: number; // Counts from 1.
 }
 
 interface AstCommandNode {
     kind: AstNodeKind.AstCommandNode;
-    command_name: string;
-    sub_nodes: AstNode[];
+    commandName: string;
+    subNodes: AstNode[];
 }
 
 interface AstRootNode {
     kind: AstNodeKind.AstRootNode;
-    sub_nodes: AstNode[];
+    subNodes: AstNode[];
 }
 
 type AstNode = AstStrNode | AstCommandNode | AstRootNode;
 
 interface ParserState {
     data: string;
-    curr_idx: number;
-    curr_pos_line: number;
-    curr_pos_col: number;
-    special_char: string;
+    currIdx: number;
+    currPosLine: number;
+    currPosCol: number;
+    specialChar: string;
+    commentMarkerChar: string;
 }
 
 // TODO: Handle tabbing / spaces better.
@@ -52,104 +72,191 @@ interface ParserState {
 
 /** Parse the LaPoL code into an AST, return root of this AST. */
 export function parse(input: string): AstRootNode {
-    let parser_state: ParserState = {
+    let parserState: ParserState = {
         data: input,
-        curr_idx: 0,
-        curr_pos_line: 1,
-        curr_pos_col: 1,
-        special_char: DEFAULT_SPECIAL_CHARACTER,
+        currIdx: 0,
+        currPosLine: 1,
+        currPosCol: 1,
+        specialChar: DEFAULT_SPECIAL_CHARACTER,
+        commentMarkerChar: DEFAULT_COMMENT_MARKER_CHAR,
     };
-    let contents = parse_text(parser_state);
+    let contents = parseText(parserState);
 
-    let root_node: AstRootNode = {
+    let rootNode: AstRootNode = {
         kind: AstNodeKind.AstRootNode,
-        sub_nodes: contents,
+        subNodes: contents,
     };
 
-    return root_node;
+    return rootNode;
 }
 
 /** Recursively parse the text */
-function parse_text(parser_state: ParserState): AstNode[] {
-    let special_char = parser_state.special_char;
+function parseText(parserState: ParserState): AstNode[] {
+    let specialChar = parserState.specialChar;
+    let commentMarkerChar = parserState.commentMarkerChar;
     let contents: AstNode[] = [];
-    let str_acc = "";
-    let str_acc_start_line = 1;
-    let str_acc_start_col = 1;
+    let strAcc = "";
+    let strAccStartLine = 1;
+    let strAccStartCol = 1;
 
-    function add_to_str_acc(char: string) {
-        if (str_acc === "") {
-            str_acc_start_line = parser_state.curr_pos_line;
-            str_acc_start_col = parser_state.curr_pos_col;
+    function addToStrAcc(char: string) {
+        if (strAcc === "") {
+            strAccStartLine = parserState.currPosLine;
+            strAccStartCol = parserState.currPosCol;
         }
-        str_acc += char;
+        strAcc += char;
     }
 
-    function finish_str_acc() {
-        if (str_acc !== "") {
+    function finishStrAcc() {
+        if (strAcc !== "") {
             contents.push({
                 kind: AstNodeKind.AstStrNode,
-                content: str_acc,
-                source_start_col: str_acc_start_col,
-                source_start_line: str_acc_start_line,
+                content: strAcc,
+                sourceStartCol: strAccStartCol,
+                sourceStartLine: strAccStartLine,
             });
-            str_acc = "";
+            strAcc = "";
         }
     }
 
     while (true) {
-        let next_c = peek_char(parser_state);
-        if (next_c === special_char) {
-            // TODO
-        } else if (next_c === EOF_MARKER) {
-            finish_str_acc();
-            break;
-        } else if (next_c === "\r") {
-            advance_char(parser_state);
-            if (!peek_char(parser_state)) {
-                throw Error("Parser Error: \\r not followed by \\n.");
+        let currChar = peekChar(parserState);
+        // EOF
+        if (typeof currChar === "symbol") {
+            if (currChar === EOF_MARKER) {
+                finishStrAcc();
+                break;
             }
-        } else if (next_c === "\n") {
+        }
+        // ◊ (or other special character)
+        else if (currChar === specialChar) {
+            let nextChar = peekCharRelative(parserState);
+            // ◊ followed by EOF is an error
+            if (nextChar === EOF_MARKER) {
+                throw new ParserError("EOF after special character");
+            }
+            // ◊; comment syntax
+            else if (nextChar === commentMarkerChar) {
+                // Brace comment
+                if (peekCharRelative(parserState, 2) === OPEN_CURLY) {
+                    parseBlockComment(parserState);
+                }
+                // Line comment
+                else {
+                    parseLineComment(parserState);
+                }
+            } else {
+            }
+        }
+        // Newline (\r special handler)
+        else if (currChar === "\r") {
+            advanceChar(parserState);
+            if (!peekChar(parserState)) {
+                throw new ParserError("Parser Error: \\r not followed by \\n.");
+            }
+        }
+        // Newline (\n)
+        else if (currChar === "\n") {
             // TODO: Do I have to worry about '\r\n' in JS?
-            finish_str_acc();
+            finishStrAcc();
             contents.push({
                 kind: AstNodeKind.AstStrNode,
                 content: "\n",
-                source_start_col: parser_state.curr_pos_col,
-                source_start_line: parser_state.curr_pos_line,
+                sourceStartCol: parserState.currPosCol,
+                sourceStartLine: parserState.currPosLine,
             });
-            if (!advance_char(parser_state)) break;
-        } else {
-            add_to_str_acc(next_c);
-            if (!advance_char(parser_state)) break;
+            if (!advanceChar(parserState)) break;
+        }
+        // Regular text
+        else {
+            addToStrAcc(currChar as string);
+            if (!advanceChar(parserState)) break;
         }
     }
 
     return contents;
 }
 
+// function parseCommand(parserState: ParserState): AstNode[] {}
+
+/** "Parses" a line comment by advancing until \n is reached. Note
+ *  that \n IS NOT emitted after a line comment. If a newline is required,
+ *  use a block comment (i.e. with braces) instead.
+ */
+function parseLineComment(parserState: ParserState) {
+    assert(peekChar(parserState) === parserState.specialChar);
+    assert(peekCharRelative(parserState, 1) === parserState.commentMarkerChar);
+    assert(peekCharRelative(parserState, 2) !== OPEN_CURLY);
+    while (peekChar(parserState) !== "\n") {
+        if (!advanceChar(parserState)) break;
+    }
+    advanceChar(parserState);
+}
+
+/** "Parses" a block comment. Note braces must be balanced within!
+ */
+function parseBlockComment(parserState: ParserState) {
+    assert(peekChar(parserState) === parserState.specialChar);
+    assert(peekCharRelative(parserState, 1) === parserState.commentMarkerChar);
+    assert(peekCharRelative(parserState, 2) === OPEN_CURLY);
+
+    // Skip ◊;{
+    advanceChar(parserState);
+    advanceChar(parserState);
+
+    let braceCounter = 0;
+
+    do {
+        let currChar = peekChar(parserState);
+        if (currChar === OPEN_CURLY) braceCounter++;
+        if (currChar === CLOSE_CURLY) braceCounter--;
+        if (!advanceChar(parserState)) break;
+    } while (braceCounter > 0);
+
+    if (braceCounter !== 0) {
+        throw new ParserError(
+            "Eof with unbalanced braces. (parseBlockComment)"
+        );
+    }
+}
+
 /** Advance Character. Returns true on success and false on EOF. */
-function advance_char(parser_state: ParserState): boolean {
-    if (parser_state.curr_idx < parser_state.data.length) {
-        if (peek_char(parser_state) === "\r") {
+function advanceChar(parserState: ParserState): boolean {
+    if (parserState.currIdx < parserState.data.length) {
+        if (peekChar(parserState) === "\r") {
             // Do NOT change curr_pos_col.
-        } else if (peek_char(parser_state) === "\n") {
-            parser_state.curr_pos_col = 1;
-            parser_state.curr_pos_line++;
+        } else if (peekChar(parserState) === "\n") {
+            parserState.currPosCol = 1;
+            parserState.currPosLine++;
         } else {
-            parser_state.curr_pos_col++;
+            parserState.currPosCol++;
         }
-        parser_state.curr_idx++;
+        parserState.currIdx++;
         return true;
     } else {
-        parser_state.curr_idx++;
+        parserState.currIdx++;
         return false; // Indicates EOF
     }
 }
 
-function peek_char(parser_state: ParserState): string {
-    if (parser_state.curr_idx < parser_state.data.length) {
-        let out = parser_state.data[parser_state.curr_idx];
+function peekChar(parserState: ParserState): string | symbol {
+    if (parserState.currIdx < parserState.data.length) {
+        let out = parserState.data[parserState.currIdx];
+        return out;
+    } else {
+        return EOF_MARKER;
+    }
+}
+
+/** Return the character at index `<current parser index> + relativeIndex`,
+ *  or EOF_MARKER if after end of file.
+ */
+function peekCharRelative(
+    parserState: ParserState,
+    relativeIndex: number = 1
+): string | symbol {
+    if (parserState.currIdx + relativeIndex < parserState.data.length) {
+        let out = parserState.data[parserState.currIdx + relativeIndex];
         return out;
     } else {
         return EOF_MARKER;
