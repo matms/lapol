@@ -5,7 +5,7 @@ import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from ".
 import { callCommand, Command } from "./command";
 import { DetNodeKind, DetTag, DetTextStr, DetNode } from "./det";
 import { AstEvaluationError } from "./errors";
-import { loadLapolMod } from "./mod_utils";
+import { loadLapolModAsMap } from "./mod_utils";
 
 interface Environment {
     contents: Map<string, any>;
@@ -14,7 +14,7 @@ interface Environment {
 
 export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
     let env = { contents: new Map(), outerEnv: undefined };
-    let defaultEnvItems = await loadLapolMod("./default_commands/testing_commands");
+    let defaultEnvItems = await loadLapolModAsMap("./default_commands/testing_commands");
     setupDefaultEnvironment(env, defaultEnvItems);
 
     let out = evaluateNode(node, env);
