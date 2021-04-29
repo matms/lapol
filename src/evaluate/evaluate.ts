@@ -1,11 +1,11 @@
-/** Front Pass, AKA the Evaluation Pass. */
+/** Evaluation, AKA the "Front Pass"*/
 
 import { strict as assert } from "assert";
-import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "./ast";
-import { callCommand, Command } from "./command";
-import { DetNodeKind, DetTag, DetTextStr, DetNode } from "./det";
-import { AstEvaluationError } from "./errors";
-import { loadLapolModAsMap } from "./mod_utils";
+import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
+import { callCommand, Command } from "../command/command";
+import { DetNodeKind, DetTag, DetTextStr, DetNode } from "../det";
+import { AstEvaluationError } from "../errors";
+import { loadLapolModAsMap } from "../la_module/mod_utils";
 
 interface Environment {
     contents: Map<string, any>;

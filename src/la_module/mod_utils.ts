@@ -1,5 +1,5 @@
-import { fnToCommand } from "./command";
-import { LapolModuleError } from "./errors";
+import { functionToCommand } from "../command/function_to_command";
+import { LapolModuleError } from "../errors";
 
 export async function loadLapolModAsMap(modPath: string): Promise<Map<string, any>> {
     let mod = await import(modPath);
@@ -12,7 +12,7 @@ export async function loadLapolModAsMap(modPath: string): Promise<Map<string, an
     for (let prop of Object.getOwnPropertyNames(mod.define)) {
         let val = mod.define[prop];
         if (typeof val === "function") {
-            map.set(prop, fnToCommand(val, prop));
+            map.set(prop, functionToCommand(val, prop));
         } else {
             map.set(prop, mod.val);
         }

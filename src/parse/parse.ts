@@ -1,9 +1,9 @@
 import { strict as assert } from "assert";
 import { syncBuiltinESMExports } from "node:module";
 import { type } from "node:os";
-import { isWhitespace } from "./la_utils";
-import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "./ast";
-import { ParserError } from "./errors";
+import { isWhitespace } from "../utils";
+import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
+import { ParserError } from "../errors";
 
 // End of file
 const EOF_MARKER = Symbol("EOF");
