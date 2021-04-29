@@ -17,18 +17,30 @@ function consoleMain() {
     }
 }
 
-console.log(`Hey`);
-var before_read = Date.now();
+function test_timings(text: string): number {
+    var start_time = Date.now();
+    var o = parse(text);
+    var now = Date.now();
+    return now - start_time;
+}
+
+function test_parser(text: string) {
+    return parse(text);
+}
+
+console.log("Hey!");
+
 var test = readFileAtOnce("test_scratch/test_parse_0.lap");
+
 var start_time = Date.now();
 var o = parse(test);
 var now = Date.now();
-console.log(`Parsing took time: ${now - start_time} (milliseconds)`);
-console.log(
-    `Reading File + Parsing took time: ${now - start_time} (milliseconds)`
-);
-console.log("=======");
+
+// var timing = 0;
+
+console.log(`Parsing took time(s): ${now - start_time} (milliseconds)`);
 console.log(o);
-console.log("=======");
+
+console.log("Bye!");
 
 // consoleMain();

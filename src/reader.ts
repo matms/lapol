@@ -1,12 +1,14 @@
 import { strict as assert } from "assert";
+import { syncBuiltinESMExports } from "node:module";
 import { type } from "node:os";
 import { isWhitespace } from "./la_utils";
+import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "./ast";
 
 // End of file
 const EOF_MARKER = Symbol("EOF");
-// Likely ◊;
+// Likely ◊%
 const LINE_COMMENT_START_MARKER = Symbol("LINE_COMMENT_START");
-// Likely ◊; followed by opening brace. Note opening brace is NOT matched here.
+// Likely ◊% followed by opening brace. Note opening brace is NOT matched here.
 const BLOCK_COMMENT_START_MARKER = Symbol("BLOCK_COMMENT_START");
 // Likely {
 const OPEN_CURLY_MARKER = Symbol("OPEN_CURLY_MARKER");
@@ -18,15 +20,18 @@ const OPEN_SQUARE_MARKER = Symbol("OPEN_SQUARE_MARKER");
 const CLOSE_SQUARE_MARKER = Symbol("CLOSE_SQUARE_MARKER");
 // Likely ◊
 const COMMAND_START_MARKER = Symbol("COMMAND_START_MARKER");
+// Likely ;
+const COMMAND_FORCE_END_MARKER = Symbol("COMMAND_FORCE_END_MARKER");
 
 const DEFAULT_CHAR_CFG: CharConfiguration = {
     specialChar: "◊",
-    commentMarkerChar: ";",
+    commentMarkerChar: "%",
     openCurlyChar: "{",
     closeCurlyChar: "}",
     openSquareChar: "[",
     closeSquareChar: "]",
     specialBraceChar: "|",
+    commandForceEndChar: ";",
 };
 
 class ParserError extends Error {
@@ -38,38 +43,13 @@ class ParserError extends Error {
 
 type ParserToken = string | symbol;
 
-enum AstNodeKind {
-    AstStrNode = "AstStrNode",
-    AstCommandNode = "AstCommandNode",
-    AstRootNode = "AstRootNode",
-}
-
-interface AstStrNode {
-    kind: AstNodeKind.AstStrNode;
-    content: string;
-    sourceStartCol: number; // Counts from 1.
-    sourceStartLine: number; // Counts from 1.
-}
-
-interface AstCommandNode {
-    kind: AstNodeKind.AstCommandNode;
-    commandName: string;
-    curlyArg: AstNode[] | undefined;
-}
-
-interface AstRootNode {
-    kind: AstNodeKind.AstRootNode;
-    subNodes: AstNode[];
-}
-
-type AstNode = AstStrNode | AstCommandNode | AstRootNode;
-
 interface ParserState {
     data: string;
     currIdx: number;
     currPosLine: number;
     currPosCol: number;
     charCfg: CharConfiguration;
+    currTokenMetaCache: [ParserToken, number, string] | undefined;
 }
 
 interface CharConfiguration {
@@ -80,6 +60,13 @@ interface CharConfiguration {
     specialBraceChar: string;
     openSquareChar: string;
     closeSquareChar: string;
+    commandForceEndChar: string;
+}
+
+interface ParserRollbackPoint {
+    idx: number;
+    posLine: number;
+    posCol: number;
 }
 
 // TODO: Handle tabbing / spaces better.
@@ -105,6 +92,7 @@ export function parse(input: string): AstRootNode {
         currPosLine: 1,
         currPosCol: 1,
         charCfg: DEFAULT_CHAR_CFG,
+        currTokenMetaCache: undefined,
     };
     let contents = parseText(parserState, true);
 
@@ -118,12 +106,6 @@ export function parse(input: string): AstRootNode {
 
 /** Recursively parse the text */
 function parseText(parserState: ParserState, rootContext: boolean = false): AstNode[] {
-    let specialChar = parserState.charCfg.specialChar;
-    let commentMarkerChar = parserState.charCfg.commentMarkerChar;
-    let openCurlyChar = parserState.charCfg.openCurlyChar;
-    let closeCurlyChar = parserState.charCfg.closeCurlyChar;
-    let specialBraceChar = parserState.charCfg.specialBraceChar;
-
     let contents: AstNode[] = [];
     let strAcc = "";
     let strAccStartLine = 1;
@@ -160,8 +142,13 @@ function parseText(parserState: ParserState, rootContext: boolean = false): AstN
             parseLineComment(parserState);
         } else if (currTok === BLOCK_COMMENT_START_MARKER) {
             parseBlockComment(parserState);
-        } else if (currTok === OPEN_SQUARE_MARKER || currTok === CLOSE_SQUARE_MARKER) {
+        } else if (
+            currTok === OPEN_SQUARE_MARKER ||
+            currTok === CLOSE_SQUARE_MARKER ||
+            currTok === COMMAND_FORCE_END_MARKER
+        ) {
             addToStrAcc(currTokenStr(parserState));
+            advanceToken(parserState);
         } else if (currTok === OPEN_CURLY_MARKER) {
             curlyBal++;
             addToStrAcc(currTokenStr(parserState));
@@ -209,6 +196,37 @@ function parseText(parserState: ParserState, rootContext: boolean = false): AstN
     return contents;
 }
 
+function parseSquareArg(parserState: ParserState): AstNode[] {
+    let contents: AstNode[] = [];
+
+    let squareBal = 0;
+
+    while (true) {
+        let currTok = currToken(parserState);
+        if (currTok === EOF_MARKER) {
+            throw new ParserError("Unexpected EOF in Square Brace context.");
+        } else if (currTok === LINE_COMMENT_START_MARKER) {
+            parseLineComment(parserState);
+        } else if (currTok === BLOCK_COMMENT_START_MARKER) {
+            parseBlockComment(parserState);
+        } else if (currTok === OPEN_SQUARE_MARKER) {
+            squareBal++;
+            advanceToken(parserState);
+        } else if (currTok === CLOSE_SQUARE_MARKER) {
+            squareBal--;
+
+            advanceToken(parserState);
+
+            if (squareBal < 0) {
+                return contents;
+            }
+        } else {
+            // TODO
+            advanceToken(parserState);
+        }
+    }
+}
+
 // function parseCommand(parserState: ParserState): AstNode[] {}
 
 /** "Parses" a line comment by advancing until \n is reached. Note
@@ -243,22 +261,58 @@ function parseBlockComment(parserState: ParserState) {
     } while (curlyBal > 0);
 }
 
+// TODO HANDLE SQUARE ARGS.
 function parseCommand(parserState: ParserState): AstCommandNode {
     assert(currToken(parserState) === COMMAND_START_MARKER);
     advanceToken(parserState);
 
+    // COMMAND NAME
     let cmdName = parseCommandName(parserState);
+    let squareArg: AstNode[] | undefined = undefined;
+    let curlyArgs: AstNode[][] = [];
 
-    consumeWhitespaceAndComments(parserState);
-
-    let currTok = currToken(parserState);
-    if (currTok !== OPEN_CURLY_MARKER) {
-        return { kind: AstNodeKind.AstCommandNode, commandName: cmdName, curlyArg: undefined };
+    // POSSIBLE ONE OFF SQUARE BRACKET.
+    square: {
+        let rollbackPoint = makeRollbackPoint(parserState);
+        consumeWhitespaceAndComments(parserState);
+        let currTok = currToken(parserState);
+        if (currTok === COMMAND_FORCE_END_MARKER) {
+            advanceToken(parserState);
+            break square;
+        } else if (currTok !== OPEN_SQUARE_MARKER) {
+            // Note: We want to avoid redundant backtracking if curly follows immediately.
+            if (currTok !== OPEN_CURLY_MARKER) rollbackParser(parserState, rollbackPoint);
+            break square;
+        } else {
+            advanceToken(parserState);
+            squareArg = parseSquareArg(parserState);
+        }
     }
 
-    advanceToken(parserState);
-    let curlyArgs = parseText(parserState);
-    return { kind: AstNodeKind.AstCommandNode, commandName: cmdName, curlyArg: curlyArgs };
+    // 0 OR MORE CURLY ARGS.
+    while (true) {
+        let rollbackPoint = makeRollbackPoint(parserState);
+        consumeWhitespaceAndComments(parserState);
+        let currTok = currToken(parserState);
+        if (currTok === COMMAND_FORCE_END_MARKER) {
+            advanceToken(parserState);
+            break;
+        } else if (currTok !== OPEN_CURLY_MARKER) {
+            rollbackParser(parserState, rollbackPoint);
+            break;
+        } else {
+            advanceToken(parserState);
+            let curlyArg = parseText(parserState);
+            curlyArgs.push(curlyArg);
+        }
+    }
+
+    return {
+        kind: AstNodeKind.AstCommandNode,
+        commandName: cmdName,
+        squareArg: squareArg,
+        curlyArgs: curlyArgs,
+    };
 }
 
 function parseCommandName(parserState: ParserState): string {
@@ -298,30 +352,28 @@ function consumeWhitespaceAndComments(parserState: ParserState) {
     }
 }
 
-function consumeWhitespace(parserState: ParserState) {
-    let currTok = currToken(parserState);
-    while (typeof currTok === "string" && isWhitespace(currTok)) {
-        advanceToken(parserState);
-        currTok = currToken(parserState);
-    }
-}
-
 /** Returns the currently "pointed at" token.
  *  TODO: Consider context */
-function currToken(parserState: ParserState) {
-    let [t] = currTokenMeta(parserState);
-    return t;
+function currToken(parserState: ParserState): ParserToken {
+    return currTokenMeta(parserState)[0];
 }
 
 function currTokenStr(parserState: ParserState) {
-    let [, , s] = currTokenMeta(parserState);
-    return s;
+    return currTokenMeta(parserState)[2];
 }
 
 /** Returns a tuple comprised of the ParserToken; and the textual length of the token; and the
  *  matched string (or "" for EOF).
  *  TODO: Consider context  */
 function currTokenMeta(parserState: ParserState): [ParserToken, number, string] {
+    if (typeof parserState.currTokenMetaCache === "undefined") {
+        parserState.currTokenMetaCache = computeCurrTokenCache(parserState);
+    }
+
+    return parserState.currTokenMetaCache;
+}
+
+function computeCurrTokenCache(parserState: ParserState): [ParserToken, number, string] {
     let cfg = parserState.charCfg;
 
     let c = peekChar(parserState);
@@ -352,6 +404,8 @@ function currTokenMeta(parserState: ParserState): [ParserToken, number, string] 
         return [OPEN_SQUARE_MARKER, 1, cfg.openSquareChar];
     } else if (c === cfg.closeSquareChar) {
         return [CLOSE_SQUARE_MARKER, 1, cfg.closeSquareChar];
+    } else if (c === cfg.commandForceEndChar) {
+        return [COMMAND_FORCE_END_MARKER, 1, cfg.commandForceEndChar];
     } else {
         assert(typeof c === "string");
         return [c, 1, c];
@@ -369,6 +423,25 @@ function advanceToken(parserState: ParserState) {
     }
 
     parserState.currIdx += len;
+    // Invalidade currTokenMetaCache.
+    parserState.currTokenMetaCache = undefined;
+}
+
+function makeRollbackPoint(parserState: ParserState): ParserRollbackPoint {
+    return {
+        idx: parserState.currIdx,
+        posCol: parserState.currPosCol,
+        posLine: parserState.currPosLine,
+    };
+}
+
+function rollbackParser(parserState: ParserState, rollbackPoint: ParserRollbackPoint) {
+    parserState.currIdx = rollbackPoint.idx;
+    parserState.currPosCol = rollbackPoint.posCol;
+    parserState.currPosLine = rollbackPoint.posLine;
+
+    // Invalidade currTokenMetaCache.
+    parserState.currTokenMetaCache = undefined;
 }
 
 /** Return the character at index `<current parser index> + relativeIndex`,
