@@ -1,3 +1,4 @@
+import { evaluateAst } from "./front_pass";
 import { readFileAtOnce, writeFileAtOnce } from "./la_utils";
 import { parse } from "./reader";
 
@@ -30,17 +31,26 @@ function test_parser(text: string) {
 
 console.log("Hey!");
 
-var test = readFileAtOnce("test_scratch/test_parse_0.lap");
+var test = readFileAtOnce("test_scratch/test_cmd_0.lap");
 
 var start_time = Date.now();
-var o = parse(test);
+var parsed = parse(test);
 var now = Date.now();
 
 // var timing = 0;
 
 console.log(`Parsing took time(s): ${now - start_time} (milliseconds)`);
-console.log(o);
+console.log(parsed);
 
+// ============================
+
+var estart_time = Date.now();
+var evaluated = evaluateAst(parsed);
+var enow = Date.now();
+
+console.log(`Evaluating took time(s): ${enow - estart_time} (milliseconds)`);
+
+console.log(evaluated);
 console.log("Bye!");
 
 // consoleMain();

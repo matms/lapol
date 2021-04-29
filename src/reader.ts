@@ -3,6 +3,7 @@ import { syncBuiltinESMExports } from "node:module";
 import { type } from "node:os";
 import { isWhitespace } from "./la_utils";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "./ast";
+import { ParserError } from "./errors";
 
 // End of file
 const EOF_MARKER = Symbol("EOF");
@@ -33,13 +34,6 @@ const DEFAULT_CHAR_CFG: CharConfiguration = {
     specialBraceChar: "|",
     commandForceEndChar: ";",
 };
-
-class ParserError extends Error {
-    constructor(m: string) {
-        super(m);
-        Object.setPrototypeOf(this, ParserError.prototype);
-    }
-}
 
 type ParserToken = string | symbol;
 
