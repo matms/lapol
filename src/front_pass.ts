@@ -5,15 +5,18 @@ import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from ".
 import { callCommand, Command } from "./command";
 import { DetNodeKind, DetTag, DetTextStr, DetNode } from "./det";
 import { AstEvaluationError } from "./errors";
+import { loadLapolMod } from "./mod_utils";
 
 interface Environment {
     contents: Map<string, any>;
     outerEnv: Environment | undefined;
 }
 
-export function evaluateAst(node: AstRootNode): DetNode {
+export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
     let env = { contents: new Map(), outerEnv: undefined };
-    setupDefaultEnvironment(env);
+    let defaultEnvItems = await loadLapolMod("./default_commands/testing_commands");
+    setupDefaultEnvironment(env, defaultEnvItems);
+
     let out = evaluateNode(node, env);
     return out;
 }
@@ -82,24 +85,12 @@ function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {
     return cont;
 }
 
-function setupDefaultEnvironment(env: Environment) {
+function setupDefaultEnvironment(env: Environment, defaultEnvItems: Map<string, any>) {
     let map = env.contents;
-    let testCommand: Command = {
-        kind: "Command",
-        curlyArity: "any",
-        fn: (args) => {
-            return { kind: DetNodeKind.DetTextStrKind, content: "test command invocation" };
-        },
-    };
-    let testOneCommand: Command = {
-        kind: "Command",
-        curlyArity: 1,
-        fn: (args) => {
-            return { kind: DetNodeKind.DetTextStrKind, content: "test command invocation" };
-        },
-    };
-    map.set("test", testCommand);
-    map.set("test1", testOneCommand);
+
+    defaultEnvItems.forEach((val, key) => {
+        map.set(key, val);
+    });
 }
 
 function environmentLookup(env: Environment, key: string): any {

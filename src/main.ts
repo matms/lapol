@@ -45,12 +45,13 @@ console.log(parsed);
 // ============================
 
 var estart_time = Date.now();
-var evaluated = evaluateAst(parsed);
-var enow = Date.now();
+var evaluated = evaluateAst(parsed).then((val) => {
+    var enow = Date.now();
+    console.log(`Evaluating took time(s): ${enow - estart_time} (milliseconds)`);
+    console.log(val);
+    console.log("Awesome!");
+});
 
-console.log(`Evaluating took time(s): ${enow - estart_time} (milliseconds)`);
-
-console.log(evaluated);
-console.log("Bye!");
+console.log("Bye? (But maybe wait for promises!)");
 
 // consoleMain();

@@ -1,5 +1,5 @@
 import { strict as assert } from "assert";
-import { DetNode } from "./det";
+import { DetNode, DetNodeKind } from "./det";
 import { AstEvaluationError } from "./errors";
 
 export interface Command {
@@ -18,4 +18,21 @@ export function callCommand(command: Command, args: DetNode[][]): DetNode {
     }
 
     return command.fn(args);
+}
+
+export function fnToCommand(func: Function): Command {
+    return {
+        kind: "Command",
+        curlyArity: func.length,
+        fn: (args: DetNode[][]) => {
+            let out = func(...args);
+            if (typeof out !== "object" || !(out.kind in DetNodeKind)) {
+                throw new AstEvaluationError(
+                    "Function defining Lapol Command returned object that appears not to be " +
+                        "of type DetNode"
+                );
+            }
+            return out;
+        },
+    };
 }
