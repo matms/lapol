@@ -2,9 +2,12 @@ export const define = {
     hey: hey,
 };
 
-import { DetNodeKind, DetTextStr } from "../det";
+import { DetNodeKind, DetTextStr, DetNode } from "../det";
 
-function hey(): DetTextStr {
+function hey(arg1: DetNode[]): DetTextStr {
     console.log("hey from here!");
-    return { kind: DetNodeKind.DetTextStrKind, content: "hello from hey function!" };
+    return {
+        kind: DetNodeKind.DetTextStrKind,
+        content: `Hello, ${(arg1[0] as DetTextStr).content}`,
+    };
 }
