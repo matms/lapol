@@ -1,6 +1,6 @@
-import { evaluateAst } from "./front_pass";
-import { readFileAtOnce, writeFileAtOnce } from "./la_utils";
-import { parse } from "./reader";
+import { evaluateAst } from "./evaluate/evaluate";
+import { readFileAtOnce, writeFileAtOnce } from "./utils";
+import { parse } from "./parse/parse";
 
 function consoleMain() {
     console.log("Hello, LaPoL!");

@@ -12,6 +12,16 @@ interface Environment {
     outerEnv: Environment | undefined;
 }
 
+/** Evaluate the Abstract Syntax Tree.
+ *
+ * Parameter `node` should be the root of the AST,
+ *
+ * Returns (asynchronously) a DetNode.
+ *
+ * This function is async as it needs to load modules dynamically.
+ *
+ * TODO: Should default modules be loaded statically?
+ */
 export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
     let env = { contents: new Map(), outerEnv: undefined };
     let defaultEnvItems = await loadLapolModAsMap("./default_commands/testing_commands");
@@ -21,6 +31,10 @@ export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
     return out;
 }
 
+/** Evaluate `node` using environment `env`, returns a `DetNode`.
+ *
+ * Note this function dispatches to `evaluate*` (e.g. `evaluateRoot`, `evaluateCommand`, etc.).
+ */
 function evaluateNode(node: AstNode, env: Environment): DetNode {
     switch (node.kind) {
         case AstNodeKind.AstRootNode:
@@ -84,6 +98,8 @@ function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {
     }
     return cont;
 }
+
+// TODO: REFACTOR ENVIRONMENT INTO ANOTHER FILE.
 
 function setupDefaultEnvironment(env: Environment, defaultEnvItems: Map<string, any>) {
     let map = env.contents;

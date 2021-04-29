@@ -7,8 +7,8 @@ export enum AstNodeKind {
 export interface AstStrNode {
     kind: AstNodeKind.AstStrNode;
     content: string;
-    sourceStartCol: number; // Counts from 1.
-    sourceStartLine: number; // Counts from 1.
+    sourceStartCol: number; // The first column is 1.
+    sourceStartLine: number; // The first line is 1.
 }
 
 export interface AstCommandNode {

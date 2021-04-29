@@ -78,7 +78,8 @@ interface ParserRollbackPoint {
 // (after all other steps, not before). Besides, depending on export target,
 // it may not even matter (we may end up using uniform handling of white space).
 
-/** Parse the LaPoL code into an AST, return root of this AST. */
+/** Parse the LaPoL code (given as the string `input`) into an AST, return root of this AST.*/
+// TODO: Read input gradually; Use async.
 export function parse(input: string): AstRootNode {
     let parserState: ParserState = {
         data: input,
@@ -98,7 +99,11 @@ export function parse(input: string): AstRootNode {
     return rootNode;
 }
 
-/** Recursively parse the text */
+/** Recursively parse the text.
+ *
+ * This is used for the "main" body of text, and also for textual parameters given within curly
+ * braces.
+ */
 function parseText(parserState: ParserState, rootContext: boolean = false): AstNode[] {
     let contents: AstNode[] = [];
     let strAcc = "";
@@ -190,6 +195,7 @@ function parseText(parserState: ParserState, rootContext: boolean = false): AstN
     return contents;
 }
 
+/** NOT PROPERLY IMPLEMENTED YET. TODO! */
 function parseSquareArg(parserState: ParserState): AstNode[] {
     let contents: AstNode[] = [];
 
@@ -221,13 +227,16 @@ function parseSquareArg(parserState: ParserState): AstNode[] {
     }
 }
 
-// function parseCommand(parserState: ParserState): AstNode[] {}
-
 /** "Parses" a line comment by advancing until \n is reached. Note
  *  that \n IS NOT emitted after a line comment. If a newline is required,
  *  use a block comment (i.e. with braces) instead.
  *
  *  Any braces inside are ignored and irrelevant. Balance not required.
+ *
+ * Note that while line and block comment syntax looks a lot like command call syntax,
+ * they have some differences. Notably, you cannot have a space between "◊;" and "{}" if
+ * you want a block comment, because if you have a space there, it gets parsed as a line
+ * comment instead.
  */
 function parseLineComment(parserState: ParserState) {
     assert(currToken(parserState) === LINE_COMMENT_START_MARKER);
@@ -238,6 +247,14 @@ function parseLineComment(parserState: ParserState) {
     advanceToken(parserState);
 }
 
+/** Parses a Block Comment.
+ *
+ * Braces inside must be balanced.
+ *
+ * Note that while line and block comment syntax looks a lot like command call syntax,
+ * they have some differences. Notably, you cannot have a space between "◊;" and "{}" if
+ * you want a block comment, because if you have a space there, it gets parsed as a line
+ * comment instead. */
 function parseBlockComment(parserState: ParserState) {
     assert(currToken(parserState) === BLOCK_COMMENT_START_MARKER);
     advanceToken(parserState);
@@ -255,6 +272,10 @@ function parseBlockComment(parserState: ParserState) {
     } while (curlyBal > 0);
 }
 
+/** Parses a command.
+ *
+ * TODO: Handle square argument properly (instead of simply discarding them).
+ */
 // TODO HANDLE SQUARE ARGS.
 function parseCommand(parserState: ParserState): AstCommandNode {
     assert(currToken(parserState) === COMMAND_START_MARKER);
@@ -309,6 +330,7 @@ function parseCommand(parserState: ParserState): AstCommandNode {
     };
 }
 
+/** Parse a command name. Command names must not have whitespace. */
 function parseCommandName(parserState: ParserState): string {
     let name = "";
     while (true) {
@@ -328,6 +350,7 @@ function parseCommandName(parserState: ParserState): string {
     }
 }
 
+/** Consume (i.e. skip) whitespace or comments (of the line or block variety). */
 function consumeWhitespaceAndComments(parserState: ParserState) {
     let currTok = currToken(parserState);
     while (
@@ -346,19 +369,18 @@ function consumeWhitespaceAndComments(parserState: ParserState) {
     }
 }
 
-/** Returns the currently "pointed at" token.
- *  TODO: Consider context */
+/** Returns the currently "pointed at" token. */
 function currToken(parserState: ParserState): ParserToken {
     return currTokenMeta(parserState)[0];
 }
 
+/** Returns the textual string originating the currently "pointed at" token. */
 function currTokenStr(parserState: ParserState) {
     return currTokenMeta(parserState)[2];
 }
 
 /** Returns a tuple comprised of the ParserToken; and the textual length of the token; and the
- *  matched string (or "" for EOF).
- *  TODO: Consider context  */
+ *  matched string (or "" for EOF). */
 function currTokenMeta(parserState: ParserState): [ParserToken, number, string] {
     if (typeof parserState.currTokenMetaCache === "undefined") {
         parserState.currTokenMetaCache = computeCurrTokenCache(parserState);
@@ -367,6 +389,12 @@ function currTokenMeta(parserState: ParserState): [ParserToken, number, string] 
     return parserState.currTokenMetaCache;
 }
 
+/** (Re)compute the current token cache. This needs to be done if the token has been advanced.
+ *
+ * However, do not call it directly; This called only by currTokenMeta().
+ *
+ * If token recomputation is needed, invalidate the cache (by setting it to `undefined`) instead.
+ */
 function computeCurrTokenCache(parserState: ParserState): [ParserToken, number, string] {
     let cfg = parserState.charCfg;
 
@@ -406,6 +434,11 @@ function computeCurrTokenCache(parserState: ParserState): [ParserToken, number, 
     }
 }
 
+/** Advance the currently pointed at token. Note this may advance more than one character,
+ * if the current token is longer than one character.
+ *
+ * This also updates `currPosCol` and `currPosLine`.
+ */
 function advanceToken(parserState: ParserState) {
     let [t, len] = currTokenMeta(parserState);
 
@@ -421,6 +454,11 @@ function advanceToken(parserState: ParserState) {
     parserState.currTokenMetaCache = undefined;
 }
 
+/** Return a `ParserRollbackPoint` that can be used to rollback (or backtrack) the parser to the
+ * current position.
+ *
+ * To execute a rollback, see `rollbackParser`.
+ */
 function makeRollbackPoint(parserState: ParserState): ParserRollbackPoint {
     return {
         idx: parserState.currIdx,
@@ -429,6 +467,10 @@ function makeRollbackPoint(parserState: ParserState): ParserRollbackPoint {
     };
 }
 
+/** Rollback the parser (i.e. backtrack) to a previously generated rollback point.
+ *
+ * To generate a rollback point, see `makeRollbackPoint`.
+ */
 function rollbackParser(parserState: ParserState, rollbackPoint: ParserRollbackPoint) {
     parserState.currIdx = rollbackPoint.idx;
     parserState.currPosCol = rollbackPoint.posCol;
