@@ -1,12 +1,31 @@
 import { strict as assert } from "assert";
+import { type } from "node:os";
+import { isWhitespace } from "./la_utils";
 
+// End of file
 const EOF_MARKER = Symbol("EOF");
+// Likely ◊;
+const LINE_COMMENT_START_MARKER = Symbol("LINE_COMMENT_START");
+// Likely ◊; followed by opening brace. Note opening brace is NOT matched here.
+const BLOCK_COMMENT_START_MARKER = Symbol("BLOCK_COMMENT_START");
+// Likely {
+const OPEN_CURLY_MARKER = Symbol("OPEN_CURLY_MARKER");
+// Likely }
+const CLOSE_CURLY_MARKER = Symbol("CLOSE_CURLY_MARKER");
+// Likely [
+const OPEN_SQUARE_MARKER = Symbol("OPEN_SQUARE_MARKER");
+// Likely ]
+const CLOSE_SQUARE_MARKER = Symbol("CLOSE_SQUARE_MARKER");
+// Likely ◊
+const COMMAND_START_MARKER = Symbol("COMMAND_START_MARKER");
 
 const DEFAULT_CHAR_CFG: CharConfiguration = {
     specialChar: "◊",
     commentMarkerChar: ";",
     openCurlyChar: "{",
     closeCurlyChar: "}",
+    openSquareChar: "[",
+    closeSquareChar: "]",
     specialBraceChar: "|",
 };
 
@@ -16,6 +35,8 @@ class ParserError extends Error {
         Object.setPrototypeOf(this, ParserError.prototype);
     }
 }
+
+type ParserToken = string | symbol;
 
 enum AstNodeKind {
     AstStrNode = "AstStrNode",
@@ -33,7 +54,7 @@ interface AstStrNode {
 interface AstCommandNode {
     kind: AstNodeKind.AstCommandNode;
     commandName: string;
-    subNodes: AstNode[];
+    curlyArg: AstNode[] | undefined;
 }
 
 interface AstRootNode {
@@ -49,7 +70,6 @@ interface ParserState {
     currPosLine: number;
     currPosCol: number;
     charCfg: CharConfiguration;
-    contextStack: ParserContext[];
 }
 
 interface CharConfiguration {
@@ -58,20 +78,9 @@ interface CharConfiguration {
     openCurlyChar: string;
     closeCurlyChar: string;
     specialBraceChar: string;
+    openSquareChar: string;
+    closeSquareChar: string;
 }
-
-enum ParserContextKind {
-    TextContext = "TextContext",
-}
-
-// Denotes regular text. May also be used for block comments (TODO: Update this comment?)
-interface TextContext {
-    contextKind: ParserContextKind;
-    curlyBalance: number;
-    escapedMode: boolean;
-}
-
-type ParserContext = TextContext;
 
 // TODO: Handle tabbing / spaces better.
 // How should I handle it is a good question?
@@ -96,11 +105,8 @@ export function parse(input: string): AstRootNode {
         currPosLine: 1,
         currPosCol: 1,
         charCfg: DEFAULT_CHAR_CFG,
-        contextStack: [
-            { contextKind: ParserContextKind.TextContext, curlyBalance: 0, escapedMode: false },
-        ],
     };
-    let contents = parseText(parserState);
+    let contents = parseText(parserState, true);
 
     let rootNode: AstRootNode = {
         kind: AstNodeKind.AstRootNode,
@@ -111,7 +117,7 @@ export function parse(input: string): AstRootNode {
 }
 
 /** Recursively parse the text */
-function parseText(parserState: ParserState): AstNode[] {
+function parseText(parserState: ParserState, rootContext: boolean = false): AstNode[] {
     let specialChar = parserState.charCfg.specialChar;
     let commentMarkerChar = parserState.charCfg.commentMarkerChar;
     let openCurlyChar = parserState.charCfg.openCurlyChar;
@@ -143,50 +149,46 @@ function parseText(parserState: ParserState): AstNode[] {
         }
     }
 
-    let currCtx = parserTopContext(parserState);
-
-    assert(currCtx.contextKind === ParserContextKind.TextContext);
-    assert(currCtx.escapedMode === false);
+    let curlyBal = 0;
 
     while (true) {
-        let currChar = peekChar(parserState);
-        // EOF
-        if (typeof currChar === "symbol") {
-            if (currChar === EOF_MARKER) {
-                finishStrAcc();
-                break;
-            }
-        }
-        // ◊ (or other special character)
-        else if (currChar === specialChar) {
-            let nextChar = peekCharRelative(parserState, 1);
-            // ◊ followed by EOF is an error
-            if (nextChar === EOF_MARKER) {
-                throw new ParserError("EOF after special character");
-            }
-            // ◊; comment syntax
-            else if (nextChar === commentMarkerChar) {
-                // Brace comment
-                if (peekCharRelative(parserState, 2) === openCurlyChar) {
-                    parseBlockComment(parserState);
-                }
-                // Line comment
-                else {
-                    parseLineComment(parserState);
+        let currTok = currToken(parserState);
+        if (currTok === EOF_MARKER) {
+            finishStrAcc();
+            break;
+        } else if (currTok === LINE_COMMENT_START_MARKER) {
+            parseLineComment(parserState);
+        } else if (currTok === BLOCK_COMMENT_START_MARKER) {
+            parseBlockComment(parserState);
+        } else if (currTok === OPEN_SQUARE_MARKER || currTok === CLOSE_SQUARE_MARKER) {
+            addToStrAcc(currTokenStr(parserState));
+        } else if (currTok === OPEN_CURLY_MARKER) {
+            curlyBal++;
+            addToStrAcc(currTokenStr(parserState));
+            advanceToken(parserState);
+        } else if (currTok === CLOSE_CURLY_MARKER) {
+            curlyBal--;
+
+            if (curlyBal < 0) {
+                // TODO: How to detect main context vs sub context?
+                if (rootContext) {
+                    throw new ParserError("Unexpected close brace in main context");
+                } else {
+                    finishStrAcc();
+                    advanceToken(parserState);
+                    return contents;
                 }
             } else {
+                addToStrAcc(currTokenStr(parserState));
             }
-        }
-        // Newline (\r special handler)
-        else if (currChar === "\r") {
-            advanceChar(parserState);
-            if (!peekChar(parserState)) {
-                throw new ParserError("Parser Error: \\r not followed by \\n.");
-            }
-        }
-        // Newline (\n)
-        else if (currChar === "\n") {
-            // TODO: Do I have to worry about '\r\n' in JS?
+
+            advanceToken(parserState);
+        } else if (currTok === COMMAND_START_MARKER) {
+            finishStrAcc();
+            let cmd = parseCommand(parserState);
+            contents.push(cmd);
+        } else if (currTok === "\n") {
+            // Newline handling
             finishStrAcc();
             contents.push({
                 kind: AstNodeKind.AstStrNode,
@@ -194,38 +196,15 @@ function parseText(parserState: ParserState): AstNode[] {
                 sourceStartCol: parserState.currPosCol,
                 sourceStartLine: parserState.currPosLine,
             });
-            if (!advanceChar(parserState)) break;
-        }
-        // Open Curly ({)
-        else if (currChar === openCurlyChar) {
-            currCtx.curlyBalance++;
-            addToStrAcc(currChar);
-            if (!advanceChar(parserState)) break;
-        }
-        // Close Curly (})
-        else if (currChar === closeCurlyChar) {
-            currCtx.curlyBalance--;
-            // TODO: HANDLE IF GOES BELOW ZERO (Return unless in main text, in which case,
-            // error)!
-            if (currCtx.curlyBalance < 0) {
-                if (parserState.contextStack.length === 1) {
-                    throw new ParserError("Unexpected close brace in main context");
-                } else {
-                    throw new ParserError("NOT IMPLEMENTED YET");
-                }
-            } else {
-                addToStrAcc(currChar);
-            }
-            if (!advanceChar(parserState)) break;
-        }
-        // Regular text
-        else {
-            addToStrAcc(currChar as string);
-            if (!advanceChar(parserState)) break;
+            advanceToken(parserState);
+        } else {
+            assert(typeof currTok === "string"); // All symbols should be matched above.
+            addToStrAcc(currTok);
+            advanceToken(parserState);
         }
     }
 
-    assert(currCtx.curlyBalance === 0);
+    assert(curlyBal === 0);
 
     return contents;
 }
@@ -239,78 +218,163 @@ function parseText(parserState: ParserState): AstNode[] {
  *  Any braces inside are ignored and irrelevant. Balance not required.
  */
 function parseLineComment(parserState: ParserState) {
-    assert(peekChar(parserState) === parserState.charCfg.specialChar);
-    assert(peekCharRelative(parserState, 1) === parserState.charCfg.commentMarkerChar);
-    assert(peekCharRelative(parserState, 2) !== parserState.charCfg.openCurlyChar);
+    assert(currToken(parserState) === LINE_COMMENT_START_MARKER);
 
-    while (peekChar(parserState) !== "\n") {
-        if (!advanceChar(parserState)) break;
+    while (currToken(parserState) !== "\n") {
+        advanceToken(parserState);
     }
-    advanceChar(parserState);
+    advanceToken(parserState);
 }
 
-/** "Parses" a block comment. Note braces must be balanced within!
- */
 function parseBlockComment(parserState: ParserState) {
-    assert(peekChar(parserState) === parserState.charCfg.specialChar);
-    assert(peekCharRelative(parserState, 1) === parserState.charCfg.commentMarkerChar);
-    assert(peekCharRelative(parserState, 2) === parserState.charCfg.openCurlyChar);
+    assert(currToken(parserState) === BLOCK_COMMENT_START_MARKER);
+    advanceToken(parserState);
+    assert(currToken(parserState) === OPEN_CURLY_MARKER);
+    advanceToken(parserState);
 
-    // Skip ◊;{
-    advanceChar(parserState);
-    advanceChar(parserState);
-
-    parserState.contextStack.push({
-        contextKind: ParserContextKind.TextContext,
-        curlyBalance: 0,
-        escapedMode: false,
-    });
-
-    let currCtx = parserTopContext(parserState);
+    let curlyBal = 1;
 
     do {
-        let currChar = peekChar(parserState);
-        if (currChar === parserState.charCfg.openCurlyChar) currCtx.curlyBalance++;
-        if (currChar === parserState.charCfg.closeCurlyChar) currCtx.curlyBalance--;
-        if (!advanceChar(parserState)) break;
-    } while (currCtx.curlyBalance > 0);
+        let currTok = currToken(parserState);
+        if (currTok === OPEN_CURLY_MARKER) curlyBal++;
+        if (currTok === CLOSE_CURLY_MARKER) curlyBal--;
+        if (currTok === EOF_MARKER) throw new ParserError("Unexpected EOF in Block Comment.");
+        advanceToken(parserState);
+    } while (curlyBal > 0);
+}
 
-    if (currCtx.curlyBalance !== 0) {
-        throw new ParserError("Eof with unbalanced braces. (parseBlockComment)");
+function parseCommand(parserState: ParserState): AstCommandNode {
+    assert(currToken(parserState) === COMMAND_START_MARKER);
+    advanceToken(parserState);
+
+    let cmdName = parseCommandName(parserState);
+
+    consumeWhitespaceAndComments(parserState);
+
+    let currTok = currToken(parserState);
+    if (currTok !== OPEN_CURLY_MARKER) {
+        return { kind: AstNodeKind.AstCommandNode, commandName: cmdName, curlyArg: undefined };
     }
+
+    advanceToken(parserState);
+    let curlyArgs = parseText(parserState);
+    return { kind: AstNodeKind.AstCommandNode, commandName: cmdName, curlyArg: curlyArgs };
 }
 
-function parserTopContext(parserState: ParserState): ParserContext {
-    return parserState.contextStack[parserState.contextStack.length - 1];
-}
-
-/** Advance Character. Returns true on success and false on EOF. */
-function advanceChar(parserState: ParserState): boolean {
-    if (parserState.currIdx < parserState.data.length) {
-        if (peekChar(parserState) === "\r") {
-            // Do NOT change curr_pos_col.
-        } else if (peekChar(parserState) === "\n") {
-            parserState.currPosCol = 1;
-            parserState.currPosLine++;
+function parseCommandName(parserState: ParserState): string {
+    let name = "";
+    while (true) {
+        let currTok = currToken(parserState);
+        if (typeof currTok === "string") {
+            if (isWhitespace(currTok)) {
+                if (name === "") throw new ParserError("Empty Command name.");
+                return name;
+            } else {
+                name += currTok;
+                advanceToken(parserState);
+            }
         } else {
-            parserState.currPosCol++;
+            if (name === "") throw new ParserError("Empty Command name.");
+            return name;
         }
-        parserState.currIdx++;
-        return true;
-    } else {
-        parserState.currIdx++;
-        return false; // Indicates EOF
     }
 }
 
-function peekChar(parserState: ParserState): string | symbol {
-    return peekCharRelative(parserState, 0);
+function consumeWhitespaceAndComments(parserState: ParserState) {
+    let currTok = currToken(parserState);
+    while (
+        (typeof currTok === "string" && isWhitespace(currTok)) ||
+        currTok === LINE_COMMENT_START_MARKER ||
+        currTok === BLOCK_COMMENT_START_MARKER
+    ) {
+        if (currTok === LINE_COMMENT_START_MARKER) {
+            parseLineComment(parserState);
+        } else if (currTok === BLOCK_COMMENT_START_MARKER) {
+            parseBlockComment(parserState);
+        } else {
+            advanceToken(parserState);
+        }
+        currTok = currToken(parserState);
+    }
+}
+
+function consumeWhitespace(parserState: ParserState) {
+    let currTok = currToken(parserState);
+    while (typeof currTok === "string" && isWhitespace(currTok)) {
+        advanceToken(parserState);
+        currTok = currToken(parserState);
+    }
+}
+
+/** Returns the currently "pointed at" token.
+ *  TODO: Consider context */
+function currToken(parserState: ParserState) {
+    let [t] = currTokenMeta(parserState);
+    return t;
+}
+
+function currTokenStr(parserState: ParserState) {
+    let [, , s] = currTokenMeta(parserState);
+    return s;
+}
+
+/** Returns a tuple comprised of the ParserToken; and the textual length of the token; and the
+ *  matched string (or "" for EOF).
+ *  TODO: Consider context  */
+function currTokenMeta(parserState: ParserState): [ParserToken, number, string] {
+    let cfg = parserState.charCfg;
+
+    let c = peekChar(parserState);
+    if (c === EOF_MARKER) {
+        return [EOF_MARKER, 0, ""];
+    } else if (c === "\r") {
+        assert(peekChar(parserState, 1) === "\n");
+        return ["\n", 2, "\r\n"];
+    } else if (c === "\n") {
+        return ["\n", 1, "\n"];
+    } else if (c === cfg.specialChar) {
+        if (peekChar(parserState, 1) === cfg.commentMarkerChar) {
+            if (peekChar(parserState, 2) === cfg.openCurlyChar) {
+                return [BLOCK_COMMENT_START_MARKER, 2, cfg.specialChar + cfg.commentMarkerChar];
+            } else {
+                return [LINE_COMMENT_START_MARKER, 2, cfg.specialChar + cfg.commentMarkerChar];
+            }
+        } else {
+            return [COMMAND_START_MARKER, 1, cfg.specialChar];
+        }
+    } else if (c === cfg.specialBraceChar) {
+        throw new ParserError("Special braces not yet implemented!");
+    } else if (c === cfg.openCurlyChar) {
+        return [OPEN_CURLY_MARKER, 1, cfg.openCurlyChar];
+    } else if (c === cfg.closeCurlyChar) {
+        return [CLOSE_CURLY_MARKER, 1, cfg.closeCurlyChar];
+    } else if (c === cfg.openSquareChar) {
+        return [OPEN_SQUARE_MARKER, 1, cfg.openSquareChar];
+    } else if (c === cfg.closeSquareChar) {
+        return [CLOSE_SQUARE_MARKER, 1, cfg.closeSquareChar];
+    } else {
+        assert(typeof c === "string");
+        return [c, 1, c];
+    }
+}
+
+function advanceToken(parserState: ParserState) {
+    let [t, len] = currTokenMeta(parserState);
+
+    if (t === "\n") {
+        parserState.currPosCol = 1;
+        parserState.currPosLine++;
+    } else {
+        parserState.currPosCol++;
+    }
+
+    parserState.currIdx += len;
 }
 
 /** Return the character at index `<current parser index> + relativeIndex`,
  *  or EOF_MARKER if after end of file.
  */
-function peekCharRelative(parserState: ParserState, relativeIndex: number): string | symbol {
+function peekChar(parserState: ParserState, relativeIndex: number = 0): string | symbol {
     if (parserState.currIdx + relativeIndex < parserState.data.length) {
         let out = parserState.data[parserState.currIdx + relativeIndex];
         return out;
