@@ -1,6 +1,6 @@
 /** Outputting, AKA the "Back Pass" */
 
-import { DetNode } from "../det";
+import { DetNodeType } from "../det";
 import { CompileError } from "../errors";
 import { outputNodeToHtml } from "./html";
 
@@ -8,7 +8,10 @@ interface CompilationOutput {
     str: string;
 }
 
-export async function outputDet(detRootNode: DetNode, target: string): Promise<CompilationOutput> {
+export async function outputDet(
+    detRootNode: DetNodeType,
+    target: string
+): Promise<CompilationOutput> {
     switch (target) {
         case "html":
             return outputToHtml(detRootNode);
@@ -18,6 +21,6 @@ export async function outputDet(detRootNode: DetNode, target: string): Promise<C
     }
 }
 
-function outputToHtml(detRootNode: DetNode): CompilationOutput {
+function outputToHtml(detRootNode: DetNodeType): CompilationOutput {
     return { str: outputNodeToHtml(detRootNode) };
 }

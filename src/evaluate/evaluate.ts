@@ -6,7 +6,7 @@
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
 import { callCommand, Command, CommandKind } from "../command/command";
-import { DetNodeKind, DetTag, DetTextStr, DetNode, DetRoot } from "../det";
+import { DetNodeKind, DetTag, DetTextStr, DetNodeType, DetRoot } from "../det";
 import { AstEvaluationError } from "../errors";
 import { loadLapolModAsMap } from "../la_module/mod_utils";
 import { Environment, environmentLookup, setupDefaultEnvironment } from "./environment";
@@ -21,7 +21,7 @@ import { Environment, environmentLookup, setupDefaultEnvironment } from "./envir
  *
  * TODO: Should default modules be loaded statically?
  */
-export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
+export async function evaluateAst(node: AstRootNode): Promise<DetNodeType> {
     let env = { contents: new Map(), outerEnv: undefined };
     let defaultEnvItems = await loadLapolModAsMap("../default_lapol_modules/main");
     setupDefaultEnvironment(env, defaultEnvItems);
@@ -34,7 +34,7 @@ export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
  *
  * Note this function dispatches to `evaluate*` (e.g. `evaluateRoot`, `evaluateCommand`, etc.).
  */
-function evaluateNode(node: AstNode, env: Environment): DetNode {
+function evaluateNode(node: AstNode, env: Environment): DetNodeType {
     switch (node.kind) {
         case AstNodeKind.AstRootNode:
             return evaluateRoot(node, env);
@@ -57,7 +57,7 @@ function evaluateRoot(rootNode: AstRootNode, env: Environment): DetRoot {
     };
 }
 
-function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode {
+function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNodeType {
     assert(commandNode.kind === AstNodeKind.AstCommandNode);
 
     let command = environmentLookup(env, commandNode.commandName);
@@ -76,7 +76,7 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
 
     // TODO: Allow some commands to defer evaluation of their arguments (e.g. "if")
     // "lazy arguments"
-    let evalCurlyArgs: DetNode[][] = [];
+    let evalCurlyArgs: DetNodeType[][] = [];
     for (let curlyArg of commandNode.curlyArgs) {
         evalCurlyArgs.push(evaluateNodeArray(curlyArg, env));
     }
@@ -90,7 +90,7 @@ function evaluateStrNode(strNode: AstStrNode, env: Environment): DetTextStr {
     return { kind: DetNodeKind.DetTextStrKind, text: strNode.content };
 }
 
-function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {
+function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNodeType[] {
     let cont = [];
     for (let node of nodeArray) {
         let n = evaluateNode(node, env);

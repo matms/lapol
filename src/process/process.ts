@@ -3,15 +3,15 @@
  * This pass takes in a DET, returns a possibly modified DET.
  */
 
-import { DetNode } from "../det";
+import { DetNodeType } from "../det";
 import { processLinebreaks, processParagraphs } from "./paragraph";
 
-const PROCESSING_PASSES: ((node: DetNode) => DetNode)[] = [
+const PROCESSING_PASSES: ((node: DetNodeType) => DetNodeType)[] = [
     processLinebreaks,
     //processParagraphs
 ];
 
-export async function processDet(detRootNode: DetNode): Promise<DetNode> {
+export async function processDet(detRootNode: DetNodeType): Promise<DetNodeType> {
     let out = detRootNode;
 
     for (let pass of PROCESSING_PASSES) {

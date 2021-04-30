@@ -1,7 +1,7 @@
-import { DetNode, DetNodeKind } from "../det";
+import { DetNodeType, DetNodeKind } from "../det";
 import { CompileError } from "../errors";
 
-export function outputNodeToHtml(node: DetNode): string {
+export function outputNodeToHtml(node: DetNodeType): string {
     switch (node.kind) {
         case DetNodeKind.DetTextStrKind: {
             return node.text;

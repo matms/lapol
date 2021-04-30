@@ -5,9 +5,9 @@ export const commands = {
     section: section,
 };
 
-import { DetNodeKind, DetTextStr, DetNode, DetTag } from "../det";
+import { DetNodeKind, DetTextStr, DetNodeType, DetTag } from "../det";
 
-function title(arg1: DetNode[]): DetTag {
+function title(arg1: DetNodeType[]): DetTag {
     return {
         kind: DetNodeKind.DetTag,
         tag: "h1",
@@ -15,7 +15,7 @@ function title(arg1: DetNode[]): DetTag {
     };
 }
 
-function section(arg1: DetNode[]): DetTag {
+function section(arg1: DetNodeType[]): DetTag {
     return {
         kind: DetNodeKind.DetTag,
         tag: "h2",
@@ -23,7 +23,7 @@ function section(arg1: DetNode[]): DetTag {
     };
 }
 
-function hey(arg1: DetNode[]): DetTextStr {
+function hey(arg1: DetNodeType[]): DetTextStr {
     // console.log("hey from here!");
     return {
         kind: DetNodeKind.DetTextStrKind,
@@ -31,7 +31,7 @@ function hey(arg1: DetNode[]): DetTextStr {
     };
 }
 
-function hey_varargs(arg1: DetNode[], ..._rest: DetNode[]): DetTextStr {
+function hey_varargs(arg1: DetNodeType[], ..._rest: DetNodeType[]): DetTextStr {
     // console.log("hey from here!");
     return {
         kind: DetNodeKind.DetTextStrKind,

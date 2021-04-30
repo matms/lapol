@@ -1,4 +1,4 @@
-import { DetNode, DetNodeKind } from "../det";
+import { DetNodeType, DetNodeKind } from "../det";
 import { mapUpdateContents, replaceContents, updateContents } from "../det_utils";
 import { ProcessingError } from "../errors";
 
@@ -6,7 +6,7 @@ const BREAK_MARKER = Symbol("TEMP_NEWLINE_MARKER");
 
 // TODO: Strip empty lines (whitespace only lines.)
 
-export function processLinebreaks(node: DetNode): DetNode {
+export function processLinebreaks(node: DetNodeType): DetNodeType {
     switch (node.kind) {
         case DetNodeKind.DetTextStrKind:
             return node;
@@ -16,7 +16,7 @@ export function processLinebreaks(node: DetNode): DetNode {
 
             if (node.contents.length <= 1) return node;
 
-            let out: (DetNode | symbol)[] = [];
+            let out: (DetNodeType | symbol)[] = [];
             let i = 0;
             for (let i = 0; i < node.contents.length; i++) {
                 let curr = node.contents[i];
@@ -39,12 +39,12 @@ export function processLinebreaks(node: DetNode): DetNode {
     }
 }
 
-function removeBreakMarker(val: DetNode | symbol): DetNode {
+function removeBreakMarker(val: DetNodeType | symbol): DetNodeType {
     if (typeof val === "symbol") return { kind: DetNodeKind.DetTag, tag: "br", contents: [] };
     return val;
 }
 
-export function processParagraphs(node: DetNode): DetNode {
+export function processParagraphs(node: DetNodeType): DetNodeType {
     switch (node.kind) {
         default:
             throw new ProcessingError(`processParagraphs: Unsupported node kind ${node.kind}`);
@@ -53,6 +53,6 @@ export function processParagraphs(node: DetNode): DetNode {
 
 // function isBlock(node: DetNode | symbol): boolean {}
 
-function isNewline(node: DetNode): boolean {
+function isNewline(node: DetNodeType): boolean {
     return node.kind === DetNodeKind.DetTextStrKind && node.text === "\n";
 }
