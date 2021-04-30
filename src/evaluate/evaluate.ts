@@ -6,7 +6,7 @@
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
 import { callCommand, Command, CommandKind } from "../command/command";
-import { DetNodeKind, DetTag, DetTextStr, DetNodeType, DetRoot } from "../det";
+import { DetNode, Expr, Str } from "../det";
 import { AstEvaluationError } from "../errors";
 import { loadLapolModAsMap } from "../la_module/mod_utils";
 import { Environment, environmentLookup, setupDefaultEnvironment } from "./environment";
@@ -21,7 +21,7 @@ import { Environment, environmentLookup, setupDefaultEnvironment } from "./envir
  *
  * TODO: Should default modules be loaded statically?
  */
-export async function evaluateAst(node: AstRootNode): Promise<DetNodeType> {
+export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
     let env = { contents: new Map(), outerEnv: undefined };
     let defaultEnvItems = await loadLapolModAsMap("../default_lapol_modules/main");
     setupDefaultEnvironment(env, defaultEnvItems);
@@ -34,7 +34,7 @@ export async function evaluateAst(node: AstRootNode): Promise<DetNodeType> {
  *
  * Note this function dispatches to `evaluate*` (e.g. `evaluateRoot`, `evaluateCommand`, etc.).
  */
-function evaluateNode(node: AstNode, env: Environment): DetNodeType {
+function evaluateNode(node: AstNode, env: Environment): DetNode {
     switch (node.kind) {
         case AstNodeKind.AstRootNode:
             return evaluateRoot(node, env);
@@ -49,15 +49,12 @@ function evaluateNode(node: AstNode, env: Environment): DetNodeType {
     }
 }
 
-function evaluateRoot(rootNode: AstRootNode, env: Environment): DetRoot {
+function evaluateRoot(rootNode: AstRootNode, env: Environment): Expr {
     assert(rootNode.kind === AstNodeKind.AstRootNode);
-    return {
-        kind: DetNodeKind.DetRoot,
-        contents: evaluateNodeArray(rootNode.subNodes, env),
-    };
+    return new Expr("root", evaluateNodeArray(rootNode.subNodes, env));
 }
 
-function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNodeType {
+function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode {
     assert(commandNode.kind === AstNodeKind.AstCommandNode);
 
     let command = environmentLookup(env, commandNode.commandName);
@@ -76,7 +73,7 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
 
     // TODO: Allow some commands to defer evaluation of their arguments (e.g. "if")
     // "lazy arguments"
-    let evalCurlyArgs: DetNodeType[][] = [];
+    let evalCurlyArgs: DetNode[][] = [];
     for (let curlyArg of commandNode.curlyArgs) {
         evalCurlyArgs.push(evaluateNodeArray(curlyArg, env));
     }
@@ -85,17 +82,17 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
     return callCommand(command, evalCurlyArgs);
 }
 
-function evaluateStrNode(strNode: AstStrNode, env: Environment): DetTextStr {
+function evaluateStrNode(strNode: AstStrNode, env: Environment): Str {
     assert(strNode.kind === AstNodeKind.AstStrNode);
-    return { kind: DetNodeKind.DetTextStrKind, text: strNode.content };
+    return new Str(strNode.content);
 }
 
-function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNodeType[] {
+function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {
     let cont = [];
     for (let node of nodeArray) {
         let n = evaluateNode(node, env);
-        if (n.kind === DetNodeKind.DetSpecialSpliceIndicator) {
-            for (let sn of n.contents) cont.push(sn);
+        if (n instanceof Expr && n.tag === "splice") {
+            for (let sn of n.contentsIter()) cont.push(sn);
         } else {
             cont.push(n);
         }

@@ -1,5 +1,5 @@
 import { strict as assert } from "assert";
-import { DetNodeType } from "../det";
+import { DetNode } from "../det";
 import { AstEvaluationError } from "../errors";
 
 export enum CommandKind {
@@ -18,13 +18,13 @@ export interface Command {
     kind: CommandKind.CommandKind;
     cmdName: string;
     curlyArity: number | "any";
-    fn: (args: DetNodeType[][]) => DetNodeType;
+    fn: (args: DetNode[][]) => DetNode;
 }
 
 /** Execute the command `command`, given arguments `args`.
  *  Returns a `DetNode`.
  */
-export function callCommand(command: Command, args: DetNodeType[][]): DetNodeType {
+export function callCommand(command: Command, args: DetNode[][]): DetNode {
     // This check is important since typescript type information may be lost when
     // saving commands into the environment.
     assert(command.kind === CommandKind.CommandKind);

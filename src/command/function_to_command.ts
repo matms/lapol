@@ -1,4 +1,4 @@
-import { DetNodeType, DetNodeKind } from "../det";
+import { DetNode } from "../det";
 import { AstEvaluationError } from "../errors";
 import { Command, CommandKind } from "./command";
 
@@ -22,9 +22,9 @@ export function functionToCommand(func: Function, cmdName: string, options?: any
         kind: CommandKind.CommandKind,
         cmdName: cmdName,
         curlyArity: varArgs ? "any" : func.length,
-        fn: (args: DetNodeType[][]) => {
+        fn: (args: DetNode[][]) => {
             let out = func(...args);
-            if (typeof out !== "object" || !Object.values(DetNodeKind).includes(out.kind)) {
+            if (!(out instanceof DetNode)) {
                 throw new AstEvaluationError(
                     "Function defining Lapol Command returned object that appears not to be " +
                         "of type DetNode" +

@@ -31,35 +31,101 @@ All will be serializeable (to the extent possible)
 
 */
 
-export enum DetNodeKind {
-    DetTextStrKind = "DetTextStr",
-    DetTag = "DetTag",
-    DetSpecialSpliceIndicator = "DetSpecialSpliceIndicator",
-    DetRoot = "DetRoot",
+// Note: https://stackoverflow.com/questions/56067863/discriminating-a-union-of-classes
+
+/**
+ *
+ * Warning: DO NOT INHERIT FROM THIS CLASS (If you are an user).
+ *
+ * Note: These nodes are considered _de facto_ immutable, but they are not frozen. Use internal
+ * methods to "safely mutate" (i.e. return a new copy).
+ *
+ * IMPORTANT: Before using any public function prefixed with unsafe, read their documentation
+ * very carefully.
+ */
+export abstract class DetNode {
+    abstract readonly kind: "Str" | "Expr" | "Data";
+
+    // TODO: Consider storing metadata / debug information.
 }
 
-export interface DetTextStr {
-    kind: DetNodeKind.DetTextStrKind;
-    text: string;
+export class Str extends DetNode {
+    readonly kind = "Str";
+
+    private _text: string;
+
+    constructor(text: string) {
+        super();
+        this._text = text;
+    }
+
+    public get text() {
+        return this._text;
+    }
 }
 
-export interface DetTag {
-    kind: DetNodeKind.DetTag;
-    tag: string;
-    contents: DetNodeType[];
+export class Expr extends DetNode {
+    readonly kind = "Expr";
+
+    private _tag: string;
+    private _attrs: Map<string, any>; // TODO: Do we want to allow numbers?
+    private _contents: DetNode[];
+
+    /**a */
+    constructor(tag: string, contents?: DetNode[], attrs?: Map<string, any>) {
+        super();
+        this._tag = tag;
+
+        if (contents === undefined) this._contents = [];
+        else this._contents = contents;
+
+        if (attrs === undefined) this._attrs = new Map();
+        else this._attrs = attrs;
+    }
+
+    public get tag(): string {
+        return this._tag;
+    }
+
+    /** The user MUST NOT mutate the returned map under any circumstances. */
+    public unsafeBorrowAttrs(): Map<string, any> {
+        return this._attrs;
+    }
+
+    /** The user MUST NOT mutate the returned array under any circumstances. */
+    public unsafeBorrowContents(): DetNode[] {
+        return this._contents;
+    }
+
+    public contentsLength() {
+        return this._contents.length;
+    }
+
+    public contentsIter() {
+        return this._contents.values();
+    }
+
+    public contentsReplace(newContents: DetNode[]): Expr {
+        return new Expr(this._tag, newContents, this._attrs);
+    }
+
+    public contentsMap(fn: (n: DetNode) => DetNode): Expr {
+        return this.contentsReplace(this._contents.map(fn));
+    }
 }
 
-/** Special DET Node used to indicate splicing (i.e. the contents should be spread
- * out and become contents of the parent node.) */
-export interface DetSpecialSpliceIndicator {
-    kind: DetNodeKind.DetSpecialSpliceIndicator;
-    contents: DetNodeType[];
-}
+export class Data extends DetNode {
+    readonly kind = "Data";
 
-export interface DetRoot {
-    kind: DetNodeKind.DetRoot;
-    contents: DetNodeType[];
-}
+    private _data: any;
 
-// TODO: Allow new DetNode types dynamically?
-export type DetNodeType = DetTextStr | DetTag | DetSpecialSpliceIndicator | DetRoot;
+    constructor(data: any) {
+        super();
+        this._data = data;
+    }
+
+    /** The user MUST NOT mutate the returned array under any circumstances. */
+    public unsafe_borrow_data(): DetNode[] {
+        return this._data;
+    }
+}

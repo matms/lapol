@@ -62,6 +62,6 @@ function consoleMain() {
 
 console.log("Calling compile");
 
-compile("test_scratch/test_cmd_0.lap", "test_scratch/testOut.html");
+compile("test_scratch/stress_test_0.lap", "test_scratch/testOut.html");
 
 console.log("Called compile, now wait for the promises!");

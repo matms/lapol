@@ -1,58 +1,52 @@
-import { DetNodeType, DetNodeKind } from "../det";
-import { mapUpdateContents, replaceContents, updateContents } from "../det_utils";
-import { ProcessingError } from "../errors";
+import { Data, DetNode, Str, Expr } from "../det";
+import { LapolError, ProcessingError } from "../errors";
+import { outputNodeToHtml } from "../output/html";
 
 const BREAK_MARKER = Symbol("TEMP_NEWLINE_MARKER");
 
 // TODO: Strip empty lines (whitespace only lines.)
 
-export function processLinebreaks(node: DetNodeType): DetNodeType {
-    switch (node.kind) {
-        case DetNodeKind.DetTextStrKind:
-            return node;
-        case DetNodeKind.DetRoot:
-        case DetNodeKind.DetTag: {
-            node = mapUpdateContents(node, processLinebreaks);
+export function processLinebreaks(node: DetNode): DetNode {
+    if (node instanceof Str) return node;
+    if (node instanceof Data) return node;
+    if (node instanceof Expr) {
+        let nNode = node.contentsMap(processLinebreaks);
 
-            if (node.contents.length <= 1) return node;
+        if (nNode.contentsLength() <= 1) return nNode;
 
-            let out: (DetNodeType | symbol)[] = [];
-            let i = 0;
-            for (let i = 0; i < node.contents.length; i++) {
-                let curr = node.contents[i];
-                if (!isNewline(curr)) out.push(curr);
-                else if (
-                    isNewline(node.contents[i + 1]) && // Next is newline
-                    out[out.length - 1] !== BREAK_MARKER &&
-                    out[out.length - 1] !== undefined // No break at beginning of contents.
-                ) {
-                    out.push(BREAK_MARKER);
-                }
+        const LINEBREAK_INDICATOR = "n";
+
+        let contHelper: (DetNode | "n")[] = [];
+
+        for (let i = 0; i < nNode.contentsLength(); i++) {
+            let curr = nNode.unsafeBorrowContents()[i];
+            if (!isNewline(curr)) contHelper.push(curr);
+            else if (
+                isNewline(nNode.unsafeBorrowContents()[i + 1]) &&
+                contHelper[contHelper.length - 1] !== LINEBREAK_INDICATOR &&
+                contHelper[contHelper.length - 1] !== undefined
+                // ^ No break at beginning of contents.
+            ) {
+                contHelper.push(LINEBREAK_INDICATOR);
             }
-            // No break at end of contents.
-            if (out[out.length - 1] === BREAK_MARKER) out.pop();
-            // Map BREAK_MARKER to BR tag
-            return replaceContents(node, out.map(removeBreakMarker));
         }
-        default:
-            throw new ProcessingError(`processParagraphs: Unsupported node kind ${node.kind}`);
+
+        // No break at end of contents
+        if (contHelper[contHelper.length - 1] === LINEBREAK_INDICATOR) contHelper.pop();
+
+        let finalContents = contHelper.map((v) => (v !== LINEBREAK_INDICATOR ? v : new Expr("br")));
+
+        return nNode.contentsReplace(finalContents);
     }
+    throw new LapolError("Should be unreachable");
 }
 
-function removeBreakMarker(val: DetNodeType | symbol): DetNodeType {
-    if (typeof val === "symbol") return { kind: DetNodeKind.DetTag, tag: "br", contents: [] };
-    return val;
-}
-
-export function processParagraphs(node: DetNodeType): DetNodeType {
-    switch (node.kind) {
-        default:
-            throw new ProcessingError(`processParagraphs: Unsupported node kind ${node.kind}`);
-    }
+export function processParagraphs(node: DetNode): DetNode {
+    throw new LapolError(`Not yet implemented`);
 }
 
 // function isBlock(node: DetNode | symbol): boolean {}
 
-function isNewline(node: DetNodeType): boolean {
-    return node.kind === DetNodeKind.DetTextStrKind && node.text === "\n";
+function isNewline(node: DetNode): boolean {
+    return node instanceof Str && node.text === "\n";
 }
