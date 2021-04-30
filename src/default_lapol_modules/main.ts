@@ -1,4 +1,4 @@
-export const define = {
+export const commands = {
     hey: hey,
 };
 
