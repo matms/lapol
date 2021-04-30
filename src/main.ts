@@ -5,7 +5,7 @@ import { processDet } from "./process/process";
 import { outputDet } from "./output/output";
 
 async function compile(inFilePath: string, outFilePath: string) {
-    console.log("Hello");
+    console.log("Starting to compile...");
 
     var t1 = Date.now();
     let text = readFileAtOnce(inFilePath); // TODO MAKE ASYNC
@@ -32,10 +32,16 @@ async function compile(inFilePath: string, outFilePath: string) {
 
     console.log("====================");
 
+    console.log("AST:");
+    console.log(parsed);
+    console.log("Evaluation output (DET):");
+    console.log(evaluated);
+    console.log("Processed DET:");
+    console.log(processed);
     console.log("Output:");
     console.log(output);
 
-    console.log("Bye!");
+    console.log("Goodbye!");
 }
 
 function consoleMain() {

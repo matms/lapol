@@ -5,7 +5,22 @@ export class LapolModuleError extends Error {
     }
 }
 
+// TODO: Make all errors of kind LapolError?
+export class LapolError extends Error {
+    constructor(m: string) {
+        super(m);
+        Object.setPrototypeOf(this, AstEvaluationError.prototype);
+    }
+}
+
 export class CompileError extends Error {
+    constructor(m: string) {
+        super(m);
+        Object.setPrototypeOf(this, AstEvaluationError.prototype);
+    }
+}
+
+export class ProcessingError extends Error {
     constructor(m: string) {
         super(m);
         Object.setPrototypeOf(this, AstEvaluationError.prototype);

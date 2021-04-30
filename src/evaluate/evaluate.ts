@@ -6,7 +6,7 @@
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
 import { callCommand, Command, CommandKind } from "../command/command";
-import { DetNodeKind, DetTag, DetTextStr, DetNode } from "../det";
+import { DetNodeKind, DetTag, DetTextStr, DetNode, DetRoot } from "../det";
 import { AstEvaluationError } from "../errors";
 import { loadLapolModAsMap } from "../la_module/mod_utils";
 import { Environment, environmentLookup, setupDefaultEnvironment } from "./environment";
@@ -49,11 +49,10 @@ function evaluateNode(node: AstNode, env: Environment): DetNode {
     }
 }
 
-function evaluateRoot(rootNode: AstRootNode, env: Environment): DetTag {
+function evaluateRoot(rootNode: AstRootNode, env: Environment): DetRoot {
     assert(rootNode.kind === AstNodeKind.AstRootNode);
     return {
-        kind: DetNodeKind.DetTag,
-        tag: "root",
+        kind: DetNodeKind.DetRoot,
         contents: evaluateNodeArray(rootNode.subNodes, env),
     };
 }
@@ -88,7 +87,7 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
 
 function evaluateStrNode(strNode: AstStrNode, env: Environment): DetTextStr {
     assert(strNode.kind === AstNodeKind.AstStrNode);
-    return { kind: DetNodeKind.DetTextStrKind, contents: strNode.content };
+    return { kind: DetNodeKind.DetTextStrKind, text: strNode.content };
 }
 
 function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {

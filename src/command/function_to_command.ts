@@ -24,10 +24,11 @@ export function functionToCommand(func: Function, cmdName: string, options?: any
         curlyArity: varArgs ? "any" : func.length,
         fn: (args: DetNode[][]) => {
             let out = func(...args);
-            if (typeof out !== "object" || !(out.kind in DetNodeKind)) {
+            if (typeof out !== "object" || !Object.values(DetNodeKind).includes(out.kind)) {
                 throw new AstEvaluationError(
                     "Function defining Lapol Command returned object that appears not to be " +
-                        "of type DetNode"
+                        "of type DetNode" +
+                        `Command name: ${cmdName}`
                 );
             }
             return out;

@@ -27,7 +27,7 @@ function hey(arg1: DetNode[]): DetTextStr {
     // console.log("hey from here!");
     return {
         kind: DetNodeKind.DetTextStrKind,
-        contents: `Hello, ${(arg1[0] as DetTextStr).contents}`,
+        text: `Hello, ${(arg1[0] as DetTextStr).text}`,
     };
 }
 
@@ -35,6 +35,6 @@ function hey_varargs(arg1: DetNode[], ..._rest: DetNode[]): DetTextStr {
     // console.log("hey from here!");
     return {
         kind: DetNodeKind.DetTextStrKind,
-        contents: `Hello, ${(arg1[0] as DetTextStr).contents}`,
+        text: `Hello, ${(arg1[0] as DetTextStr).text}`,
     };
 }

@@ -3,14 +3,15 @@
  */
 
 export enum DetNodeKind {
-    DetTextStrKind = "DetTextStrKind",
+    DetTextStrKind = "DetTextStr",
     DetTag = "DetTag",
     DetSpecialSpliceIndicator = "DetSpecialSpliceIndicator",
+    DetRoot = "DetRoot",
 }
 
 export interface DetTextStr {
     kind: DetNodeKind.DetTextStrKind;
-    contents: string;
+    text: string;
 }
 
 export interface DetTag {
@@ -26,5 +27,10 @@ export interface DetSpecialSpliceIndicator {
     contents: DetNode[];
 }
 
+export interface DetRoot {
+    kind: DetNodeKind.DetRoot;
+    contents: DetNode[];
+}
+
 // TODO: Allow new DetNode types dynamically?
-export type DetNode = DetTextStr | DetTag | DetSpecialSpliceIndicator;
+export type DetNode = DetTextStr | DetTag | DetSpecialSpliceIndicator | DetRoot;
