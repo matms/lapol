@@ -1,7 +1,7 @@
 /** Outputting, AKA the "Back Pass" */
 
 import { DetNode } from "../det";
-import { CompileError } from "../errors";
+import { LapolError } from "../errors";
 import { outputNodeToHtml } from "./html";
 
 interface CompilationOutput {
@@ -14,7 +14,7 @@ export async function outputDet(detRootNode: DetNode, target: string): Promise<C
             return outputToHtml(detRootNode);
 
         default:
-            throw new CompileError(`Unknown compilation target language ${target}.`);
+            throw new LapolError(`Unknown compilation target language ${target}.`);
     }
 }
 

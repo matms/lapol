@@ -1,5 +1,5 @@
 import { DetNode } from "../det";
-import { AstEvaluationError } from "../errors";
+import { LapolError } from "../errors";
 import { Command, CommandKind } from "./command";
 
 /** Transform a Javascript function `func` into a command named `cmdName`.
@@ -25,7 +25,7 @@ export function functionToCommand(func: Function, cmdName: string, options?: any
         fn: (args: DetNode[][]) => {
             let out = func(...args);
             if (!(out instanceof DetNode)) {
-                throw new AstEvaluationError(
+                throw new LapolError(
                     "Function defining Lapol Command returned object that appears not to be " +
                         "of type DetNode" +
                         `Command name: ${cmdName}`

@@ -7,7 +7,7 @@ import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
 import { callCommand, Command, CommandKind } from "../command/command";
 import { DetNode, Expr, Str } from "../det";
-import { AstEvaluationError } from "../errors";
+import { LapolError } from "../errors";
 import { loadLapolModAsMap } from "../la_module/mod_utils";
 import { Environment, environmentLookup, setupDefaultEnvironment } from "./environment";
 
@@ -45,7 +45,7 @@ function evaluateNode(node: AstNode, env: Environment): DetNode {
         case AstNodeKind.AstStrNode:
             return evaluateStrNode(node, env);
         default:
-            throw new AstEvaluationError("Ast Node Kind Unknown or cannot be directly evaluated.");
+            throw new LapolError("Ast Node Kind Unknown or cannot be directly evaluated.");
     }
 }
 
@@ -60,13 +60,9 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
     let command = environmentLookup(env, commandNode.commandName);
 
     if (command === undefined) {
-        throw new AstEvaluationError(
-            `Command (name: ${commandNode.commandName}) not in environment.`
-        );
+        throw new LapolError(`Command (name: ${commandNode.commandName}) not in environment.`);
     } else if (command.kind !== CommandKind.CommandKind) {
-        throw new AstEvaluationError(
-            `Value (command name: ${commandNode.commandName}) is not a Command.`
-        );
+        throw new LapolError(`Value (command name: ${commandNode.commandName}) is not a Command.`);
     }
 
     // TODO commandNode.squareArg;

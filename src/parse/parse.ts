@@ -3,7 +3,7 @@ import { syncBuiltinESMExports } from "node:module";
 import { type } from "node:os";
 import { isWhitespace } from "../utils";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
-import { ParserError } from "../errors";
+import { LapolError } from "../errors";
 
 // End of file
 const EOF_MARKER = Symbol("EOF");
@@ -159,7 +159,7 @@ function parseText(parserState: ParserState, rootContext: boolean = false): AstN
             if (curlyBal < 0) {
                 // TODO: How to detect main context vs sub context?
                 if (rootContext) {
-                    throw new ParserError("Unexpected close brace in main context");
+                    throw new LapolError("Unexpected close brace in main context");
                 } else {
                     finishStrAcc();
                     advanceToken(parserState);
@@ -205,7 +205,7 @@ function parseSquareArg(parserState: ParserState): AstNode[] {
     while (true) {
         let currTok = currToken(parserState);
         if (currTok === EOF_MARKER) {
-            throw new ParserError("Unexpected EOF in Square Brace context.");
+            throw new LapolError("Unexpected EOF in Square Brace context.");
         } else if (currTok === LINE_COMMENT_START_MARKER) {
             parseLineComment(parserState);
         } else if (currTok === BLOCK_COMMENT_START_MARKER) {
@@ -268,7 +268,7 @@ function parseBlockComment(parserState: ParserState) {
         let currTok = currToken(parserState);
         if (currTok === OPEN_CURLY_MARKER) curlyBal++;
         if (currTok === CLOSE_CURLY_MARKER) curlyBal--;
-        if (currTok === EOF_MARKER) throw new ParserError("Unexpected EOF in Block Comment.");
+        if (currTok === EOF_MARKER) throw new LapolError("Unexpected EOF in Block Comment.");
         advanceToken(parserState);
     } while (curlyBal > 0);
 }
@@ -338,14 +338,14 @@ function parseCommandName(parserState: ParserState): string {
         let currTok = currToken(parserState);
         if (typeof currTok === "string") {
             if (isWhitespace(currTok)) {
-                if (name === "") throw new ParserError("Empty Command name.");
+                if (name === "") throw new LapolError("Empty Command name.");
                 return name;
             } else {
                 name += currTok;
                 advanceToken(parserState);
             }
         } else {
-            if (name === "") throw new ParserError("Empty Command name.");
+            if (name === "") throw new LapolError("Empty Command name.");
             return name;
         }
     }
@@ -418,7 +418,7 @@ function computeCurrTokenCache(parserState: ParserState): [ParserToken, number, 
             return [COMMAND_START_MARKER, 1, cfg.specialChar];
         }
     } else if (c === cfg.specialBraceChar) {
-        throw new ParserError("Special braces not yet implemented!");
+        throw new LapolError("Special braces not yet implemented!");
     } else if (c === cfg.openCurlyChar) {
         return [OPEN_CURLY_MARKER, 1, cfg.openCurlyChar];
     } else if (c === cfg.closeCurlyChar) {

@@ -1,7 +1,7 @@
 export class LapolModuleError extends Error {
     constructor(m: string) {
         super(m);
-        Object.setPrototypeOf(this, AstEvaluationError.prototype);
+        Object.setPrototypeOf(this, LapolModuleError.prototype);
     }
 }
 
@@ -9,34 +9,6 @@ export class LapolModuleError extends Error {
 export class LapolError extends Error {
     constructor(m: string) {
         super(m);
-        Object.setPrototypeOf(this, AstEvaluationError.prototype);
-    }
-}
-
-export class CompileError extends Error {
-    constructor(m: string) {
-        super(m);
-        Object.setPrototypeOf(this, AstEvaluationError.prototype);
-    }
-}
-
-export class ProcessingError extends Error {
-    constructor(m: string) {
-        super(m);
-        Object.setPrototypeOf(this, AstEvaluationError.prototype);
-    }
-}
-
-export class AstEvaluationError extends Error {
-    constructor(m: string) {
-        super(m);
-        Object.setPrototypeOf(this, AstEvaluationError.prototype);
-    }
-}
-
-export class ParserError extends Error {
-    constructor(m: string) {
-        super(m);
-        Object.setPrototypeOf(this, ParserError.prototype);
+        Object.setPrototypeOf(this, LapolError.prototype);
     }
 }

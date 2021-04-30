@@ -1,5 +1,5 @@
 import { Data, DetNode, Expr, Str } from "../det";
-import { CompileError, LapolError } from "../errors";
+import { LapolError } from "../errors";
 
 export function outputNodeToHtml(node: DetNode): string {
     if (node instanceof Str) return node.text;

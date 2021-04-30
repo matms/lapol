@@ -1,8 +1,7 @@
 import { Data, DetNode, Str, Expr } from "../det";
-import { LapolError, ProcessingError } from "../errors";
-import { outputNodeToHtml } from "../output/html";
+import { LapolError } from "../errors";
 
-const BREAK_MARKER = Symbol("TEMP_NEWLINE_MARKER");
+const BREAK_TAG = "br";
 
 // TODO: Strip empty lines (whitespace only lines.)
 
@@ -34,7 +33,9 @@ export function processLinebreaks(node: DetNode): DetNode {
         // No break at end of contents
         if (contHelper[contHelper.length - 1] === LINEBREAK_INDICATOR) contHelper.pop();
 
-        let finalContents = contHelper.map((v) => (v !== LINEBREAK_INDICATOR ? v : new Expr("br")));
+        let finalContents = contHelper.map((v) =>
+            v !== LINEBREAK_INDICATOR ? v : new Expr(BREAK_TAG)
+        );
 
         return nNode.contentsReplace(finalContents);
     }

@@ -1,6 +1,6 @@
 import { strict as assert } from "assert";
 import { DetNode } from "../det";
-import { AstEvaluationError } from "../errors";
+import { LapolError } from "../errors";
 
 export enum CommandKind {
     CommandKind = "CommandKind",
@@ -30,7 +30,7 @@ export function callCommand(command: Command, args: DetNode[][]): DetNode {
     assert(command.kind === CommandKind.CommandKind);
 
     if (command.curlyArity !== "any" && args.length !== command.curlyArity) {
-        throw new AstEvaluationError(`Command (name: ${command.cmdName}) arity mismatch.`);
+        throw new LapolError(`Command (name: ${command.cmdName}) arity mismatch.`);
     }
 
     return command.fn(args);
