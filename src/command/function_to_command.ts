@@ -1,15 +1,27 @@
 import { DetNode, DetNodeKind } from "../det";
 import { AstEvaluationError } from "../errors";
-import { Command } from "./command";
+import { Command, CommandKind } from "./command";
 
 /** Transform a Javascript function `func` into a command named `cmdName`.
- *  Returns the command.
+ * Returns the command.
+ *
+ * If `options` is not provided, all configurations will be assumed to be default.
+ *
+ * Options:
+ * - `varArgs` (boolean):
+ *   If true, the command will accept any number of curly args.
+ *   If false, the command will require a specific number of curly args (depending on `func`'s
+ *   signature).
  */
-export function functionToCommand(func: Function, cmdName: string): Command {
+export function functionToCommand(func: Function, cmdName: string, options?: any): Command {
+    if (options === undefined) options = {};
+
+    let varArgs = cfgBool(options.varArgs, false);
+
     return {
-        kind: "Command",
+        kind: CommandKind.CommandKind,
         cmdName: cmdName,
-        curlyArity: func.length,
+        curlyArity: varArgs ? "any" : func.length,
         fn: (args: DetNode[][]) => {
             let out = func(...args);
             if (typeof out !== "object" || !(out.kind in DetNodeKind)) {
@@ -21,4 +33,10 @@ export function functionToCommand(func: Function, cmdName: string): Command {
             return out;
         },
     };
+}
+
+function cfgBool(cfg: any, defaultCfg: boolean): boolean {
+    if (cfg === undefined) return defaultCfg;
+    if (typeof cfg !== "boolean") throw new TypeError("Boolean configuration required.");
+    return cfg;
 }

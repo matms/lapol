@@ -2,6 +2,10 @@ import { strict as assert } from "assert";
 import { DetNode } from "../det";
 import { AstEvaluationError } from "../errors";
 
+export enum CommandKind {
+    CommandKind = "CommandKind",
+}
+
 /** A Lapol Command definition.
  *
  * A Lapol Command is a function that takes in zero or more arguments and returns a `DetNode`.
@@ -11,7 +15,7 @@ import { AstEvaluationError } from "../errors";
  *
  * Not to be confused with an `AstCommandNode` which represents an _invocation_ of a Command. */
 export interface Command {
-    kind: "Command";
+    kind: CommandKind.CommandKind;
     cmdName: string;
     curlyArity: number | "any";
     fn: (args: DetNode[][]) => DetNode;
@@ -23,7 +27,7 @@ export interface Command {
 export function callCommand(command: Command, args: DetNode[][]): DetNode {
     // This check is important since typescript type information may be lost when
     // saving commands into the environment.
-    assert(command.kind === "Command");
+    assert(command.kind === CommandKind.CommandKind);
 
     if (command.curlyArity !== "any" && args.length !== command.curlyArity) {
         throw new AstEvaluationError(`Command (name: ${command.cmdName}) arity mismatch.`);

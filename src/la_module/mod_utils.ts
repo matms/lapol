@@ -1,3 +1,5 @@
+import { strict as assert } from "assert";
+import { CommandKind } from "../command/command";
 import { functionToCommand } from "../command/function_to_command";
 import { LapolModuleError } from "../errors";
 
@@ -17,7 +19,10 @@ export async function loadLapolModAsMap(modPath: string): Promise<Map<string, an
         let val = mod[LA_MOD_EXPORT_COMMAND_NAME][prop];
         if (typeof val === "function") {
             map.set(prop, functionToCommand(val, prop));
-        } else {
+        } else if (Array.isArray(val)) {
+            assert(val.length === 2);
+            map.set(prop, functionToCommand(val[0], prop, val[1]));
+        } else if (typeof val === "object" && val.kind === CommandKind.CommandKind) {
             map.set(prop, mod.val);
         }
     }

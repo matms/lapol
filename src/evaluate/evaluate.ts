@@ -1,8 +1,11 @@
-/** Evaluation, AKA the "Front Pass"*/
+/** Evaluation, AKA the "Front Pass"
+ *
+ * This pass takes in the AST (Abstract Syntax Tree), and outputs a DET (Document Expression Tree)
+ */
 
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
-import { callCommand, Command } from "../command/command";
+import { callCommand, Command, CommandKind } from "../command/command";
 import { DetNodeKind, DetTag, DetTextStr, DetNode } from "../det";
 import { AstEvaluationError } from "../errors";
 import { loadLapolModAsMap } from "../la_module/mod_utils";
@@ -20,7 +23,7 @@ import { Environment, environmentLookup, setupDefaultEnvironment } from "./envir
  */
 export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
     let env = { contents: new Map(), outerEnv: undefined };
-    let defaultEnvItems = await loadLapolModAsMap("./default_commands/testing_commands");
+    let defaultEnvItems = await loadLapolModAsMap("../default_lapol_modules/main");
     setupDefaultEnvironment(env, defaultEnvItems);
 
     let out = evaluateNode(node, env);
@@ -42,7 +45,7 @@ function evaluateNode(node: AstNode, env: Environment): DetNode {
         case AstNodeKind.AstStrNode:
             return evaluateStrNode(node, env);
         default:
-            throw new AstEvaluationError("Unknown Node Kind.");
+            throw new AstEvaluationError("Ast Node Kind Unknown or cannot be directly evaluated.");
     }
 }
 
@@ -51,7 +54,7 @@ function evaluateRoot(rootNode: AstRootNode, env: Environment): DetTag {
     return {
         kind: DetNodeKind.DetTag,
         tag: "root",
-        innerContents: evaluateNodeArray(rootNode.subNodes, env),
+        contents: evaluateNodeArray(rootNode.subNodes, env),
     };
 }
 
@@ -62,12 +65,18 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
 
     if (command === undefined) {
         throw new AstEvaluationError(
-            `Command (name: ${commandNode.commandName}) not in environment. `
+            `Command (name: ${commandNode.commandName}) not in environment.`
+        );
+    } else if (command.kind !== CommandKind.CommandKind) {
+        throw new AstEvaluationError(
+            `Value (command name: ${commandNode.commandName}) is not a Command.`
         );
     }
 
     // TODO commandNode.squareArg;
 
+    // TODO: Allow some commands to defer evaluation of their arguments (e.g. "if")
+    // "lazy arguments"
     let evalCurlyArgs: DetNode[][] = [];
     for (let curlyArg of commandNode.curlyArgs) {
         evalCurlyArgs.push(evaluateNodeArray(curlyArg, env));
@@ -79,7 +88,7 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
 
 function evaluateStrNode(strNode: AstStrNode, env: Environment): DetTextStr {
     assert(strNode.kind === AstNodeKind.AstStrNode);
-    return { kind: DetNodeKind.DetTextStrKind, content: strNode.content };
+    return { kind: DetNodeKind.DetTextStrKind, contents: strNode.content };
 }
 
 function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {

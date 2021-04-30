@@ -10,15 +10,17 @@ export enum DetNodeKind {
 
 export interface DetTextStr {
     kind: DetNodeKind.DetTextStrKind;
-    content: string;
+    contents: string;
 }
 
 export interface DetTag {
     kind: DetNodeKind.DetTag;
     tag: string;
-    innerContents: DetNode[];
+    contents: DetNode[];
 }
 
+/** Special DET Node used to indicate splicing (i.e. the contents should be spread
+ * out and become contents of the parent node.) */
 export interface DetSpecialSpliceIndicator {
     kind: DetNodeKind.DetSpecialSpliceIndicator;
     contents: DetNode[];

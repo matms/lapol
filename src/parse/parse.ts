@@ -80,7 +80,8 @@ interface ParserRollbackPoint {
 
 /** Parse the LaPoL code (given as the string `input`) into an AST, return root of this AST.*/
 // TODO: Read input gradually; Use async.
-export function parse(input: string): AstRootNode {
+// TODO: Use async to optimize
+export async function parse(input: string): Promise<AstRootNode> {
     let parserState: ParserState = {
         data: input,
         currIdx: 0,
