@@ -6,11 +6,7 @@ import { callCommand, Command } from "../command/command";
 import { DetNodeKind, DetTag, DetTextStr, DetNode } from "../det";
 import { AstEvaluationError } from "../errors";
 import { loadLapolModAsMap } from "../la_module/mod_utils";
-
-interface Environment {
-    contents: Map<string, any>;
-    outerEnv: Environment | undefined;
-}
+import { Environment, environmentLookup, setupDefaultEnvironment } from "./environment";
 
 /** Evaluate the Abstract Syntax Tree.
  *
@@ -97,24 +93,4 @@ function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {
         }
     }
     return cont;
-}
-
-// TODO: REFACTOR ENVIRONMENT INTO ANOTHER FILE.
-
-function setupDefaultEnvironment(env: Environment, defaultEnvItems: Map<string, any>) {
-    let map = env.contents;
-
-    defaultEnvItems.forEach((val, key) => {
-        map.set(key, val);
-    });
-}
-
-function environmentLookup(env: Environment, key: string): any {
-    if (env.contents.has(key)) {
-        return env.contents.get(key);
-    } else if (env.outerEnv === undefined) {
-        return undefined;
-    } else {
-        return environmentLookup(env.outerEnv, key);
-    }
 }
