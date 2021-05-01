@@ -24,11 +24,11 @@ async function compile(inFilePath: string, outFilePath: string) {
 
     console.log("Timings (in milliseconds):");
     console.log(`read file in: ${t2 - t1}`);
-    console.log(`parse: ${t3 - t2}, cumtime: ${t3 - t1}`);
-    console.log(`evaluate: ${t4 - t3}, cumtime: ${t4 - t1}`);
-    console.log(`process: ${t5 - t4}, cumtime: ${t5 - t1}`);
-    console.log(`output: ${t6 - t5}, cumtime: ${t6 - t1}`);
-    console.log(`write output to file: ${t7 - t6}, cumtime: ${t7 - t1}`);
+    console.log(`parse: ${t3 - t2}, cumulative time: ${t3 - t1}`);
+    console.log(`evaluate: ${t4 - t3}, cumulative time: ${t4 - t1}`);
+    console.log(`process: ${t5 - t4}, cumulative time: ${t5 - t1}`);
+    console.log(`output: ${t6 - t5}, cumulative time: ${t6 - t1}`);
+    console.log(`write output to file: ${t7 - t6}, cumulative time: ${t7 - t1}`);
 
     console.log("====================");
 

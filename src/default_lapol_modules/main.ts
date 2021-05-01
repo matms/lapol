@@ -3,6 +3,7 @@ export const commands = {
     hey_varargs: [hey_varargs, { varArgs: true }],
     title: title,
     section: section,
+    bf: bf,
 };
 
 import { DetNode, Expr, Str } from "../det";
@@ -25,4 +26,8 @@ function hey_varargs(arg1: DetNode[], ..._rest: DetNode[]): DetNode {
     let a = arg1[0];
     if (a instanceof Str) return new Str(`Hello, ${a.text}`);
     throw new Error(":(");
+}
+
+function bf(arg1: DetNode[]): DetNode {
+    return new Expr("b", arg1);
 }
