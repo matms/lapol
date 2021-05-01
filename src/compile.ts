@@ -22,19 +22,19 @@ export interface CompileOutput {
 }
 
 export async function compile(c: CompileInput): Promise<CompileOutput> {
-    var t1 = Date.now();
+    let t1 = Date.now();
     let text = await readFile(c.inputFilePath);
-    var t2 = Date.now();
-    var parsed = await parse(text);
-    var t3 = Date.now();
-    var evaluated = await evaluateAst(parsed);
-    var t4 = Date.now();
-    var processed = await processDet(evaluated);
-    var t5 = Date.now();
-    var output = await outputDet(processed, c.targetLanguage);
-    var t6 = Date.now();
+    let t2 = Date.now();
+    let parsed = await parse(text);
+    let t3 = Date.now();
+    let evaluated = await evaluateAst(parsed);
+    let t4 = Date.now();
+    let processed = await processDet(evaluated);
+    let t5 = Date.now();
+    let output = await outputDet(processed, c.targetLanguage);
+    let t6 = Date.now();
     await writeFile(c.outputFilePath, output.str);
-    var t7 = Date.now();
+    let t7 = Date.now();
 
     let dbgTimingInfo =
         `COMPILATION TIMINGS (All in milliseconds)\n` +
