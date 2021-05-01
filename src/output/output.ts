@@ -4,11 +4,11 @@ import { DetNode } from "../det";
 import { LapolError } from "../errors";
 import { outputNodeToHtml } from "./html";
 
-interface CompilationOutput {
+export interface OutputData {
     str: string;
 }
 
-export async function outputDet(detRootNode: DetNode, target: string): Promise<CompilationOutput> {
+export async function outputDet(detRootNode: DetNode, target: string): Promise<OutputData> {
     switch (target) {
         case "html":
             return outputToHtml(detRootNode);
@@ -18,6 +18,6 @@ export async function outputDet(detRootNode: DetNode, target: string): Promise<C
     }
 }
 
-function outputToHtml(detRootNode: DetNode): CompilationOutput {
+function outputToHtml(detRootNode: DetNode): OutputData {
     return { str: outputNodeToHtml(detRootNode) };
 }
