@@ -5,7 +5,7 @@
 
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
-import { callCommand, Command, CommandKind } from "../command/command";
+import { Command } from "../command/command";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { LapolModule } from "../la_module/module";
@@ -61,7 +61,7 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
 
     if (command === undefined) {
         throw new LapolError(`Command (name: ${commandNode.commandName}) not in environment.`);
-    } else if (command.kind !== CommandKind.CommandKind) {
+    } else if (!(command instanceof Command)) {
         throw new LapolError(`Value (command name: ${commandNode.commandName}) is not a Command.`);
     }
 
@@ -75,7 +75,11 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
     }
     // TODO Implement
 
-    return callCommand(command, evalCurlyArgs);
+    let out = command.call(evalCurlyArgs);
+
+    // TODO: Does this work???
+    if (out === undefined) return new Expr("splice", []);
+    else return out;
 }
 
 function evaluateStrNode(strNode: AstStrNode, env: Environment): Str {

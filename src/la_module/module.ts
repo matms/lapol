@@ -1,6 +1,5 @@
 import { strict as assert } from "assert";
-import { Command, CommandKind } from "../command/command";
-import { functionToCommand } from "../command/function_to_command";
+import { Command } from "../command/command";
 import { LapolModuleError } from "../errors";
 
 const LA_MOD_EXPORT_COMMAND_NAME = "commands";
@@ -27,11 +26,11 @@ export class LapolModule {
         for (let prop of Object.getOwnPropertyNames(l_mod[LA_MOD_EXPORT_COMMAND_NAME])) {
             let val = l_mod[LA_MOD_EXPORT_COMMAND_NAME][prop];
             if (typeof val === "function") {
-                map.set(prop, functionToCommand(val, prop));
+                map.set(prop, Command.fromJsFunction(val, prop));
             } else if (Array.isArray(val)) {
                 assert(val.length === 2);
-                map.set(prop, functionToCommand(val[0], prop, val[1]));
-            } else if (typeof val === "object" && val.kind === CommandKind.CommandKind) {
+                map.set(prop, Command.fromJsFunction(val[0], prop, val[1]));
+            } else if (typeof val === "object" && val instanceof Command) {
                 map.set(prop, l_mod.val);
             }
         }

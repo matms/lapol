@@ -2,36 +2,67 @@ import { strict as assert } from "assert";
 import { DetNode } from "../det";
 import { LapolError } from "../errors";
 
-export enum CommandKind {
-    CommandKind = "CommandKind",
-}
+export class Command {
+    private readonly _kind = "Command";
+    private _name: string;
+    private _curlyArity: number | "any";
+    private _fn: (args: DetNode[][]) => DetNode | undefined;
 
-/** A Lapol Command definition.
- *
- * A Lapol Command is a function that takes in zero or more arguments and returns a `DetNode`.
- * Each argument is an array of `DetNode`s.
- *
- * To generate a command, see `functionToCommand` (in the similarly-named module).
- *
- * Not to be confused with an `AstCommandNode` which represents an _invocation_ of a Command. */
-export interface Command {
-    kind: CommandKind.CommandKind;
-    cmdName: string;
-    curlyArity: number | "any";
-    fn: (args: DetNode[][]) => DetNode;
-}
-
-/** Execute the command `command`, given arguments `args`.
- *  Returns a `DetNode`.
- */
-export function callCommand(command: Command, args: DetNode[][]): DetNode {
-    // This check is important since typescript type information may be lost when
-    // saving commands into the environment.
-    assert(command.kind === CommandKind.CommandKind);
-
-    if (command.curlyArity !== "any" && args.length !== command.curlyArity) {
-        throw new LapolError(`Command (name: ${command.cmdName}) arity mismatch.`);
+    private constructor(
+        name: string,
+        curlyArity: number | "any",
+        fn: (args: DetNode[][]) => DetNode | undefined
+    ) {
+        this._name = name;
+        this._curlyArity = curlyArity;
+        this._fn = fn;
     }
 
-    return command.fn(args);
+    /** Transform a Javascript function `func` into a command named `cmdName`.
+     * Returns the command.
+     *
+     * If `options` is not provided, all configurations will be assumed to be default.
+     *
+     * Options:
+     * - `varArgs` (boolean):
+     *   If true, the command will accept any number of curly args.
+     *   If false, the command will require a specific number of curly args (depending on `func`'s
+     *   signature).
+     */
+    public static fromJsFunction(func: Function, cmdName: string, options?: any): Command {
+        if (options === undefined) options = {};
+
+        let varArgs = cfgBool(options.varArgs, false);
+        let curlyArity: number | "any" = varArgs ? "any" : func.length;
+        let cmdFn = (args: DetNode[][]) => {
+            let out = func(...args);
+            if (!(out instanceof DetNode)) {
+                throw new LapolError(
+                    "Function defining Lapol Command returned object that appears not to be " +
+                        "of type DetNode" +
+                        `Command name: ${cmdName}`
+                );
+            }
+            return out;
+        };
+
+        return new Command(cmdName, curlyArity, cmdFn);
+    }
+
+    /** Execute the command `command`, given arguments `args`.
+     *  Returns a `DetNode` or undefined to mean nothing.
+     */
+    public call(args: DetNode[][]): DetNode | undefined {
+        if (this._curlyArity !== "any" && args.length !== this._curlyArity) {
+            throw new LapolError(`Command (name: ${this._name}) arity mismatch.`);
+        }
+
+        return this._fn(args);
+    }
+}
+
+function cfgBool(cfg: any, defaultCfg: boolean): boolean {
+    if (cfg === undefined) return defaultCfg;
+    if (typeof cfg !== "boolean") throw new TypeError("Boolean configuration required.");
+    return cfg;
 }
