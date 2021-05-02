@@ -1,5 +1,5 @@
 import { Command } from "../command/command";
-import { LapolModule } from "../la_module/mod_utils";
+import { LapolModule } from "../la_module/module";
 
 export class Environment {
     private _loadedModules: Map<string, LapolModule>;
