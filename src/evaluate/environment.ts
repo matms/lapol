@@ -1,22 +1,35 @@
-export interface Environment {
-    contents: Map<string, any>;
-    outerEnv: Environment | undefined;
-}
+import { Command } from "../command/command";
+import { LapolModule } from "../la_module/mod_utils";
 
-export function setupDefaultEnvironment(env: Environment, defaultEnvItems: Map<string, any>) {
-    let map = env.contents;
+export class Environment {
+    private _loadedModules: Map<string, LapolModule>;
+    private _variables: Map<string, any>;
+    private _outerEnv: Environment | undefined;
+    constructor(outerEnv?: Environment | undefined) {
+        this._outerEnv = outerEnv;
+        this._variables = new Map();
+        this._loadedModules = new Map();
+    }
 
-    defaultEnvItems.forEach((val, key) => {
-        map.set(key, val);
-    });
-}
+    loadModule(name: string, module: LapolModule) {
+        this._loadedModules.set(name, module);
+    }
 
-export function environmentLookup(env: Environment, key: string): any {
-    if (env.contents.has(key)) {
-        return env.contents.get(key);
-    } else if (env.outerEnv === undefined) {
-        return undefined;
-    } else {
-        return environmentLookup(env.outerEnv, key);
+    lookupCommand(commandName: string): any {
+        if (this._variables.has(commandName)) {
+            return this._variables.get(commandName);
+        } else {
+            let c: Command | undefined = undefined;
+            // TODO: Namespaces!
+            for (let [modName, mod] of this._loadedModules) {
+                let cc = mod.lookupCommand(commandName);
+                if (cc !== undefined) c = cc;
+            }
+            if (c === undefined && this._outerEnv !== undefined) {
+                return this._outerEnv.lookupCommand(commandName);
+            } else {
+                return c;
+            }
+        }
     }
 }

@@ -8,8 +8,8 @@ import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from ".
 import { callCommand, Command, CommandKind } from "../command/command";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
-import { loadLapolModAsMap } from "../la_module/mod_utils";
-import { Environment, environmentLookup, setupDefaultEnvironment } from "./environment";
+import { LapolModule } from "../la_module/mod_utils";
+import { Environment } from "./environment";
 
 /** Evaluate the Abstract Syntax Tree.
  *
@@ -22,9 +22,9 @@ import { Environment, environmentLookup, setupDefaultEnvironment } from "./envir
  * TODO: Should default modules be loaded statically?
  */
 export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
-    let env = { contents: new Map(), outerEnv: undefined };
-    let defaultEnvItems = await loadLapolModAsMap("../default_lapol_modules/main");
-    setupDefaultEnvironment(env, defaultEnvItems);
+    let env = new Environment();
+    let defaultModule = await LapolModule.loadModuleFile("../default_lapol_modules/main");
+    env.loadModule("default", defaultModule);
 
     let out = evaluateNode(node, env);
     return out;
@@ -57,7 +57,7 @@ function evaluateRoot(rootNode: AstRootNode, env: Environment): Expr {
 function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode {
     assert(commandNode.kind === AstNodeKind.AstCommandNode);
 
-    let command = environmentLookup(env, commandNode.commandName);
+    let command = env.lookupCommand(commandNode.commandName);
 
     if (command === undefined) {
         throw new LapolError(`Command (name: ${commandNode.commandName}) not in environment.`);
