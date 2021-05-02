@@ -8,7 +8,7 @@ import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from ".
 import { Command } from "../command/command";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
-import { LapolModule } from "../la_module/module";
+import { findDefaultModulePath, LapolModule } from "../la_module/module";
 import { Environment } from "./environment";
 
 /** Evaluate the Abstract Syntax Tree.
@@ -23,7 +23,7 @@ import { Environment } from "./environment";
  */
 export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
     let env = new Environment();
-    let defaultModule = await LapolModule.loadModuleFile("../default_lapol_modules/main");
+    let defaultModule = await LapolModule.loadModuleFile(findDefaultModulePath("core"));
     env.loadModule("default", defaultModule);
 
     let out = evaluateNode(node, env);
@@ -75,7 +75,7 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
     }
     // TODO Implement
 
-    let out = command.call(evalCurlyArgs);
+    let out = command.call(evalCurlyArgs, env);
 
     // TODO: Does this work???
     if (out === undefined) return new Expr("splice", []);

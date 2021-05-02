@@ -1,10 +1,23 @@
 import { strict as assert } from "assert";
 import { DetNode } from "../det";
 import { LapolError } from "../errors";
+import { Environment } from "../evaluate/environment";
 
-export class Command {
-    private readonly _kind = "Command";
-    private _name: string;
+type CommandKind = "JsFnCommand" | "Other";
+
+export abstract class Command {
+    protected readonly _kind: CommandKind;
+    protected _name: string;
+
+    protected constructor(kind: CommandKind, name: string) {
+        this._kind = kind;
+        this._name = name;
+    }
+
+    public abstract call(args: DetNode[][], env: Environment): DetNode | undefined;
+}
+
+export class JsFnCommand extends Command {
     private _curlyArity: number | "any";
     private _fn: (args: DetNode[][]) => DetNode | undefined;
 
@@ -13,7 +26,7 @@ export class Command {
         curlyArity: number | "any",
         fn: (args: DetNode[][]) => DetNode | undefined
     ) {
-        this._name = name;
+        super("JsFnCommand", name);
         this._curlyArity = curlyArity;
         this._fn = fn;
     }
@@ -29,7 +42,7 @@ export class Command {
      *   If false, the command will require a specific number of curly args (depending on `func`'s
      *   signature).
      */
-    public static fromJsFunction(func: Function, cmdName: string, options?: any): Command {
+    public static fromJsFunction(func: Function, cmdName: string, options?: any): JsFnCommand {
         if (options === undefined) options = {};
 
         let varArgs = cfgBool(options.varArgs, false);
@@ -46,13 +59,13 @@ export class Command {
             return out;
         };
 
-        return new Command(cmdName, curlyArity, cmdFn);
+        return new JsFnCommand(cmdName, curlyArity, cmdFn);
     }
 
     /** Execute the command `command`, given arguments `args`.
      *  Returns a `DetNode` or undefined to mean nothing.
      */
-    public call(args: DetNode[][]): DetNode | undefined {
+    public call(args: DetNode[][], env: Environment): DetNode | undefined {
         if (this._curlyArity !== "any" && args.length !== this._curlyArity) {
             throw new LapolError(`Command (name: ${this._name}) arity mismatch.`);
         }
