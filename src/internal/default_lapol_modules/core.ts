@@ -11,7 +11,12 @@ import { Command } from "../command/command";
 import { DetNode, Str } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "../evaluate/environment";
-import { findModulePath, LapolModule } from "../la_module/module";
+import { findModulePath, LapolModule } from "../module/module";
+import { ModuleLoader } from "../module/mod_utils";
+
+export function load(loader: ModuleLoader) {
+    loader.exportCommands(commands);
+}
 
 /** The first argument is the file to load, the second is the module name. */
 class QuickImportCommand extends Command {
@@ -41,7 +46,7 @@ class QuickImportCommand extends Command {
 
 const quickImport = new QuickImportCommand();
 
-export const commands = {
+const commands = {
     quick_import: quickImport,
     // import: "TODO",
     // doc: "TODO",

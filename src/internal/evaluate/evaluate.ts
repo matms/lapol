@@ -8,7 +8,7 @@ import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from ".
 import { Command } from "../command/command";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
-import { findDefaultModulePath, LapolModule } from "../la_module/module";
+import { findDefaultModulePath, LapolModule } from "../module/module";
 import { Environment } from "./environment";
 
 /** Evaluate the Abstract Syntax Tree.

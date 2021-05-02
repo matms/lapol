@@ -1,11 +1,14 @@
-import { DetNode, Expr, Str } from "../../mod";
+import { DetNode, Expr, Str, ModuleLoader } from "../../mod";
 
-export const commands = {
-    hey: hey,
-    hey_varargs: [hey_varargs, { varArgs: true }],
+export function load(loader: ModuleLoader) {
+    loader.exportCommands(commands);
+}
+
+const commands = {
     title: title,
     section: section,
     bf: bf,
+    it: it,
 };
 
 function title(arg1: DetNode[]): DetNode {
@@ -16,18 +19,10 @@ function section(arg1: DetNode[]): DetNode {
     return new Expr("h2", arg1);
 }
 
-function hey(arg1: DetNode[]): DetNode {
-    let a = arg1[0];
-    if (a instanceof Str) return new Str(`Hello, ${a.text}`);
-    throw new Error(":(");
-}
-
-function hey_varargs(arg1: DetNode[], ..._rest: DetNode[]): DetNode {
-    let a = arg1[0];
-    if (a instanceof Str) return new Str(`Hello, ${a.text}`);
-    throw new Error(":(");
-}
-
 function bf(arg1: DetNode[]): DetNode {
     return new Expr("b", arg1);
+}
+
+function it(arg1: DetNode[]): DetNode {
+    return new Expr("i", arg1);
 }
