@@ -157,7 +157,6 @@ function parseText(parserState: ParserState, rootContext: boolean = false): AstN
             curlyBal--;
 
             if (curlyBal < 0) {
-                // TODO: How to detect main context vs sub context?
                 if (rootContext) {
                     throw new LapolError("Unexpected close brace in main context");
                 } else {

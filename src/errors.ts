@@ -5,7 +5,6 @@ export class LapolModuleError extends Error {
     }
 }
 
-// TODO: Make all errors of kind LapolError?
 export class LapolError extends Error {
     constructor(m: string) {
         super(m);
