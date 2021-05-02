@@ -1,5 +1,6 @@
 import { Data, DetNode, Str, Expr } from "../det";
 import { LapolError } from "../errors";
+import { isWhitespace } from "../utils";
 
 const BREAK_MARKER_TAG = "para-br-marker";
 const PARAGRAPH_TAG = "p";
@@ -40,9 +41,6 @@ export function processLinebreaks(node: DetNode): DetNode {
                 // treated as a whitespace.
             }
         }
-
-        // No break at end of contents
-        if (contHelper[contHelper.length - 1] === LINEBREAK_INDICATOR) contHelper.pop();
 
         let finalContents = contHelper.map((v) =>
             v !== LINEBREAK_INDICATOR ? v : new Expr(BREAK_MARKER_TAG)
@@ -91,9 +89,39 @@ export function processParagraphs(node: DetNode): DetNode {
             else outContents.push(...pAccum); // Extend outContents by pAccum.
         }
 
-        return nNode.contentsReplace(outContents);
+        return nNode.contentsReplace(trimParas(outContents));
     }
     throw new LapolError("Should be unreachable");
+}
+
+/** Trim paragraph nodes (remove starting and ending whitespace Str nodes),
+ * and filter out any paragraphs that become empty as a result (i.e. which were only whitespace
+ * before). Non paragraph nodes should be unaffected.
+ */
+function trimParas(contents: DetNode[]) {
+    const trimSingleParaNode = (node: DetNode) => {
+        if (node instanceof Expr && node.tag === PARAGRAPH_TAG) {
+            let newCont: DetNode[] = [...node.unsafeBorrowContents()]; // Copy array.
+            while (newCont[0] instanceof Str && isWhitespace((newCont[0] as Str).text)) {
+                newCont.shift();
+            }
+            while (
+                newCont[newCont.length - 1] instanceof Str &&
+                isWhitespace((newCont[newCont.length - 1] as Str).text)
+            ) {
+                newCont.shift();
+            }
+            return node.contentsReplace(newCont);
+        } else return node;
+    };
+
+    const isParaNodeEmpty = (node: DetNode) => {
+        if (node instanceof Expr && node.tag === PARAGRAPH_TAG && node.contentsLength() === 0)
+            return false;
+        else return true;
+    };
+
+    return contents.map(trimSingleParaNode).filter(isParaNodeEmpty);
 }
 
 // function isBlock(node: DetNode | symbol): boolean {}
@@ -104,5 +132,7 @@ function isNewline(node: DetNode): boolean {
 
 function isBlock(node: DetNode): boolean {
     // TODO: Make customizable by user
+    // See https://www.w3schools.com/html/html_blocks.asp
+    // Also note https://en.wikipedia.org/wiki/Span_and_div
     return node instanceof Expr && (node.tag === "h1" || node.tag === "h2");
 }

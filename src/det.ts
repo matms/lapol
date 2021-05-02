@@ -109,8 +109,12 @@ export class Expr extends DetNode {
         return new Expr(this._tag, newContents, this._attrs);
     }
 
-    public contentsMap(fn: (n: DetNode) => DetNode): Expr {
+    public contentsMap(fn: (node: DetNode, index?: number, array?: DetNode[]) => DetNode): Expr {
         return this.contentsReplace(this._contents.map(fn));
+    }
+
+    public contentsFilter(fn: (node: DetNode, index?: number, array?: DetNode[]) => boolean): Expr {
+        return this.contentsReplace(this._contents.filter(fn));
     }
 }
 

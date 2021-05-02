@@ -77,9 +77,10 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
 
     let out = command.call(evalCurlyArgs, env);
 
-    // TODO: Does this work???
-    if (out === undefined) return new Expr("splice", []);
-    else return out;
+    if (out === undefined) {
+        // Splicing in an empty array means adding nothing to the DET.
+        return new Expr("splice", []);
+    } else return out;
 }
 
 function evaluateStrNode(strNode: AstStrNode, env: Environment): Str {
