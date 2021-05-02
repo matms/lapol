@@ -2,7 +2,7 @@ import { compile } from "./compile";
 import * as nodePath from "path";
 import { LapolError } from "./errors";
 
-async function compileDbg(inFilePath: string, outFilePath: string) {
+export async function compileDbg(inFilePath: string, outFilePath: string) {
     console.log("\n====== Starting to compile ======\n");
 
     let o = await compile({
@@ -18,7 +18,7 @@ async function compileDbg(inFilePath: string, outFilePath: string) {
     console.log("Done with compileDbg");
 }
 
-async function render(
+export async function render(
     filePath: string,
     target: string = "html",
     forcePathKind?: "windows" | "posix" | undefined
@@ -47,31 +47,9 @@ async function render(
     console.log("Done!");
 }
 
-function consoleMain() {
-    console.log("Hello, LaPoL!");
-    console.log(process.argv);
-
-    let args = process.argv.slice(2);
-    console.log(args);
-
-    if (args.length === 0) {
-        console.log("No arguments passed, using default debug mode");
-
-        debugDefaultActions();
-    } else {
-        if (args[0] === "render") {
-            if (args.length !== 2) {
-                console.error(`LAPOL ERROR <@ main>: Must indicate exactly one file to render`);
-            } else render(args[1]);
-        } else console.error(`LAPOL ERROR <@ main>: Unknown command ${args[0]}`);
-    }
-}
-
 // What to do if no parameters are passed (this is useful for debugging with vscode)
-function debugDefaultActions() {
+export function debugDefaultActions() {
     console.log("Calling compile");
     render("test_scratch/stress_test_0.lap", "html", "posix");
     console.log("Called compile, now wait for the promises!");
 }
-
-consoleMain();

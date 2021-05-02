@@ -1,3 +1,4 @@
+// TODO: Remove this?
 export class LapolModuleError extends Error {
     constructor(m: string) {
         super(m);
@@ -5,6 +6,7 @@ export class LapolModuleError extends Error {
     }
 }
 
+// TODO: Rename to LapolInternalError
 export class LapolError extends Error {
     constructor(m: string) {
         super(m);

@@ -1,3 +1,5 @@
+import { DetNode, Expr, Str } from "../../mod";
+
 export const commands = {
     hey: hey,
     hey_varargs: [hey_varargs, { varArgs: true }],
@@ -5,8 +7,6 @@ export const commands = {
     section: section,
     bf: bf,
 };
-
-import { DetNode, Expr, Str } from "../det";
 
 function title(arg1: DetNode[]): DetNode {
     return new Expr("h1", arg1);
