@@ -1,12 +1,6 @@
-mod utils;
+mod panic_hook;
 
 use wasm_bindgen::prelude::*;
-
-// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-// allocator.
-#[cfg(feature = "wee_alloc")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
 extern "C" {
@@ -15,8 +9,9 @@ extern "C" {
 }
 
 #[wasm_bindgen]
+/// Before using any functions, it is important to initialize lapol-rs.
 pub fn init() {
-    utils::set_panic_hook()
+    panic_hook::set_panic_hook()
 }
 
 #[wasm_bindgen]
