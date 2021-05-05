@@ -40,7 +40,8 @@ pub struct Tokenizer<'a> {
     valid: bool,
     text: &'a str,
     char_iter: Peekable<CharIndices<'a>>,
-    curr_idx: usize,
+    curr_line: usize,
+    curr_col: usize,
     tok_cfg: TokenizerCfg,
 }
 
@@ -68,7 +69,8 @@ impl<'a> Tokenizer<'a> {
             valid: true,
             text: input,
             char_iter: input.char_indices().peekable(),
-            curr_idx: 0,
+            curr_line: 1,
+            curr_col: 1,
             tok_cfg: if let Some(x) = tokenizer_cfg {
                 x
             } else {
@@ -105,6 +107,28 @@ impl<'a> Tokenizer<'a> {
             || c == self.tok_cfg.close_square_char
             || c == self.tok_cfg.command_force_end_char;
     }
+
+    /// You should call this instead of char_iter.next(), as this also updates the current column
+    /// and line numbers. If you call char_iter.next() directly, the line / col numbers will
+    /// become incorrect.
+    fn char_it_next(&mut self) -> Option<(usize, char)> {
+        let opt = self.char_iter.next();
+        if let Some((_, c)) = opt {
+            if c == '\n' {
+                self.curr_col = 1;
+                self.curr_line += 1;
+            } else {
+                self.curr_col += 1
+            }
+        }
+        opt
+    }
+
+    /// Return the line (starting the count at 1) and column numbers, respectively,
+    /// of the start of the token that will be returned next (not the last returned token!).
+    pub fn cursor_pos(&self) -> (usize, usize) {
+        (self.curr_line, self.curr_col)
+    }
 }
 
 impl<'a> Iterator for Tokenizer<'a> {
@@ -116,13 +140,13 @@ impl<'a> Iterator for Tokenizer<'a> {
             return None;
         }
 
-        let curr_char_or_none = self.char_iter.next();
+        let curr_char_or_none = self.char_it_next();
         let out = if let Some((idx, c)) = curr_char_or_none {
             if self.is_interesting_char(c) {
                 let char_str_slice = self.text.get(idx..self.curr_char_end(idx))?;
 
                 if c == '\r' {
-                    if let Some((next_idx, next_char)) = self.char_iter.next() {
+                    if let Some((next_idx, next_char)) = self.char_it_next() {
                         if next_char == self.tok_cfg.newline_char {
                             Token::Newline(self.text.get(next_idx..self.curr_char_end(next_idx))?)
                         } else {
@@ -134,7 +158,7 @@ impl<'a> Iterator for Tokenizer<'a> {
                 } else if c == self.tok_cfg.newline_char {
                     Token::Newline(char_str_slice)
                 } else if c == self.tok_cfg.special_char {
-                    if let Some((next_idx, next_char)) = self.char_iter.next() {
+                    if let Some((next_idx, next_char)) = self.char_it_next() {
                         if next_char == self.tok_cfg.comment_marker_char {
                             // TODO: Handle line comment vs block comment
                             // TODO: Also, later, allow block comments to work with brace escape syntax.
@@ -172,7 +196,7 @@ impl<'a> Iterator for Tokenizer<'a> {
                             }
                         }
                     }
-                    self.char_iter.next();
+                    self.char_it_next();
                 }
                 let char_str_slice = self.text.get(idx..self.curr_char_end(idx))?;
                 Token::Text(char_str_slice)
