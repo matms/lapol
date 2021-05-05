@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::{error::Error, iter::Peekable, str::CharIndices};
 
 use thiserror::Error as TError;
@@ -13,7 +14,6 @@ pub enum TokenizerError {
 }
 
 pub struct TokenizerCfg {
-    newline_char: char,
     special_char: char,
     comment_marker_char: char,
     open_curly_char: char,
@@ -25,7 +25,6 @@ pub struct TokenizerCfg {
 }
 
 const DEFAULT_TOKENIZER_CFG: TokenizerCfg = TokenizerCfg {
-    newline_char: '\n',
     special_char: '◊',
     open_curly_char: '{',
     close_curly_char: '}',
@@ -36,7 +35,18 @@ const DEFAULT_TOKENIZER_CFG: TokenizerCfg = TokenizerCfg {
     special_brace_char: '|',
 };
 
+pub enum TokenizerContext {
+    // TODO: special brace support.
+    Text,
+    // LineComment,
+    // BlockComment,
+    // CommandName,
+    // CommandSquareArg,
+    // Note that curly args are just text.
+}
+
 pub struct Tokenizer<'a> {
+    ctx_stack: Vec<TokenizerContext>,
     valid: bool,
     text: &'a str,
     char_iter: Peekable<CharIndices<'a>>,
@@ -45,7 +55,8 @@ pub struct Tokenizer<'a> {
     tok_cfg: TokenizerCfg,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "tok_t", content = "c")]
 pub enum Token<'a> {
     Newline(&'a str),
     Text(&'a str),
@@ -66,6 +77,7 @@ impl<'a> Tokenizer<'a> {
     /// uses the default settings.
     pub fn new(input: &'a str, tokenizer_cfg: Option<TokenizerCfg>) -> Self {
         Self {
+            ctx_stack: Vec::new(),
             valid: true,
             text: input,
             char_iter: input.char_indices().peekable(),
@@ -77,6 +89,14 @@ impl<'a> Tokenizer<'a> {
                 DEFAULT_TOKENIZER_CFG
             },
         }
+    }
+
+    pub fn push_context(&mut self, ctx: TokenizerContext) {
+        self.ctx_stack.push(ctx);
+    }
+
+    pub fn pop_context(&mut self) -> Option<TokenizerContext> {
+        self.ctx_stack.pop()
     }
 
     /// Takes in the idx of the current character (as returned by char_indices), returns the
@@ -96,8 +116,20 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn is_interesting_char(&self, c: char) -> bool {
+        match self.ctx_stack.last() {
+            None => panic!("Empty Tokenizer Context Stack --- likely an issue with the parser"),
+            Some(TokenizerContext::Text) => {
+                return c == '\r'
+                    || c == '\n'
+                    || c == self.tok_cfg.special_char
+                    || c == self.tok_cfg.comment_marker_char
+                    || c == self.tok_cfg.open_curly_char
+                    || c == self.tok_cfg.close_curly_char
+                    || c == self.tok_cfg.special_brace_char; // TODO maybe remove this last one
+            }
+        }
         return c == '\r'
-            || c == self.tok_cfg.newline_char
+            || c == '\n'
             || c == self.tok_cfg.special_char
             || c == self.tok_cfg.comment_marker_char
             || c == self.tok_cfg.open_curly_char
@@ -147,7 +179,7 @@ impl<'a> Iterator for Tokenizer<'a> {
 
                 if c == '\r' {
                     if let Some((next_idx, next_char)) = self.char_it_next() {
-                        if next_char == self.tok_cfg.newline_char {
+                        if next_char == '\n' {
                             Token::Newline(self.text.get(next_idx..self.curr_char_end(next_idx))?)
                         } else {
                             return Some(Err(TokenizerError::BadCarrageReturn));
@@ -155,7 +187,7 @@ impl<'a> Iterator for Tokenizer<'a> {
                     } else {
                         return Some(Err(TokenizerError::BadCarrageReturn));
                     }
-                } else if c == self.tok_cfg.newline_char {
+                } else if c == '\n' {
                     Token::Newline(char_str_slice)
                 } else if c == self.tok_cfg.special_char {
                     if let Some((next_idx, next_char)) = self.char_it_next() {

@@ -7,6 +7,7 @@ use std::{
 
 use wasm_bindgen::prelude::*;
 
+pub mod ast;
 mod parser;
 mod tokenizer;
 
@@ -24,34 +25,19 @@ pub(crate) fn load_file(full_path: &str) -> Result<String, Box<dyn Error>> {
 }
 
 #[wasm_bindgen]
-pub fn parse_file(file_path: &str, file_content_buffer: &[u8]) {
+pub fn parse_file(file_path: &str, file_content_buffer: &[u8]) -> JsValue {
     println!("Parsing {}", file_path);
 
     let file_content = std::str::from_utf8(file_content_buffer)
         .expect("Failed to turn file_content_buffer into str.");
 
-    let tok_start = Instant::now();
+    // let tok_start = Instant::now();
+
     let mut tokenizer = Tokenizer::new(&file_content, None);
 
-    let mut pos = tokenizer.cursor_pos();
+    let mut parser = Parser::new(tokenizer);
 
-    println!("Start pos: {:?}", pos);
+    let root_node = parser.parse().unwrap();
 
-    //while let Some(x) = tokenizer.next() {
-    //    pos = tokenizer.cursor_pos();
-    //    tok = Some(x);
-    //}
-
-    println!("End pos: {:?}", pos);
-    //let o: Vec<Token> = tokenizer.map(|x| x.unwrap()).collect();
-    let last = tokenizer.last().unwrap().unwrap();
-
-    let tok_dur = tok_start.elapsed();
-
-    println!("Took time {:?}", tok_dur);
-
-    println!("Tokenizer last tok {:?}", last);
-    // js_console_log(&format!("First token is {:?}", o[0]));
-
-    println!("Finished tokenizing {}", file_path);
+    JsValue::from_serde(&root_node).unwrap()
 }
