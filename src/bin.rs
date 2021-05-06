@@ -10,18 +10,15 @@ pub fn main() {
     //    "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\test_parse_0 simple.lap",
     //);
 
-    let path =
-        "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\stress_test_0.lap";
+    let path = "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\parse2.lap";
+    // let path =
+    // "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\stress_test_0.lap";
 
-    //let read_start = Instant::now();
-    let contents = parse::load_file(path).expect(&format!("Failed to read file {}", path));
-    //let read_dur = read_start.elapsed();
+    //while (true) {
+    let parse_start = Instant::now();
+    parse::parse_file_native(path);
+    let parse_dur = parse_start.elapsed();
 
-    while (true) {
-        let parse_start = Instant::now();
-        parse::parse_file(path, contents.as_bytes());
-        let parse_dur = parse_start.elapsed();
-
-        println!("Parsing took {:?}", parse_dur)
-    }
+    println!("Parsing took {:?}", parse_dur);
+    //}
 }

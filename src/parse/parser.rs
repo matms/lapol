@@ -1,6 +1,10 @@
+use std::borrow::Cow;
+
+use crate::parse::tokenizer::DEFAULT_BRACE_MATCH;
+
 use super::{
     ast::AstNode,
-    tokenizer::{Tokenizer, TokenizerContext, TokenizerError},
+    tokenizer::{Token, Tokenizer, TokenizerContext, TokenizerError},
 };
 use thiserror::Error as TError;
 
@@ -9,7 +13,7 @@ pub enum ParserError {
     #[error("Tokenizer error occurred, could not continue parsing.")]
     TokenizerError(#[from] TokenizerError),
     #[error("Unexpected Token. Probably an issue with the Tokenizer context stack.")]
-    UnexpectedToken,
+    UnexpectedToken(String),
 }
 
 pub struct Parser<'a> {
@@ -24,6 +28,9 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // TODO: Merge adjacent AstTextNodes
+    // Consider: Should I use CopyOnWrite str?
+
     pub fn parse(&mut self) -> Result<AstNode, ParserError> {
         Ok(AstNode::AstRootNode {
             sub_nodes: self.parse_text(true)?,
@@ -32,9 +39,39 @@ impl<'a> Parser<'a> {
 
     fn parse_text(&mut self, root_context: bool) -> Result<Vec<AstNode<'a>>, ParserError> {
         let mut contents = Vec::<AstNode>::new();
-        let mut curlyBal = 0;
 
-        self.tokenizer.push_context(TokenizerContext::Text);
+        if !root_context {
+            self.tokenizer
+                .push_context(TokenizerContext::GenericBraceStart);
+            let brace = self.tokenizer.next().unwrap()?;
+            self.tokenizer.pop_context();
+
+            debug_assert!(matches!(brace, Token::OpenCurly(_)));
+
+            self.tokenizer
+                .push_context(TokenizerContext::Text(Tokenizer::get_brace_match(brace)));
+        } else {
+            self.tokenizer
+                .push_context(TokenizerContext::Text(DEFAULT_BRACE_MATCH));
+        }
+
+        // Merge Adjacent Text Nodes (except if either is a newline node).
+        let mut add_to_contents = |node| match contents.last_mut() {
+            Some(AstNode::AstTextNode {
+                content: last_content,
+                ..
+            }) if last_content != "\n" => match node {
+                AstNode::AstTextNode {
+                    content: new_content,
+                    ..
+                } if new_content != "\n" => last_content.to_mut().push_str(&new_content),
+                _ => contents.push(node),
+            },
+            _ => contents.push(node),
+        };
+
+        let mut curlyBal = 1; // Either we matched a open curly, or otherwise we pretend that
+                              // there is a fictitious open curly before the start of the file.
 
         loop {
             let (curr_line, curr_col) = self.tokenizer.cursor_pos();
@@ -43,48 +80,150 @@ impl<'a> Parser<'a> {
                 None => break,
                 Some(Err(e)) => return Err(ParserError::TokenizerError(e)),
                 Some(Ok(tok)) => match tok {
-                    super::tokenizer::Token::Newline(n) => contents.push(AstNode::AstTextNode {
-                        content: n,
+                    Token::Newline(n) => add_to_contents(AstNode::AstTextNode {
+                        content: Cow::from(n),
                         source_start_line: curr_line,
                         source_start_col: curr_col,
                     }),
-                    super::tokenizer::Token::Text(n) => contents.push(AstNode::AstTextNode {
-                        content: n,
+                    Token::Text(n) => add_to_contents(AstNode::AstTextNode {
+                        content: Cow::from(n),
                         source_start_line: curr_line,
                         source_start_col: curr_col,
                     }),
-                    super::tokenizer::Token::CommandStartMarker(_) => {
+                    Token::CommandStartMarker(_) => {
                         todo!()
                     }
-                    super::tokenizer::Token::BlockCommentStartMarker(_) => {
-                        todo!()
+                    Token::BlockCommentStartMarker(_) => {
+                        self.parse_block_comment();
                     }
-                    super::tokenizer::Token::LineCommentStartMarker(_) => {
-                        todo!()
+                    Token::LineCommentStartMarker(_) => {
+                        self.parse_line_comment()?;
                     }
-                    super::tokenizer::Token::OpenCurly(_) => {
+                    Token::OpenCurly(n) => {
                         curlyBal += 1;
-                        todo!() // TODO emit text
+                        add_to_contents(AstNode::AstTextNode {
+                            content: Cow::from(n),
+                            source_start_line: curr_line,
+                            source_start_col: curr_col,
+                        })
                     }
-                    super::tokenizer::Token::CloseCurly(_) => {
+                    Token::CloseCurly(n) => {
                         curlyBal -= 1;
-                        // Use root_context here.
-                        todo!() // TODO emit text if relevant, else close this text.
+
+                        debug_assert!(curlyBal >= 0);
+
+                        if curlyBal == 0 {
+                            if root_context {
+                                return Err(ParserError::UnexpectedToken(
+                                    "Unexpected CloseCurly in root context (likely curly brace
+                                    mismatch."
+                                        .to_string(),
+                                ));
+                            } else {
+                                break;
+                            }
+                        } else {
+                            add_to_contents(AstNode::AstTextNode {
+                                content: Cow::from(n),
+                                source_start_line: curr_line,
+                                source_start_col: curr_col,
+                            })
+                        }
                     }
                     // These should not be emitted in Text context, instead normal Text(_) should
                     // tokens should be emitted in their place.
-                    super::tokenizer::Token::CommandForceEndMarker(_)
-                    | super::tokenizer::Token::OpenSquare(_)
-                    | super::tokenizer::Token::CloseSquare(_) => {
-                        return Err(ParserError::UnexpectedToken)
+                    other => {
+                        return Err(ParserError::UnexpectedToken(format!(
+                            "parse_text: Unexpected token {:?}",
+                            other
+                        )))
                     }
                 },
             }
         }
 
         let _ctx = self.tokenizer.pop_context();
-        debug_assert!(matches!(_ctx, Some(TokenizerContext::Text)));
+        debug_assert!(matches!(_ctx, Some(TokenizerContext::Text(_))));
 
         Ok(contents)
+    }
+
+    fn parse_line_comment(&mut self) -> Result<(), ParserError> {
+        self.tokenizer.push_context(TokenizerContext::LineComment);
+
+        loop {
+            let tok = self.tokenizer.next();
+            match tok {
+                None => break,
+                Some(Err(e)) => return Err(ParserError::TokenizerError(e)),
+                Some(Ok(tok)) => match tok {
+                    Token::Newline(_) => break,
+                    Token::Text(_) => continue,
+                    other => {
+                        return Err(ParserError::UnexpectedToken(format!(
+                            "parse_line_comment: Unexpected token {:?}",
+                            other
+                        )))
+                    }
+                },
+            }
+        }
+
+        let _ctx = self.tokenizer.pop_context();
+        debug_assert!(matches!(_ctx, Some(TokenizerContext::LineComment)));
+
+        Ok(())
+    }
+
+    fn parse_block_comment(&mut self) -> Result<(), ParserError> {
+        self.tokenizer
+            .push_context(TokenizerContext::GenericBraceStart);
+        let brace = self.tokenizer.next().unwrap()?;
+        self.tokenizer.pop_context();
+
+        debug_assert!(matches!(brace, Token::OpenCurly(_)));
+
+        self.tokenizer
+            .push_context(TokenizerContext::BlockComment(Tokenizer::get_brace_match(
+                brace,
+            )));
+
+        let mut curlyBal = 1; // Starts at 1 because we already matched an opening curly brace.
+
+        loop {
+            let tok = self.tokenizer.next();
+            match tok {
+                None => {
+                    return Err(ParserError::UnexpectedToken(
+                        "Unexpected EOF in parse_block_comment".to_string(),
+                    ))
+                }
+                Some(Err(e)) => return Err(ParserError::TokenizerError(e)),
+                Some(Ok(tok)) => match tok {
+                    Token::Newline(_) | Token::Text(_) => continue,
+                    Token::OpenCurly(_) => {
+                        curlyBal += 1;
+                    }
+                    Token::CloseCurly(_) => {
+                        curlyBal -= 1;
+                        debug_assert!(curlyBal >= 0);
+                        if curlyBal == 0 {
+                            break;
+                        }
+                    }
+                    other => {
+                        return Err(ParserError::UnexpectedToken(format!(
+                            "parse_line_comment: Unexpected token {:?}",
+                            other
+                        )))
+                    }
+                },
+            }
+        }
+
+        let _ctx = self.tokenizer.pop_context();
+        debug_assert!(matches!(_ctx, Some(TokenizerContext::BlockComment(_))));
+
+        Ok(())
     }
 }

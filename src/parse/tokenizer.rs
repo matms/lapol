@@ -35,11 +35,25 @@ const DEFAULT_TOKENIZER_CFG: TokenizerCfg = TokenizerCfg {
     special_brace_char: '|',
 };
 
+// TODO: Use
+pub struct BraceMatch {
+    open_brace: Vec<char>,
+    close_brace: Vec<char>,
+    // TODO: Command escaping.
+}
+
+pub(super) const DEFAULT_BRACE_MATCH: BraceMatch = BraceMatch {
+    open_brace: vec![],
+    close_brace: vec![],
+    // TODO: Command escaping.
+};
+
 pub enum TokenizerContext {
     // TODO: special brace support.
-    Text,
-    // LineComment,
-    // BlockComment,
+    Text(BraceMatch),
+    LineComment,
+    BlockComment(BraceMatch),
+    GenericBraceStart,
     // CommandName,
     // CommandSquareArg,
     // Note that curly args are just text.
@@ -53,6 +67,7 @@ pub struct Tokenizer<'a> {
     curr_line: usize,
     curr_col: usize,
     tok_cfg: TokenizerCfg,
+    curr_str_idx: usize,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -83,6 +98,7 @@ impl<'a> Tokenizer<'a> {
             char_iter: input.char_indices().peekable(),
             curr_line: 1,
             curr_col: 1,
+            curr_str_idx: 0,
             tok_cfg: if let Some(x) = tokenizer_cfg {
                 x
             } else {
@@ -105,11 +121,11 @@ impl<'a> Tokenizer<'a> {
     ///
     /// CAUTION: Do not pass in an idx not corresponding to the current char, i.e. you MUST pass
     /// in the idx returned by the most recent invocation of self.char_iter.next();
-    fn curr_char_end(&mut self, idx: usize) -> usize {
-        debug_assert!(self.text.is_char_boundary(idx));
+    fn curr_char_end(&mut self) -> usize {
+        debug_assert!(self.text.is_char_boundary(self.curr_str_idx));
 
-        if let Some((x, _)) = self.char_iter.peek() {
-            x.clone()
+        if let Some(&(x, _)) = self.char_iter.peek() {
+            x
         } else {
             self.text.len()
         }
@@ -118,7 +134,7 @@ impl<'a> Tokenizer<'a> {
     fn is_interesting_char(&self, c: char) -> bool {
         match self.ctx_stack.last() {
             None => panic!("Empty Tokenizer Context Stack --- likely an issue with the parser"),
-            Some(TokenizerContext::Text) => {
+            Some(TokenizerContext::Text(_)) => {
                 return c == '\r'
                     || c == '\n'
                     || c == self.tok_cfg.special_char
@@ -126,6 +142,22 @@ impl<'a> Tokenizer<'a> {
                     || c == self.tok_cfg.open_curly_char
                     || c == self.tok_cfg.close_curly_char
                     || c == self.tok_cfg.special_brace_char; // TODO maybe remove this last one
+            }
+            Some(TokenizerContext::LineComment) => {
+                return c == '\r' || c == '\n';
+            }
+            Some(TokenizerContext::BlockComment(_)) => {
+                return c == '\r'
+                    || c == '\n'
+                    || c == self.tok_cfg.open_curly_char
+                    || c == self.tok_cfg.close_curly_char
+                    || c == self.tok_cfg.special_brace_char; // TODO maybe remove this last one
+            }
+            Some(TokenizerContext::GenericBraceStart) => {
+                return c == '\r'
+                    || c == '\n'
+                    || c == self.tok_cfg.special_brace_char
+                    || c == self.tok_cfg.open_curly_char
             }
         }
         return c == '\r'
@@ -161,6 +193,16 @@ impl<'a> Tokenizer<'a> {
     pub fn cursor_pos(&self) -> (usize, usize) {
         (self.curr_line, self.curr_col)
     }
+
+    pub fn get_brace_match(brace: Token) -> BraceMatch {
+        if let Token::OpenCurly(x) = brace {
+            if x == "{" {
+                return DEFAULT_BRACE_MATCH;
+            }
+            todo!();
+        }
+        panic!("get_brace_match: brace should be an OpenCurly");
+    }
 }
 
 impl<'a> Iterator for Tokenizer<'a> {
@@ -175,12 +217,12 @@ impl<'a> Iterator for Tokenizer<'a> {
         let curr_char_or_none = self.char_it_next();
         let out = if let Some((idx, c)) = curr_char_or_none {
             if self.is_interesting_char(c) {
-                let char_str_slice = self.text.get(idx..self.curr_char_end(idx))?;
+                let char_str_slice = self.text.get(idx..self.curr_char_end())?;
 
                 if c == '\r' {
                     if let Some((next_idx, next_char)) = self.char_it_next() {
                         if next_char == '\n' {
-                            Token::Newline(self.text.get(next_idx..self.curr_char_end(next_idx))?)
+                            Token::Newline(self.text.get(next_idx..self.curr_char_end())?)
                         } else {
                             return Some(Err(TokenizerError::BadCarrageReturn));
                         }
@@ -190,12 +232,41 @@ impl<'a> Iterator for Tokenizer<'a> {
                 } else if c == '\n' {
                     Token::Newline(char_str_slice)
                 } else if c == self.tok_cfg.special_char {
-                    if let Some((next_idx, next_char)) = self.char_it_next() {
-                        if next_char == self.tok_cfg.comment_marker_char {
-                            // TODO: Handle line comment vs block comment
-                            // TODO: Also, later, allow block comments to work with brace escape syntax.
-                            todo!()
-                        } else {
+                    // ◊
+                    if let Some((n1_idx, n1_char)) = self.char_it_next() {
+                        // ◊%
+                        if n1_char == self.tok_cfg.comment_marker_char {
+                            if let Some(&(n2_idx, n2_char)) = self.char_iter.peek() {
+                                // ◊%{ -> Start block comment
+                                if n2_char == self.tok_cfg.open_curly_char {
+                                    // Note we don't actually match the brace yet!
+                                    Token::BlockCommentStartMarker(
+                                        self.text.get(idx..self.curr_char_end())?,
+                                    )
+                                }
+                                // ◊%| -> Potential start block comment with escaped brace.
+                                else if n2_char == self.tok_cfg.special_brace_char {
+                                    // Note we don't actually match the brace yet!
+                                    Token::BlockCommentStartMarker(
+                                        self.text.get(idx..self.curr_char_end())?,
+                                    )
+                                }
+                                // ◊% + anything else -> Line comment
+                                else {
+                                    Token::LineCommentStartMarker(
+                                        self.text.get(idx..self.curr_char_end())?,
+                                    )
+                                }
+                            }
+                            // ◊%<EOF> -> Treat as line comment.
+                            else {
+                                Token::LineCommentStartMarker(
+                                    self.text.get(idx..self.curr_char_end())?,
+                                )
+                            }
+                        }
+                        // ◊ + anything else
+                        else {
                             Token::CommandStartMarker(char_str_slice)
                         }
                     } else {
@@ -230,7 +301,7 @@ impl<'a> Iterator for Tokenizer<'a> {
                     }
                     self.char_it_next();
                 }
-                let char_str_slice = self.text.get(idx..self.curr_char_end(idx))?;
+                let char_str_slice = self.text.get(idx..self.curr_char_end())?;
                 Token::Text(char_str_slice)
             }
         } else {
