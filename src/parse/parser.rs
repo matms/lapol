@@ -1,7 +1,5 @@
 use std::borrow::Cow;
 
-use crate::parse::tokenizer::DEFAULT_BRACE_MATCH;
-
 use super::{
     ast::AstNode,
     tokenizer::{Token, Tokenizer, TokenizerContext, TokenizerError},
@@ -48,11 +46,13 @@ impl<'a> Parser<'a> {
 
             debug_assert!(matches!(brace, Token::OpenCurly(_)));
 
-            self.tokenizer
-                .push_context(TokenizerContext::Text(Tokenizer::get_brace_match(brace)));
+            self.tokenizer.push_context(TokenizerContext::Text(
+                self.tokenizer.get_escape_match(Some(brace)),
+            ));
         } else {
-            self.tokenizer
-                .push_context(TokenizerContext::Text(DEFAULT_BRACE_MATCH));
+            self.tokenizer.push_context(TokenizerContext::Text(
+                self.tokenizer.get_escape_match(None),
+            ));
         }
 
         // Merge Adjacent Text Nodes (except if either is a newline node).
@@ -183,10 +183,9 @@ impl<'a> Parser<'a> {
 
         debug_assert!(matches!(brace, Token::OpenCurly(_)));
 
-        self.tokenizer
-            .push_context(TokenizerContext::BlockComment(Tokenizer::get_brace_match(
-                brace,
-            )));
+        self.tokenizer.push_context(TokenizerContext::BlockComment(
+            self.tokenizer.get_escape_match(Some(brace)),
+        ));
 
         let mut curlyBal = 1; // Starts at 1 because we already matched an opening curly brace.
 
