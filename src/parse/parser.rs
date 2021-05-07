@@ -39,20 +39,24 @@ impl<'a> Parser<'a> {
         let mut contents = Vec::<AstNode>::new();
 
         if !root_context {
-            self.tokenizer
-                .push_context(TokenizerContext::GenericBraceStart);
+            self.tokenizer.push_context(
+                TokenizerContext::GenericCurlyStart,
+                self.tokenizer.get_escape_match(None),
+            );
             let brace = self.tokenizer.next().unwrap()?;
             self.tokenizer.pop_context();
 
             debug_assert!(matches!(brace, Token::OpenCurly(_)));
 
-            self.tokenizer.push_context(TokenizerContext::Text(
+            self.tokenizer.push_context(
+                TokenizerContext::Text,
                 self.tokenizer.get_escape_match(Some(brace)),
-            ));
+            );
         } else {
-            self.tokenizer.push_context(TokenizerContext::Text(
+            self.tokenizer.push_context(
+                TokenizerContext::Text,
                 self.tokenizer.get_escape_match(None),
-            ));
+            );
         }
 
         // Merge Adjacent Text Nodes (except if either is a newline node).
@@ -143,13 +147,16 @@ impl<'a> Parser<'a> {
         }
 
         let _ctx = self.tokenizer.pop_context();
-        debug_assert!(matches!(_ctx, Some(TokenizerContext::Text(_))));
+        debug_assert!(matches!(_ctx, Some((TokenizerContext::Text, _))));
 
         Ok(contents)
     }
 
     fn parse_line_comment(&mut self) -> Result<(), ParserError> {
-        self.tokenizer.push_context(TokenizerContext::LineComment);
+        self.tokenizer.push_context(
+            TokenizerContext::LineComment,
+            self.tokenizer.get_escape_match(None),
+        );
 
         loop {
             let tok = self.tokenizer.next();
@@ -170,22 +177,25 @@ impl<'a> Parser<'a> {
         }
 
         let _ctx = self.tokenizer.pop_context();
-        debug_assert!(matches!(_ctx, Some(TokenizerContext::LineComment)));
+        debug_assert!(matches!(_ctx, Some((TokenizerContext::LineComment, _))));
 
         Ok(())
     }
 
     fn parse_block_comment(&mut self) -> Result<(), ParserError> {
-        self.tokenizer
-            .push_context(TokenizerContext::GenericBraceStart);
+        self.tokenizer.push_context(
+            TokenizerContext::GenericCurlyStart,
+            self.tokenizer.get_escape_match(None),
+        );
         let brace = self.tokenizer.next().unwrap()?;
         self.tokenizer.pop_context();
 
         debug_assert!(matches!(brace, Token::OpenCurly(_)));
 
-        self.tokenizer.push_context(TokenizerContext::BlockComment(
+        self.tokenizer.push_context(
+            TokenizerContext::BlockComment,
             self.tokenizer.get_escape_match(Some(brace)),
-        ));
+        );
 
         let mut curlyBal = 1; // Starts at 1 because we already matched an opening curly brace.
 
@@ -221,7 +231,7 @@ impl<'a> Parser<'a> {
         }
 
         let _ctx = self.tokenizer.pop_context();
-        debug_assert!(matches!(_ctx, Some(TokenizerContext::BlockComment(_))));
+        debug_assert!(matches!(_ctx, Some((TokenizerContext::BlockComment, _))));
 
         Ok(())
     }

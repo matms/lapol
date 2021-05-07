@@ -8,6 +8,7 @@ use std::{
 use wasm_bindgen::prelude::*;
 
 pub mod ast;
+mod matching;
 mod parser;
 mod tokenizer;
 
@@ -58,6 +59,6 @@ pub fn parse_file_native(file_path: &str) {
     let root_node = parser.parse().unwrap();
 
     if let AstNode::AstRootNode { sub_nodes } = root_node {
-        println!("root node dbg: {:#?}", sub_nodes);
+        //println!("root node dbg: {:#?}", sub_nodes.last());
     }
 }

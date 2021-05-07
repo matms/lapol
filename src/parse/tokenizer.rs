@@ -1,3 +1,13 @@
+// TODO: Maybe do away with PeekNth and instead use chars.as_str() from the character iterator?
+// https://doc.rust-lang.org/std/str/struct.CharIndices.html
+//
+// Then, of course, we'd use str.starts_with
+// https://doc.rust-lang.org/std/primitive.str.html#method.starts_with
+
+use crate::parse::matching::default_matching;
+
+use super::matching::{MatchInProgress, MatchingCtx};
+use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
 use std::{error::Error, iter::Peekable, str::CharIndices, vec};
 
@@ -35,33 +45,113 @@ const DEFAULT_TOKENIZER_CFG: TokenizerCfg = TokenizerCfg {
     special_brace_char: '|',
 };
 
-// TODO: Use
-pub struct EscapeMatch {
-    open_curly: Vec<char>,
-    close_curly: Vec<char>,
-    special: Vec<char>,
-}
-
+#[derive(Copy, Clone, Debug)]
 pub enum TokenizerContext {
     // TODO: special brace support.
-    Text(EscapeMatch),
+    Text,
     LineComment,
-    BlockComment(EscapeMatch),
-    GenericBraceStart,
+    BlockComment,
+    GenericCurlyStart,
     // CommandName,
     // CommandSquareArg,
     // Note that curly args are just text.
 }
 
+impl TokenizerContext {
+    fn is_interesting_char(&self, c: char, tok_cfg: &TokenizerCfg) -> bool {
+        match self {
+            TokenizerContext::Text => {
+                return c == '\r'
+                    || c == '\n'
+                    || c == tok_cfg.special_char
+                    || c == tok_cfg.comment_marker_char
+                    || c == tok_cfg.open_curly_char
+                    || c == tok_cfg.close_curly_char
+                    || c == tok_cfg.special_brace_char; // TODO maybe remove this last one
+            }
+            TokenizerContext::LineComment => {
+                return c == '\r' || c == '\n';
+            }
+            TokenizerContext::BlockComment => {
+                return c == '\r'
+                    || c == '\n'
+                    || c == tok_cfg.open_curly_char
+                    || c == tok_cfg.close_curly_char
+                    || c == tok_cfg.special_brace_char; // TODO maybe remove this last one
+            }
+            TokenizerContext::GenericCurlyStart => {
+                return c == '\r'
+                    || c == '\n'
+                    || c == tok_cfg.special_brace_char
+                    || c == tok_cfg.open_curly_char
+            }
+        }
+        return c == '\r'
+            || c == '\n'
+            || c == tok_cfg.special_char
+            || c == tok_cfg.comment_marker_char
+            || c == tok_cfg.open_curly_char
+            || c == tok_cfg.close_curly_char
+            || c == tok_cfg.special_brace_char
+            || c == tok_cfg.open_square_char
+            || c == tok_cfg.close_square_char
+            || c == tok_cfg.command_force_end_char;
+    }
+
+    fn should_match_crlf(&self) -> bool {
+        true
+    }
+    fn should_match_newline(&self) -> bool {
+        true
+    }
+    fn should_match_comments(&self) -> bool {
+        match self {
+            TokenizerContext::Text => true,
+            TokenizerContext::LineComment => false,
+            TokenizerContext::BlockComment => false,
+            TokenizerContext::GenericCurlyStart => true, // TODO: Should this last one be false or true?
+        }
+    }
+
+    fn should_match_generic_open_curly(&self) -> bool {
+        match self {
+            TokenizerContext::Text => false,
+            TokenizerContext::LineComment => false,
+            TokenizerContext::BlockComment => false,
+            TokenizerContext::GenericCurlyStart => true,
+        }
+    }
+
+    fn should_match_open_curly(&self) -> bool {
+        match self {
+            TokenizerContext::Text => true,
+            TokenizerContext::LineComment => false,
+            TokenizerContext::BlockComment => true,
+            TokenizerContext::GenericCurlyStart => false,
+        }
+    }
+
+    fn should_match_close_curly(&self) -> bool {
+        match self {
+            TokenizerContext::Text => true,
+            TokenizerContext::LineComment => false,
+            TokenizerContext::BlockComment => true,
+            TokenizerContext::GenericCurlyStart => false,
+        }
+    }
+}
+
 pub struct Tokenizer<'a> {
     ctx_stack: Vec<TokenizerContext>,
+    esc_stack: Vec<MatchingCtx>,
     valid: bool,
     text: &'a str,
-    char_iter: Peekable<CharIndices<'a>>,
+    char_iter: CharIndices<'a>,
     curr_line: usize,
     curr_col: usize,
     tok_cfg: TokenizerCfg,
     curr_str_idx: usize,
+    curr_char_len: usize,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -87,12 +177,14 @@ impl<'a> Tokenizer<'a> {
     pub fn new(input: &'a str, tokenizer_cfg: Option<TokenizerCfg>) -> Self {
         Self {
             ctx_stack: Vec::new(),
+            esc_stack: Vec::new(),
             valid: true,
             text: input,
-            char_iter: input.char_indices().peekable(),
+            char_iter: input.char_indices(),
             curr_line: 1,
             curr_col: 1,
             curr_str_idx: 0,
+            curr_char_len: 0,
             tok_cfg: if let Some(x) = tokenizer_cfg {
                 x
             } else {
@@ -101,69 +193,47 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    pub fn push_context(&mut self, ctx: TokenizerContext) {
+    pub(super) fn push_context(&mut self, ctx: TokenizerContext, ec: MatchingCtx) {
         self.ctx_stack.push(ctx);
+        self.esc_stack.push(ec);
     }
 
-    pub fn pop_context(&mut self) -> Option<TokenizerContext> {
-        self.ctx_stack.pop()
+    pub(super) fn pop_context(&mut self) -> Option<(TokenizerContext, MatchingCtx)> {
+        Some((self.ctx_stack.pop()?, self.esc_stack.pop()?))
     }
 
-    /// Takes in the idx of the current character (as returned by char_indices), returns the
-    /// EXCLUSIVE ending index corresponding to it (i.e., the start of the next character or
-    /// the length of self.text, if there is no next character).
+    /// Returns the beginning index corresponding to the char that
+    /// was _last_ returned by char_it_next();
     ///
-    /// CAUTION: Do not pass in an idx not corresponding to the current char, i.e. you MUST pass
-    /// in the idx returned by the most recent invocation of self.char_iter.next();
-    fn curr_char_end(&mut self) -> usize {
-        debug_assert!(self.text.is_char_boundary(self.curr_str_idx));
-
-        if let Some(&(x, _)) = self.char_iter.peek() {
-            x
-        } else {
-            self.text.len()
-        }
+    /// If char_it_next() hasn't been called yet, this will return 0.
+    ///
+    /// WARNING: Calling char_iter.next() directly will NOT update the index, so this will
+    /// return the incorrect value.
+    fn prev_char_idx(&mut self) -> usize {
+        self.curr_str_idx
     }
 
-    fn is_interesting_char(&self, c: char) -> bool {
-        match self.ctx_stack.last() {
-            None => panic!("Empty Tokenizer Context Stack --- likely an issue with the parser"),
-            Some(TokenizerContext::Text(esc)) => {
-                return c == '\r'
-                    || c == '\n'
-                    || c == esc.open_curly[0]
-                    || c == esc.close_curly[0]
-                    || c == esc.special[0]
-            }
-            Some(TokenizerContext::LineComment) => {
-                return c == '\r' || c == '\n';
-            }
-            Some(TokenizerContext::BlockComment(esc)) => {
-                return c == '\r'
-                    || c == '\n'
-                    || c == esc.open_curly[0]
-                    || c == esc.close_curly[0]
-                    || c == esc.special[0]
-            }
-            Some(TokenizerContext::GenericBraceStart) => {
-                return c == '\r'
-                    || c == '\n'
-                    || c == self.tok_cfg.special_brace_char
-                    || c == self.tok_cfg.open_curly_char
-            }
-        }
-        /*
-        return c == '\r'
-            || c == '\n'
-            || c == self.tok_cfg.special_char
-            || c == self.tok_cfg.comment_marker_char
-            || c == self.tok_cfg.open_curly_char
-            || c == self.tok_cfg.close_curly_char
-            || c == self.tok_cfg.special_brace_char
-            || c == self.tok_cfg.open_square_char
-            || c == self.tok_cfg.close_square_char
-            || c == self.tok_cfg.command_force_end_char;
-        */
+    /// Returns the beginning index corresponding to the char that
+    /// will be returned by char_it_next() the next time it is called;
+    ///
+    /// In other words, this is the endind index (EXCLUSIVE) for the prev char.
+    ///
+    /// Note: Should return the length of the text in bytes if at the end.
+    ///
+    /// WARNING: Calling char_iter.next() directly will NOT update the index, so this will
+    /// return the incorrect value.
+    fn next_char_idx(&self) -> usize {
+        self.curr_str_idx + self.curr_char_len
+    }
+
+    /// Return true if `s` matches from the current char forward
+    /// (as returned by char_iter.as_str()).
+    fn peek_match(&mut self, s: &str) -> bool {
+        self.char_iter.as_str().starts_with(s)
+    }
+
+    fn start_match(&self) -> MatchInProgress<'a> {
+        return MatchInProgress::new(self.char_iter.as_str(), self.next_char_idx());
     }
 
     /// You should call this instead of char_iter.next(), as this also updates the current column
@@ -171,15 +241,30 @@ impl<'a> Tokenizer<'a> {
     /// become incorrect.
     fn char_it_next(&mut self) -> Option<(usize, char)> {
         let opt = self.char_iter.next();
-        if let Some((_, c)) = opt {
+        if let Some((i, c)) = opt {
             if c == '\n' {
                 self.curr_col = 1;
                 self.curr_line += 1;
             } else {
                 self.curr_col += 1
             }
+            self.curr_str_idx += i;
+            self.curr_char_len = c.len_utf8();
+        } else {
+            // TODO: Does this make sense?
+            self.curr_str_idx = self.text.len();
+            self.curr_char_len = 0;
         }
         opt
+    }
+
+    /// qty == 1 corresponds to char_it_next.
+    fn char_it_next_many(&mut self, qty: usize) -> Option<(usize, char)> {
+        let mut out = None;
+        for _ in 0..qty {
+            out = self.char_it_next();
+        }
+        out
     }
 
     /// Return the line (starting the count at 1) and column numbers, respectively,
@@ -188,36 +273,127 @@ impl<'a> Tokenizer<'a> {
         (self.curr_line, self.curr_col)
     }
 
-    pub fn get_escape_match(&self, brace: Option<Token>) -> EscapeMatch {
+    pub(super) fn get_escape_match(&self, brace: Option<Token>) -> MatchingCtx {
         if brace.is_none() {
-            // TODO: Use a lazy static.
-            return EscapeMatch {
-                open_curly: vec![self.tok_cfg.open_curly_char],
-                close_curly: vec![self.tok_cfg.close_curly_char],
-                special: vec![self.tok_cfg.special_char],
-            };
+            return default_matching();
         }
         if let Some(Token::OpenCurly(x)) = brace {
             if x.chars().next() == Some(self.tok_cfg.open_curly_char) {
-                return EscapeMatch {
-                    open_curly: vec![self.tok_cfg.open_curly_char],
-                    close_curly: vec![self.tok_cfg.close_curly_char],
-                    special: vec![self.tok_cfg.special_char],
-                };
+                return default_matching();
             }
-            todo!();
+            todo!("TODO: Escaped Matches");
         }
         panic!("get_escape_match: brace should be an OpenCurly");
     }
 
-    fn curr_escape_match(&self) -> Option<EscapeMatch> {
-        match self.ctx_stack.last() {
-            None => panic!("ctx_stack shouldn't be empty!"),
-            Some(TokenizerContext::Text(e)) => Some(*e),
-            Some(TokenizerContext::LineComment) => None,
-            Some(TokenizerContext::BlockComment(e)) => Some(*e),
-            Some(TokenizerContext::GenericBraceStart) => None,
+    fn curr_escape_match(&self) -> &MatchingCtx {
+        self.esc_stack
+            .last()
+            .expect("Escape match shouldn't be empty")
+    }
+
+    /// Attempt to match a CRLF (i.e. "\r\n"). Return Some(result) if match is successful or if
+    /// error occurs, return None if no match occurs.
+    fn match_crlf(&mut self) -> Option<Result<Token<'a>, TokenizerError>> {
+        if self.peek_match("\r\n") {
+            self.char_it_next(); // '\r'
+            let (newline_idx, _) = self.char_it_next().unwrap(); // '\n'
+            return Some(Ok(Token::Newline(
+                self.text.get(newline_idx..self.next_char_idx())?,
+            )));
         }
+        if self.peek_match("\r") {
+            return Some(Err(TokenizerError::BadCarrageReturn));
+        }
+        return None;
+    }
+
+    fn match_newline(&mut self) -> Option<Result<Token<'a>, TokenizerError>> {
+        if self.peek_match("\n") {
+            let (newline_idx, _) = self.char_it_next().unwrap(); // '\n'
+            return Some(Ok(Token::Newline(
+                self.text.get(newline_idx..self.next_char_idx())?,
+            )));
+        }
+        return None;
+    }
+
+    fn match_start_comment(
+        &mut self,
+        ec: &MatchingCtx,
+    ) -> Option<Result<Token<'a>, TokenizerError>> {
+        let start_idx = self.next_char_idx();
+
+        let mut m = self.start_match();
+        if m.perform_match(&ec.special) {
+            if m.perform_match_char(&self.tok_cfg.comment_marker_char) {
+                if m.perform_match_char(&self.tok_cfg.special_brace_char)
+                    || m.perform_match_char(&self.tok_cfg.open_curly_char)
+                {
+                    self.char_it_next_many(m.num_chars_matched());
+                    return Some(Ok(Token::BlockCommentStartMarker(
+                        self.text.get(start_idx..self.next_char_idx())?,
+                    )));
+                } else {
+                    self.char_it_next_many(m.num_chars_matched());
+                    return Some(Ok(Token::LineCommentStartMarker(
+                        self.text.get(start_idx..self.next_char_idx())?,
+                    )));
+                }
+            } else {
+                return None;
+            }
+        } else {
+            return None;
+        }
+    }
+
+    fn match_generic_open_curly(&mut self) -> Option<Result<Token<'a>, TokenizerError>> {
+        let start_idx = self.next_char_idx();
+
+        let mut m = self.start_match();
+
+        if m.perform_match_char(&self.tok_cfg.special_brace_char) {
+            todo!("Escaped Curly!")
+        } else if m.perform_match_char(&self.tok_cfg.open_curly_char) {
+            debug_assert!(m.num_chars_matched() == 1);
+            self.char_it_next();
+            Some(Ok(Token::OpenCurly(
+                self.text.get(start_idx..self.next_char_idx())?,
+            )))
+        } else {
+            None
+        }
+    }
+
+    fn match_open_curly(&mut self, ec: &MatchingCtx) -> Option<Result<Token<'a>, TokenizerError>> {
+        let start_idx = self.next_char_idx();
+
+        let mut m = self.start_match();
+
+        if m.perform_match(&ec.open_curly) {
+            self.char_it_next_many(m.num_chars_matched());
+            return Some(Ok(Token::OpenCurly(
+                self.text.get(start_idx..self.next_char_idx())?,
+            )));
+        }
+
+        None
+    }
+
+    fn match_close_curly(&mut self, ec: &MatchingCtx) -> Option<Result<Token<'a>, TokenizerError>> {
+        let start_idx = self.next_char_idx();
+
+        let mut m = self.start_match();
+
+        if m.perform_match(&ec.close_curly) {
+            self.char_it_next_many(m.num_chars_matched());
+            return Some(Ok(Token::CloseCurly(
+                self.text.get(start_idx..self.next_char_idx())?,
+            )));
+        }
+
+        None
     }
 }
 
@@ -230,101 +406,177 @@ impl<'a> Iterator for Tokenizer<'a> {
             return None;
         }
 
+        // '\r' followed by '\n'.
+        if self.ctx_stack.last().unwrap().should_match_crlf() {
+            let m = self.match_crlf();
+            if m.is_some() {
+                return m;
+            }
+        }
+
+        // Just '\n'
+        if self.ctx_stack.last().unwrap().should_match_newline() {
+            let m = self.match_newline();
+            if m.is_some() {
+                return m;
+            }
+        }
+
+        // Line or Block Comment Start
+        // "@%{" or "@%<ANYTHING ELSE>"
+        if self.ctx_stack.last().unwrap().should_match_comments() {
+            let cem = self.esc_stack.pop().expect("esc_stack should not be empty");
+            let m = self.match_start_comment(&cem);
+            self.esc_stack.push(cem);
+
+            if m.is_some() {
+                return m;
+            }
+        }
+
+        // GENERIC open curly
+        if self
+            .ctx_stack
+            .last()
+            .unwrap()
+            .should_match_generic_open_curly()
+        {
+            let m = self.match_generic_open_curly();
+
+            if m.is_some() {
+                return m;
+            }
+        }
+
+        // Regular Open curly
+        if self.ctx_stack.last().unwrap().should_match_open_curly() {
+            let cem = self.esc_stack.pop().expect("esc_stack should not be empty");
+            let m = self.match_open_curly(&cem);
+            self.esc_stack.push(cem);
+
+            if m.is_some() {
+                return m;
+            }
+        }
+
+        // Close curly
+        if self.ctx_stack.last().unwrap().should_match_close_curly() {
+            let cem = self.esc_stack.pop().expect("esc_stack should not be empty");
+            let m = self.match_close_curly(&cem);
+            self.esc_stack.push(cem);
+
+            if m.is_some() {
+                return m;
+            }
+        }
+
+        if let Some((start_idx, _)) = self.char_it_next() {
+            let tok_context = *self.ctx_stack.last().unwrap();
+
+            loop {
+                let p = self.char_iter.as_str().chars().next();
+                match p {
+                    None => break,
+                    Some(c) => {
+                        if tok_context.is_interesting_char(c, &self.tok_cfg) {
+                            break;
+                        }
+                    }
+                }
+                self.char_it_next();
+            }
+            let char_str_slice = self.text.get(start_idx..self.next_char_idx())?;
+
+            return Some(Ok(Token::Text(char_str_slice)));
+        }
+
+        // Ran out of the end.
+        return None;
+
+        // TODO: Match everything else using this approach!
+
+        /*
+
         let curr_char_or_none = self.char_it_next();
         let out = if let Some((idx, c)) = curr_char_or_none {
-            if self.is_interesting_char(c) {
-                let curr_escape_match = self.curr_escape_match();
-                let char_str_slice = self.text.get(idx..self.curr_char_end())?;
+            //if self.is_interesting_char(c) {
+            let curr_escape_match = self.curr_escape_match();
+            let char_str_slice = self.text.get(idx..self.curr_char_end())?;
 
-                if c == '\r' {
-                    if let Some((next_idx, next_char)) = self.char_it_next() {
-                        if next_char == '\n' {
-                            Token::Newline(self.text.get(next_idx..self.curr_char_end())?)
-                        } else {
-                            return Some(Err(TokenizerError::BadCarrageReturn));
-                        }
-                    } else {
-                        return Some(Err(TokenizerError::BadCarrageReturn));
-                    }
-                } else if c == '\n' {
-                    Token::Newline(char_str_slice)
-                } else if c == self.tok_cfg.special_char {
-                    // @
-                    if let Some((n1_idx, n1_char)) = self.char_it_next() {
-                        // @%
-                        if n1_char == self.tok_cfg.comment_marker_char {
-                            if let Some(&(n2_idx, n2_char)) = self.char_iter.peek() {
-                                // @%{ -> Start block comment
-                                if n2_char == self.tok_cfg.open_curly_char {
-                                    // Note we don't actually match the brace yet!
-                                    Token::BlockCommentStartMarker(
-                                        self.text.get(idx..self.curr_char_end())?,
-                                    )
-                                }
-                                // @%| -> Potential start block comment with escaped brace.
-                                else if n2_char == self.tok_cfg.special_brace_char {
-                                    // Note we don't actually match the brace yet!
-                                    Token::BlockCommentStartMarker(
-                                        self.text.get(idx..self.curr_char_end())?,
-                                    )
-                                }
-                                // @% + anything else -> Line comment
-                                else {
-                                    Token::LineCommentStartMarker(
-                                        self.text.get(idx..self.curr_char_end())?,
-                                    )
-                                }
+            if c == self.tok_cfg.special_char {
+                // @
+                if let Some((n1_idx, n1_char)) = self.char_it_next() {
+                    // @%
+                    if n1_char == self.tok_cfg.comment_marker_char {
+                        if let Some(&(n2_idx, n2_char)) = self.char_iter.peek() {
+                            // @%{ -> Start block comment
+                            if n2_char == self.tok_cfg.open_curly_char {
+                                // Note we don't actually match the brace yet!
+                                Token::BlockCommentStartMarker(
+                                    self.text.get(idx..self.curr_char_end())?,
+                                )
                             }
-                            // @%<EOF> -> Treat as line comment.
+                            // @%| -> Potential start block comment with escaped brace.
+                            else if n2_char == self.tok_cfg.special_brace_char {
+                                // Note we don't actually match the brace yet!
+                                Token::BlockCommentStartMarker(
+                                    self.text.get(idx..self.curr_char_end())?,
+                                )
+                            }
+                            // @% + anything else -> Line comment
                             else {
                                 Token::LineCommentStartMarker(
                                     self.text.get(idx..self.curr_char_end())?,
                                 )
                             }
                         }
-                        // @ + anything else
+                        // @%<EOF> -> Treat as line comment.
                         else {
-                            Token::CommandStartMarker(char_str_slice)
+                            Token::LineCommentStartMarker(self.text.get(idx..self.curr_char_end())?)
                         }
-                    } else {
-                        return Some(Err(TokenizerError::EndAfterSpecialChar));
                     }
-                } else if c == self.tok_cfg.special_brace_char {
-                    // TODO: Special Brace handling.
-                    todo!()
-                } else if c == self.tok_cfg.open_curly_char {
-                    Token::OpenCurly(char_str_slice)
-                } else if c == self.tok_cfg.close_curly_char {
-                    Token::CloseCurly(char_str_slice)
-                } else if c == self.tok_cfg.open_square_char {
-                    Token::OpenSquare(char_str_slice)
-                } else if c == self.tok_cfg.close_square_char {
-                    Token::CloseSquare(char_str_slice)
-                } else if c == self.tok_cfg.command_force_end_char {
-                    Token::CommandForceEndMarker(char_str_slice)
+                    // @ + anything else
+                    else {
+                        Token::CommandStartMarker(char_str_slice)
+                    }
                 } else {
-                    unreachable!()
+                    return Some(Err(TokenizerError::EndAfterSpecialChar));
                 }
+            } else if c == self.tok_cfg.special_brace_char {
+                // TODO: Special Brace handling.
+                todo!()
+            } else if c == self.tok_cfg.open_curly_char {
+                Token::OpenCurly(char_str_slice)
+            } else if c == self.tok_cfg.close_curly_char {
+                Token::CloseCurly(char_str_slice)
+            } else if c == self.tok_cfg.open_square_char {
+                Token::OpenSquare(char_str_slice)
+            } else if c == self.tok_cfg.close_square_char {
+                Token::CloseSquare(char_str_slice)
+            } else if c == self.tok_cfg.command_force_end_char {
+                Token::CommandForceEndMarker(char_str_slice)
             } else {
-                loop {
-                    let p = self.char_iter.peek();
-                    match p {
-                        None => break,
-                        Some(&(_, c)) => {
-                            if self.is_interesting_char(c) {
-                                break;
-                            }
-                        }
-                    }
-                    self.char_it_next();
-                }
-                let char_str_slice = self.text.get(idx..self.curr_char_end())?;
-                Token::Text(char_str_slice)
+                unreachable!()
             }
+            // } else {
+            loop {
+                let p = self.char_iter.peek();
+                match p {
+                    None => break,
+                    Some(&(_, c)) => {
+                        //if self.is_interesting_char(c) {
+                        break;
+                        //}
+                    }
+                }
+                self.char_it_next();
+            }
+            let char_str_slice = self.text.get(idx..self.curr_char_end())?;
+            Token::Text(char_str_slice)
+            //}
         } else {
             return None;
         };
-
-        Some(Ok(out))
+        */
     }
 }
