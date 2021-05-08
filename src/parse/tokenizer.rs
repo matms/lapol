@@ -248,7 +248,7 @@ impl<'a> Tokenizer<'a> {
             } else {
                 self.curr_col += 1
             }
-            self.curr_str_idx += i;
+            self.curr_str_idx = i;
             self.curr_char_len = c.len_utf8();
         } else {
             // TODO: Does this make sense?
@@ -327,8 +327,8 @@ impl<'a> Tokenizer<'a> {
         let mut m = self.start_match();
         if m.perform_match(&ec.special) {
             if m.perform_match_char(&self.tok_cfg.comment_marker_char) {
-                if m.perform_match_char(&self.tok_cfg.special_brace_char)
-                    || m.perform_match_char(&self.tok_cfg.open_curly_char)
+                if m.can_match_char(&self.tok_cfg.special_brace_char)
+                    || m.can_match_char(&self.tok_cfg.open_curly_char)
                 {
                     self.char_it_next_many(m.num_chars_matched());
                     return Some(Ok(Token::BlockCommentStartMarker(

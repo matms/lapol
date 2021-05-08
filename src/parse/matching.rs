@@ -34,7 +34,7 @@ impl<'a> MatchInProgress<'a> {
     }
 
     pub fn can_match(&self, s: &str) -> bool {
-        return self.source.starts_with(s);
+        self.source.starts_with(s)
     }
 
     fn curr_relative_idx(&mut self) -> usize {
@@ -49,7 +49,7 @@ impl<'a> MatchInProgress<'a> {
         if self.can_match(s) {
             let (m, rest) = self.source.split_at(s.len());
             self.curr_idx += m.len();
-            self.chars_matched = m.chars().count();
+            self.chars_matched += m.chars().count();
             self.source = rest;
             true
         } else {
@@ -63,12 +63,18 @@ impl<'a> MatchInProgress<'a> {
         if self.source.starts_with(s) {
             let (m, rest) = self.source.split_at(s.len());
             self.curr_idx += m.len();
-            self.chars_matched = m.chars().count();
+            self.chars_matched += m.chars().count();
             self.source = rest;
             true
         } else {
             false
         }
+    }
+
+    pub fn can_match_char(&mut self, c: &char) -> bool {
+        let s = c.encode_utf8(&mut self._encoding_buf);
+        let s = &*s;
+        self.source.starts_with(s)
     }
 
     pub fn num_chars_matched(&self) -> usize {

@@ -80,6 +80,7 @@ impl<'a> Parser<'a> {
         loop {
             let (curr_line, curr_col) = self.tokenizer.cursor_pos();
             let tok = self.tokenizer.next();
+            // println!("Parsing tok {:?}", tok);
             match tok {
                 None => break,
                 Some(Err(e)) => return Err(ParserError::TokenizerError(e)),
