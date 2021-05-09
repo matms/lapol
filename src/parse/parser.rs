@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use super::{
     ast::AstNode,
-    tokenizer::{Token, Tokenizer, TokenizerContext, TokenizerError},
+    tokenizer::{context::TokenizerContext, token::Token, Tokenizer, TokenizerError},
 };
 use thiserror::Error as TError;
 
@@ -74,8 +74,8 @@ impl<'a> Parser<'a> {
             _ => contents.push(node),
         };
 
-        let mut curlyBal = 1; // Either we matched a open curly, or otherwise we pretend that
-                              // there is a fictitious open curly before the start of the file.
+        let mut curly_bal = 1; // Either we matched a open curly, or otherwise we pretend that
+                               // there is a fictitious open curly before the start of the file.
 
         loop {
             let (curr_line, curr_col) = self.tokenizer.cursor_pos();
@@ -99,13 +99,13 @@ impl<'a> Parser<'a> {
                         todo!()
                     }
                     Token::BlockCommentStartMarker(_) => {
-                        self.parse_block_comment();
+                        self.parse_block_comment()?;
                     }
                     Token::LineCommentStartMarker(_) => {
                         self.parse_line_comment()?;
                     }
                     Token::OpenCurly(n) => {
-                        curlyBal += 1;
+                        curly_bal += 1;
                         add_to_contents(AstNode::AstTextNode {
                             content: Cow::from(n),
                             source_start_line: curr_line,
@@ -113,11 +113,11 @@ impl<'a> Parser<'a> {
                         })
                     }
                     Token::CloseCurly(n) => {
-                        curlyBal -= 1;
+                        curly_bal -= 1;
 
-                        debug_assert!(curlyBal >= 0);
+                        debug_assert!(curly_bal >= 0);
 
-                        if curlyBal == 0 {
+                        if curly_bal == 0 {
                             if root_context {
                                 return Err(ParserError::UnexpectedToken(
                                     "Unexpected CloseCurly in root context (likely curly brace
@@ -198,7 +198,7 @@ impl<'a> Parser<'a> {
             self.tokenizer.get_escape_match(Some(brace)),
         );
 
-        let mut curlyBal = 1; // Starts at 1 because we already matched an opening curly brace.
+        let mut curly_bal = 1; // Starts at 1 because we already matched an opening curly brace.
 
         loop {
             let tok = self.tokenizer.next();
@@ -212,12 +212,12 @@ impl<'a> Parser<'a> {
                 Some(Ok(tok)) => match tok {
                     Token::Newline(_) | Token::Text(_) => continue,
                     Token::OpenCurly(_) => {
-                        curlyBal += 1;
+                        curly_bal += 1;
                     }
                     Token::CloseCurly(_) => {
-                        curlyBal -= 1;
-                        debug_assert!(curlyBal >= 0);
-                        if curlyBal == 0 {
+                        curly_bal -= 1;
+                        debug_assert!(curly_bal >= 0);
+                        if curly_bal == 0 {
                             break;
                         }
                     }

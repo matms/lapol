@@ -1,7 +1,6 @@
 mod panic_hook;
 
 mod parse;
-use parse::ast::AstNode;
 pub use parse::parse_file;
 
 use serde::{Deserialize, Serialize};
@@ -27,7 +26,8 @@ pub fn greet() {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FileReadContent {
-    pub fileContent: String,
+    #[serde(rename = "fileContent")]
+    pub file_content: String,
 }
 
 #[wasm_bindgen(js_name = receiveStr)]

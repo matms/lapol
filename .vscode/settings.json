@@ -6,5 +6,8 @@
     ],
     "editor.rulers": [
     100
+    ],
+    "cSpell.words": [
+        "wasm"
     ]
 }

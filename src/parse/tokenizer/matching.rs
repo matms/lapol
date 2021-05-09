@@ -1,19 +1,3 @@
-pub(super) struct MatchingCtx {
-    pub open_curly: String,
-    pub close_curly: String,
-    pub special: String,
-}
-
-// TODO: Lazy static.
-// TODO: Consider Tokenizer Cfg.
-pub(super) fn default_matching() -> MatchingCtx {
-    MatchingCtx {
-        open_curly: "{".to_string(),
-        close_curly: "}".to_string(),
-        special: "@".to_string(),
-    }
-}
-
 pub(super) struct MatchInProgress<'a> {
     source: &'a str,
     chars_matched: usize,
@@ -37,10 +21,12 @@ impl<'a> MatchInProgress<'a> {
         self.source.starts_with(s)
     }
 
-    fn curr_relative_idx(&mut self) -> usize {
+    #[allow(dead_code)]
+    pub fn curr_relative_idx(&mut self) -> usize {
         self.curr_idx
     }
 
+    #[allow(dead_code)]
     pub fn curr_text_idx(&mut self) -> usize {
         self.curr_idx + self.start_idx
     }
