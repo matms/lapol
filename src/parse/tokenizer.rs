@@ -271,6 +271,24 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
+macro_rules! gen_match {
+    (
+        $curr_tok_ctx: ident,
+        $self: ident,
+        [ $(($should:ident, $mat:ident)),* ]  
+    ) =>
+    {
+        $(
+            if $curr_tok_ctx.$should() {
+                let m = $self.$mat();
+                if m.is_some() {
+                    return m;
+                }
+            }
+        )*
+    };
+}
+
 impl<'a> Iterator for Tokenizer<'a> {
     type Item = Result<Token<'a>, TokenizerError>;
 
@@ -282,59 +300,15 @@ impl<'a> Iterator for Tokenizer<'a> {
 
         let curr_tok_ctx = *self.ctx_stack.last().unwrap();
 
-        // '\r' followed by '\n'.
-        if curr_tok_ctx.should_match_crlf() {
-            let m = self.match_crlf();
-            if m.is_some() {
-                return m;
-            }
-        }
+        gen_match!(curr_tok_ctx, self, 
+            [(should_match_crlf, match_crlf),
+             (should_match_newline, match_newline),
+             (should_match_comments, match_start_comment),
+             (should_match_generic_open_curly, match_generic_open_curly),
+             (should_match_open_curly, match_open_curly),
+             (should_match_close_curly, match_close_curly)]);
 
-        // Just '\n'
-        if curr_tok_ctx.should_match_newline() {
-            let m = self.match_newline();
-            if m.is_some() {
-                return m;
-            }
-        }
-
-        // Line or Block Comment Start
-        // "@%{" or "@%<ANYTHING ELSE>"
-        if curr_tok_ctx.should_match_comments() {
-            let m = self.match_start_comment();
-
-            if m.is_some() {
-                return m;
-            }
-        }
-
-        // GENERIC open curly
-        if curr_tok_ctx.should_match_generic_open_curly() {
-            let m = self.match_generic_open_curly();
-
-            if m.is_some() {
-                return m;
-            }
-        }
-
-        // Regular Open curly
-        if curr_tok_ctx.should_match_open_curly() {
-            let m = self.match_open_curly();
-
-            if m.is_some() {
-                return m;
-            }
-        }
-
-        // Close curly
-        if curr_tok_ctx.should_match_close_curly() {
-            let m = self.match_close_curly();
-
-            if m.is_some() {
-                return m;
-            }
-        }
-
+        // Text
         if let Some((start_idx, _)) = self.char_it_next() {
             let tok_context = *self.ctx_stack.last().unwrap();
 
