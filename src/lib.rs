@@ -1,15 +1,15 @@
 use nom::{
     branch::alt,
-    bytes::complete::{is_not, tag},
+    bytes::complete::{is_a, is_not, tag},
     character::complete::{alpha1, alphanumeric1, anychar, multispace1, none_of},
     combinator::{opt, peek, recognize, value},
     error::ParseError,
     multi::many0,
-    sequence::{delimited, pair, preceded, tuple},
+    sequence::{pair, preceded, tuple},
     IResult,
 };
 
-use std::{borrow::Cow};
+use std::borrow::{Borrow, Cow};
 
 #[derive(Debug)]
 pub enum AstNode<'a> {
@@ -26,6 +26,82 @@ pub enum AstNode<'a> {
         //source_start_col: usize,
         //source_start_line: usize,
     },
+}
+
+struct EscapeMatch<'a> {
+    open: Cow<'a, str>,
+    close: Cow<'a, str>,
+    escape: Cow<'a, str>,
+}
+
+const DEFAULT_ESCAPE_MATCH: EscapeMatch = EscapeMatch {
+    open: Cow::Borrowed("{"),
+    close: Cow::Borrowed("}"),
+    escape: Cow::Borrowed(""),
+};
+
+const ALLOWED_ESCAPE_SYMBOLS: &'static str = "<([";
+
+fn generic_open_curly<'a, E: ParseError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, (&'a str, EscapeMatch), E> {
+    let (r, m) = recognize(pair(
+        opt(pair(tag("|"), opt(is_a(ALLOWED_ESCAPE_SYMBOLS)))),
+        tag("{"),
+    ))(i)?;
+
+    let em = EscapeMatch {
+        open: Cow::Borrowed(m),
+        close: get_matching_close_curly(m),
+        escape: Cow::Borrowed(get_matching_escape(m)),
+    };
+
+    Ok((r, (m, em)))
+}
+
+fn escape_matching_char(open_char: char) -> char {
+    match open_char {
+        '<' => '>',
+        '(' => ')',
+        '[' => ']',
+        _ => panic!("Bad escape matching char: {}", open_char),
+    }
+}
+
+fn get_matching_close_curly(open_curly_form: &str) -> Cow<str> {
+    let mut ocf = open_curly_form.chars();
+    let n = ocf
+        .next()
+        .expect("get_matching_close_curly --- open_curly_form mustn't be empty");
+    if n == '|' {
+        let mut s = String::with_capacity(open_curly_form.len());
+        assert!(
+            ocf.next_back()
+                .expect("get_matching_close_curly --- open_curly_form must end in open curly")
+                == '{'
+        );
+        s.push('}');
+
+        for c in ocf.rev() {
+            s.push(escape_matching_char(c))
+        }
+
+        s.push('|');
+        Cow::Owned(s)
+    } else if n == '{' {
+        Cow::Borrowed("}")
+    } else {
+        unreachable!("Bad open_curly_form start")
+    }
+}
+
+fn get_matching_escape(open_curly_form: &str) -> &str {
+    let (i, l) = open_curly_form
+        .char_indices()
+        .next_back()
+        .expect(&format!("Bad open_curly_form {}", open_curly_form));
+    debug_assert!(l == '{');
+    open_curly_form.split_at(i).0
 }
 
 /// Optimization: Instead of taking chars one by one, forming Text nodes with
@@ -57,10 +133,12 @@ fn generic_text<'a, E: ParseError<&'a str>>(
 
 fn text<'a, E: ParseError<&'a str>>(
     root_context: bool,
-    open_brace: &str,
-    close_brace: &str,
+    em: &EscapeMatch,
     i: &'a str,
 ) -> IResult<&'a str, Vec<AstNode<'a>>, E> {
+    let open_brace = em.open.borrow();
+    let close_brace = em.close.borrow();
+
     let rec_open = tag::<&str, &str, ()>(open_brace);
     let rec_close = tag::<&str, &str, ()>(close_brace);
 
@@ -114,8 +192,8 @@ fn text<'a, E: ParseError<&'a str>>(
             let (r, o) = alt((
                 // Order matters!
                 one_newline,
-                comment,
-                command,
+                |i| comment(em, i),
+                |i| command(em, i),
                 generic_text,
             ))(rest)?;
 
@@ -137,10 +215,12 @@ fn text<'a, E: ParseError<&'a str>>(
 }
 
 fn block_comment_text<'a, E: ParseError<&'a str>>(
-    open_brace: &str,
-    close_brace: &str,
+    em: &EscapeMatch,
     i: &'a str,
 ) -> IResult<&'a str, (), E> {
+    let open_brace = em.open.borrow();
+    let close_brace = em.close.borrow();
+
     let rec_open = tag::<&str, &str, ()>(open_brace);
     let rec_close = tag::<&str, &str, ()>(close_brace);
 
@@ -172,21 +252,27 @@ fn block_comment_text<'a, E: ParseError<&'a str>>(
     Ok((rest, ()))
 }
 
-fn block_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<AstNode>, E> {
-    let (r, _) = delimited(
-        //
-        tag("@%{"),
-        |i| block_comment_text("{", "}", i),
-        tag("}"),
-    )(i)?;
+fn block_comment<'a, E: ParseError<&'a str>>(
+    em: &EscapeMatch,
+    i: &'a str,
+) -> IResult<&'a str, Option<AstNode<'a>>, E> {
+    let (rest, _) = tag(em.escape.borrow())(i)?;
+    let (rest, _) = tag("@%")(rest)?;
+    let (rest, (_, em)) = generic_open_curly(rest)?;
+    let (rest, _) = block_comment_text(&em, rest)?;
+    let (rest, _) = tag(em.close.borrow())(rest)?;
 
-    Ok((r, None))
+    Ok((rest, None))
 }
 
 /// Assuming block comment didn't match.
-fn line_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<AstNode>, E> {
+fn line_comment<'a, E: ParseError<&'a str>>(
+    em: &EscapeMatch,
+    i: &'a str,
+) -> IResult<&'a str, Option<AstNode<'a>>, E> {
     let (r, _) = tuple((
         //
+        tag(em.escape.borrow()),
         tag("@%"),
         peek(none_of("|{")),
         is_not("\n"),
@@ -196,8 +282,11 @@ fn line_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Opti
     Ok((r, None))
 }
 
-fn comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<AstNode>, E> {
-    alt((block_comment, line_comment))(i)
+fn comment<'a, E: ParseError<&'a str>>(
+    em: &EscapeMatch,
+    i: &'a str,
+) -> IResult<&'a str, Option<AstNode<'a>>, E> {
+    alt((|i| block_comment(em, i), |i| line_comment(em, i)))(i)
 }
 
 fn one_newline<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<AstNode>, E> {
@@ -211,14 +300,11 @@ fn one_newline<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Optio
 }
 
 fn curly_argument<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<AstNode<'a>>, E> {
-    let (r, (_, nodes, _)) = tuple((
-        // TODO: Allow escaped braces.
-        tag("{"),
-        |i| text(false, "{", "}", i),
-        tag("}"),
-    ))(i)?;
+    let (rest, (_, em)) = generic_open_curly(i)?;
+    let (rest, nodes) = text(false, &em, rest)?;
+    let (rest, _) = tag(em.close.borrow())(rest)?;
 
-    Ok((r, nodes))
+    Ok((rest, nodes))
 }
 
 // From https://docs.rs/nom/6.1.2/nom/recipes/index.html#rust-style-identifiers
@@ -229,9 +315,13 @@ fn identifier<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a st
     ))(i)
 }
 
-fn command<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<AstNode>, E> {
+fn command<'a, E: ParseError<&'a str>>(
+    em: &EscapeMatch,
+    i: &'a str,
+) -> IResult<&'a str, Option<AstNode<'a>>, E> {
     let o = tuple((
         //
+        tag(em.escape.borrow()),
         tag("@"),
         // Make sure this isn't a comment or a malformed @{} form.
         peek(none_of("%|{")),
@@ -244,7 +334,7 @@ fn command<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<As
             // Whitespace with potential comments
             many0(alt((
                 |i| value((), multispace1)(i),
-                |i| value((), comment)(i),
+                |i| value((), |i| comment(&DEFAULT_ESCAPE_MATCH, i))(i),
             ))),
             curly_argument,
         )),
@@ -252,7 +342,7 @@ fn command<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<As
             // Whitespace with potential comments
             many0(alt((
                 |i| value((), multispace1)(i),
-                |i| value((), comment)(i),
+                |i| value((), |i| comment(&DEFAULT_ESCAPE_MATCH, i))(i),
             ))),
             tag(";"),
         )),
@@ -260,7 +350,7 @@ fn command<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<As
 
     // println!("{:?}:", o);
 
-    let (rest, (_, _, command_name, curly_args, _)) = o;
+    let (rest, (_, _, _, command_name, curly_args, _)) = o;
 
     Ok((
         rest,
@@ -273,12 +363,22 @@ fn command<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<As
 }
 
 pub fn parse_root<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, AstNode<'a>, E> {
-    let (r, nodes) = text(true, "{", "}", i)?;
+    let (r, nodes) = text(true, &DEFAULT_ESCAPE_MATCH, i)?;
     assert!(r == ""); // We are at EOF.
     Ok((r, AstNode::AstRootNode { sub_nodes: nodes }))
 }
 
 pub fn parse<'a>(i: &'a str) -> Result<AstNode<'a>, ()> {
+    /*
+    println!("{}", get_matching_close_curly("{"));
+    println!("{}", get_matching_close_curly("|{"));
+    println!("{}", get_matching_close_curly("|<<[[((<{"));
+
+    println!("{}", get_matching_escape("{"));
+    println!("{}", get_matching_escape("|{"));
+    println!("{}", get_matching_escape("|<<[[((<{"));
+    */
+
     let out = parse_root::<nom::error::Error<&str>>(i);
 
     match out {
