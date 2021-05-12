@@ -1,4 +1,13 @@
 import { debugDefaultActions, render } from "./internal/run";
+import {
+    init as lapol_rs_init,
+    greet,
+    parse_file,
+    receiveVal,
+    receiveStr,
+    receiveBuffer,
+} from "lapol-rs";
+import { readFile, readFileBuffer } from "./internal/utils";
 
 export async function consoleMain() {
     console.log("Hello, LaPoL!");
@@ -15,9 +24,45 @@ export async function consoleMain() {
         if (args[0] === "render") {
             if (args.length !== 2) {
                 console.error(`LAPOL ERROR <@ main>: Must indicate exactly one file to render`);
-            } else render(args[1]);
+            } else await render(args[1]);
+        } else if (args[0] === "profile") {
+            if (args.length !== 2) {
+                console.error(`LAPOL ERROR <@ main>: Must indicate exactly one file to render`);
+            } else {
+                while (true) {
+                    await render(args[1]);
+                }
+            }
         } else console.error(`LAPOL ERROR <@ main>: Unknown command ${args[0]}`);
     }
 }
 
-consoleMain();
+async function test_rust() {
+    let path =
+        "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\stress_test_0.lap";
+
+    let tr = Date.now();
+    let f = await readFileBuffer(path);
+    let tr2 = Date.now();
+
+    console.log(`NOTE: Reading buffer for rust took time ${tr2 - tr} millis.`);
+
+    let t1 = Date.now();
+    let out = parse_file(path, f);
+    let t2 = Date.now();
+
+    console.log(`NOTE: Rust parser Took time ${t2 - t1} millis`);
+
+    console.log("Bye!");
+}
+
+lapol_rs_init();
+
+async function stress() {
+    //while (true) {
+    await test_rust();
+    await consoleMain();
+    //}
+}
+
+stress();

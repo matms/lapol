@@ -25,7 +25,7 @@ const COMMAND_START_MARKER = Symbol("COMMAND_START_MARKER");
 const COMMAND_FORCE_END_MARKER = Symbol("COMMAND_FORCE_END_MARKER");
 
 const DEFAULT_CHAR_CFG: CharConfiguration = {
-    specialChar: "◊",
+    specialChar: "@",
     commentMarkerChar: "%",
     openCurlyChar: "{",
     closeCurlyChar: "}",

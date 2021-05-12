@@ -50,6 +50,6 @@ export async function render(
 // What to do if no parameters are passed (this is useful for debugging with vscode)
 export function debugDefaultActions() {
     console.log("Calling compile");
-    render("test_scratch/test_cmd_0.lap", "html", "posix");
+    render("test_scratch/stress_test_0.lap", "html", "posix");
     console.log("Called compile, now wait for the promises!");
 }

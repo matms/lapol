@@ -8,7 +8,7 @@
  */
 
 import { Command } from "../command/command";
-import { DetNode, Str } from "../det";
+import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "../evaluate/environment";
 import { findModulePath, LapolModule } from "../module/module";
@@ -48,6 +48,10 @@ const quickImport = new QuickImportCommand();
 
 const commands = {
     quick_import: quickImport,
+    doc: doc,
     // import: "TODO",
-    // doc: "TODO",
 };
+
+function doc(arg1: DetNode[]): DetNode {
+    return new Expr("doc", arg1);
+}

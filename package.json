@@ -11,5 +11,8 @@
   "license": "UNLICENCED",
   "devDependencies": {
     "@types/node": "^15.0.1"
+  },
+  "dependencies": {
+    "lapol-rs": "file:../lapol-rs/pkg"
   }
 }
