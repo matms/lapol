@@ -1,15 +1,30 @@
 use nom::{
     branch::alt,
-    bytes::complete::{is_a, is_not, tag},
+    bytes::complete::{is_a, is_not, tag, take_while1},
     character::complete::{alpha1, alphanumeric1, anychar, multispace1, none_of},
-    combinator::{opt, peek, recognize, value},
+    combinator::{map, opt, peek, recognize, value},
     error::ParseError,
-    multi::many0,
-    sequence::{pair, preceded, tuple},
+    multi::{many0, separated_list0},
+    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
 
 use std::borrow::{Borrow, Cow};
+
+use std::fmt::Debug;
+
+#[derive(Debug)]
+pub enum SquareArg<'a> {
+    Val(SquareEntry<'a>),
+    KeyVal(SquareEntry<'a>, SquareEntry<'a>),
+}
+
+/// TODO: Introduce number (distinguish from ident).
+#[derive(Debug)]
+pub enum SquareEntry<'a> {
+    Ident(&'a str),
+    AstNode(AstNode<'a>),
+}
 
 #[derive(Debug)]
 pub enum AstNode<'a> {
@@ -18,7 +33,7 @@ pub enum AstNode<'a> {
     },
     AstCommandNode {
         command_name: &'a str,
-        square_arg: Option<Vec<AstNode<'a>>>,
+        square_args: Option<Vec<SquareArg<'a>>>,
         curly_args: Vec<Vec<AstNode<'a>>>,
     },
     AstTextNode {
@@ -131,7 +146,7 @@ fn generic_text<'a, E: ParseError<&'a str>>(
     ))
 }
 
-fn text<'a, E: ParseError<&'a str>>(
+fn text<'a, E: ParseError<&'a str> + Debug>(
     root_context: bool,
     em: &EscapeMatch,
     i: &'a str,
@@ -193,7 +208,7 @@ fn text<'a, E: ParseError<&'a str>>(
                 // Order matters!
                 one_newline,
                 |i| comment(em, i),
-                |i| command(em, i),
+                map(|i| command(em, i), |v| Some(v)),
                 generic_text,
             ))(rest)?;
 
@@ -299,7 +314,51 @@ fn one_newline<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Optio
     ))
 }
 
-fn curly_argument<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<AstNode<'a>>, E> {
+fn comma_sep<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E> {
+    value((), delimited(opt(multispace1), tag(","), opt(multispace1)))(i)
+}
+
+fn square_entry<'a, E: ParseError<&'a str> + Debug>(
+    i: &'a str,
+) -> IResult<&'a str, SquareEntry, E> {
+    delimited(
+        opt(multispace1),
+        alt((
+            map(identifier, |s| SquareEntry::Ident(s)),
+            map(
+                |i| command(&DEFAULT_ESCAPE_MATCH, i),
+                |c| SquareEntry::AstNode(c),
+            ),
+        )),
+        opt(multispace1),
+    )(i)
+}
+
+fn square_arg<'a, E: ParseError<&'a str> + Debug>(i: &'a str) -> IResult<&'a str, SquareArg, E> {
+    alt((
+        //
+        map(
+            separated_pair(
+                //
+                square_entry,
+                delimited(opt(multispace1), tag("="), opt(multispace1)),
+                square_entry,
+            ),
+            |p| SquareArg::KeyVal(p.0, p.1),
+        ),
+        map(square_entry, |e| SquareArg::Val(e)),
+    ))(i)
+}
+
+fn square_args<'a, E: ParseError<&'a str> + Debug>(
+    i: &'a str,
+) -> IResult<&'a str, Vec<SquareArg<'a>>, E> {
+    terminated(separated_list0(comma_sep, square_arg), opt(comma_sep))(i)
+}
+
+fn curly_argument<'a, E: ParseError<&'a str> + Debug>(
+    i: &'a str,
+) -> IResult<&'a str, Vec<AstNode<'a>>, E> {
     let (rest, (_, em)) = generic_open_curly(i)?;
     let (rest, nodes) = text(false, &em, rest)?;
     let (rest, _) = tag(em.close.borrow())(rest)?;
@@ -309,60 +368,137 @@ fn curly_argument<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Ve
 
 // From https://docs.rs/nom/6.1.2/nom/recipes/index.html#rust-style-identifiers
 fn identifier<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    recognize(pair(
+    /*recognize(pair(
         alt((alpha1, tag("_"))),
         many0(alt((alphanumeric1, tag("_")))),
-    ))(i)
+    ))(i)*/
+    take_while1(|c: char| {
+        // TODO: Expand?
+        c.is_ascii_alphanumeric() || c == '_'
+    })(i)
 }
 
-fn command<'a, E: ParseError<&'a str>>(
+fn command<'a, E: ParseError<&'a str> + Debug>(
     em: &EscapeMatch,
     i: &'a str,
-) -> IResult<&'a str, Option<AstNode<'a>>, E> {
-    let o = tuple((
-        //
-        tag(em.escape.borrow()),
-        tag("@"),
-        // Make sure this isn't a comment or a malformed @{} form.
-        peek(none_of("%|{")),
-        // Command Name
-        identifier,
-        // TODO: Square args
-        // One or more {}, ending in ;.
-        // TODO: Accept interspersed comments.
-        many0(preceded(
-            // Whitespace with potential comments
-            many0(alt((
-                |i| value((), multispace1)(i),
-                |i| value((), |i| comment(&DEFAULT_ESCAPE_MATCH, i))(i),
-            ))),
-            curly_argument,
-        )),
-        opt(preceded(
-            // Whitespace with potential comments
-            many0(alt((
-                |i| value((), multispace1)(i),
-                |i| value((), |i| comment(&DEFAULT_ESCAPE_MATCH, i))(i),
-            ))),
-            tag(";"),
-        )),
-    ))(i)?;
+) -> IResult<&'a str, AstNode<'a>, E> {
+    let (rest, _) = tag(em.escape.borrow())(i)?;
+    let (rest, _) = tag("@")(rest)?;
+    let (rest, _) = peek(none_of("%|{"))(rest)?;
+    // We can't just use ? because if a command fails to match, we don't
+    // want the command getting treated as some arbitrary text, we WANT a panic.
+    let (rest, o) = command_contents::<E>(rest).expect(
+        "Malformed command --- once the command syntax @ matches, a command being malformed is an error."
+    );
+    return Ok((rest, o));
+}
 
-    // println!("{:?}:", o);
+fn command_contents<'a, E: ParseError<&'a str> + Debug>(
+    i: &'a str,
+) -> IResult<&'a str, AstNode<'a>, E> {
+    let (rest, command_name) = identifier(i)?;
 
-    let (rest, (_, _, _, command_name, curly_args, _)) = o;
+    let (rest, end_here_opt) = opt(preceded(
+        // Whitespace with potential comments
+        many0(alt((
+            |i| value((), multispace1)(i),
+            |i| value((), |i| comment(&DEFAULT_ESCAPE_MATCH, i))(i),
+        ))),
+        tag(";"),
+    ))(rest)?;
+
+    if end_here_opt.is_some() {
+        return Ok((
+            rest,
+            AstNode::AstCommandNode {
+                command_name,
+                square_args: None,
+                curly_args: Vec::new(),
+            },
+        ));
+    }
+
+    let (rest, attempted_square_arg) = opt(preceded(
+        // Whitespace w/ potential comments
+        many0(alt((
+            |i| value((), multispace1)(i),
+            |i| value((), |i| comment(&DEFAULT_ESCAPE_MATCH, i))(i),
+        ))),
+        tag("["),
+    ))(rest)?;
+
+    let (rest, square_args) = if attempted_square_arg.is_some() {
+        let (rest, square_args) = square_args(rest)?;
+        let (rest, _) = tag("]")(rest)?;
+        (rest, Some(square_args))
+    } else {
+        (rest, None)
+    };
+
+    let (rest, end_here_opt) = opt(preceded(
+        // Whitespace with potential comments
+        many0(alt((
+            |i| value((), multispace1)(i),
+            |i| value((), |i| comment(&DEFAULT_ESCAPE_MATCH, i))(i),
+        ))),
+        tag(";"),
+    ))(rest)?;
+
+    if end_here_opt.is_some() {
+        return Ok((
+            rest,
+            AstNode::AstCommandNode {
+                command_name,
+                square_args,
+                curly_args: Vec::new(),
+            },
+        ));
+    }
+
+    let (rest, curly_args) = many0(preceded(
+        // Whitespace with potential comments
+        many0(alt((
+            |i| value((), multispace1)(i),
+            |i| value((), |i| comment(&DEFAULT_ESCAPE_MATCH, i))(i),
+        ))),
+        curly_argument,
+    ))(rest)?;
+
+    let (rest, _) = opt(preceded(
+        // Whitespace with potential comments
+        many0(alt((
+            |i| value((), multispace1)(i),
+            |i| value((), |i| comment(&DEFAULT_ESCAPE_MATCH, i))(i),
+        ))),
+        tag(";"),
+    ))(rest)?;
 
     Ok((
         rest,
-        Some(AstNode::AstCommandNode {
+        AstNode::AstCommandNode {
             command_name,
-            square_arg: None,
+            square_args,
             curly_args,
-        }),
+        },
     ))
+
+    // println!("{:?}:", o);
+
+    //let (rest, (_, _, _, command_name, square_args, curly_args, _)) = o;
+    /*
+    Ok((
+        rest,
+        AstNode::AstCommandNode {
+            command_name,
+            square_args,
+            curly_args,
+        },
+    )) */
 }
 
-pub fn parse_root<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, AstNode<'a>, E> {
+pub fn parse_root<'a, E: ParseError<&'a str> + Debug>(
+    i: &'a str,
+) -> IResult<&'a str, AstNode<'a>, E> {
     let (r, nodes) = text(true, &DEFAULT_ESCAPE_MATCH, i)?;
     assert!(r == ""); // We are at EOF.
     Ok((r, AstNode::AstRootNode { sub_nodes: nodes }))

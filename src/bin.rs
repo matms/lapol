@@ -32,7 +32,7 @@ pub fn main() {
     println!("Hello!");
 
     let path =
-        "X:\\programming\\programming\\LaPoL Project\\lapol-parse-rs\\parse_tests\\parse2.lap";
+        "X:\\programming\\programming\\LaPoL Project\\lapol-parse-rs\\parse_tests\\parse3.lap";
 
     //let path = "X:\\programming\\programming\\LaPoL Project\\lapol-parse-rs\\parse_tests\\stress_test_0.lap";
 
