@@ -16,10 +16,13 @@ path = "src/bin.rs"
 
 [dependencies]
 
+thiserror = "1.0"
 nom = { version = "6.1.2", features = ["alloc"] }
+serde = { version = "1.0", features = ["derive"] }
 
 [profile.release]
+
 opt-level = 3
 debug = true
-# Makes a non-negligible difference in performance (like probably 20%)
+# Makes a non-negligible difference in performance (like probably ~20%)
 lto="fat"
