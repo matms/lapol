@@ -66,4 +66,24 @@ impl<'a> MatchInProgress<'a> {
     pub fn num_chars_matched(&self) -> usize {
         return self.chars_matched;
     }
+
+    /// Match 0 or more whitespace, return number of whitespace characters matched.
+    pub fn match_whitespace(&mut self) -> usize {
+        let trimmed = self.source.trim_start();
+
+        let before_start = self.source.as_ptr();
+        let after_start = trimmed.as_ptr();
+        let diff = unsafe {after_start.offset_from(before_start) };
+
+        let (m, rest) = self.source.split_at(diff as usize);
+
+        self.curr_idx += m.len();
+
+        let whitespace_chars_matched = m.chars().count();
+        self.chars_matched += whitespace_chars_matched;
+        
+        self.source = rest;
+
+        whitespace_chars_matched
+    }
 }

@@ -9,7 +9,9 @@ pub(crate) enum TokenizerContext {
     LineComment,
     BlockComment,
     GenericCurlyStart,
-    // CommandName,
+    // Like GenericCurlyStart, but also matches command force end (probably ;)
+    GenericCurlyStartCommand,
+    CommandName,
     // CommandSquareArg,
     // Note that curly args are just text.
 }
@@ -46,6 +48,25 @@ impl TokenizerContext {
                     || c == tok_cfg.special_brace_char
                     || c == tok_cfg.open_curly_char
             }
+            TokenizerContext::GenericCurlyStartCommand => {
+                return c == '\r'
+                    || c == '\n'
+                    || c == tok_cfg.special_brace_char
+                    || c == tok_cfg.open_curly_char
+                    || c == tok_cfg.command_force_end_char
+            }
+            TokenizerContext::CommandName => {
+                return c == '\r'
+                    || c == '\n'
+                    || c == tok_cfg.special_char
+                    || c == tok_cfg.comment_marker_char // Comments aren't allowed in a command
+                    || c == tok_cfg.open_curly_char
+                    || c == tok_cfg.close_curly_char
+                    || c == tok_cfg.open_square_char
+                    || c == tok_cfg.close_square_char
+                    || c == tok_cfg.special_brace_char
+                    || c.is_whitespace(); // Whitespace ends a command.
+            }
         }
         /*
         return c == '\r'
@@ -76,7 +97,9 @@ impl TokenizerContext {
             TokenizerContext::Text => true,
             TokenizerContext::LineComment => false,
             TokenizerContext::BlockComment => false,
-            TokenizerContext::GenericCurlyStart => true, // TODO: Should this last one be false or true?
+            TokenizerContext::GenericCurlyStart => true, // TODO: Should this one be false or true?
+            TokenizerContext::GenericCurlyStartCommand => true,
+            TokenizerContext::CommandName => false, // No comments inside command name.
         }
     }
 
@@ -91,6 +114,8 @@ impl TokenizerContext {
             TokenizerContext::LineComment => false,
             TokenizerContext::BlockComment => false,
             TokenizerContext::GenericCurlyStart => true,
+            TokenizerContext::GenericCurlyStartCommand => true,
+            TokenizerContext::CommandName => false,
         }
     }
 
@@ -102,6 +127,8 @@ impl TokenizerContext {
             TokenizerContext::LineComment => false,
             TokenizerContext::BlockComment => true,
             TokenizerContext::GenericCurlyStart => false,
+            TokenizerContext::GenericCurlyStartCommand => false,
+            TokenizerContext::CommandName => false,
         }
     }
 
@@ -111,6 +138,30 @@ impl TokenizerContext {
             TokenizerContext::LineComment => false,
             TokenizerContext::BlockComment => true,
             TokenizerContext::GenericCurlyStart => false,
+            TokenizerContext::GenericCurlyStartCommand => false,
+            TokenizerContext::CommandName => false,
+        }
+    }
+
+    pub(crate) fn should_match_command_start(&self) -> bool {
+        match self {
+            TokenizerContext::Text => true,
+            TokenizerContext::LineComment => false,
+            TokenizerContext::BlockComment => false,
+            TokenizerContext::GenericCurlyStart => false, // TODO?
+            TokenizerContext::GenericCurlyStartCommand => false,
+            TokenizerContext::CommandName => false,
+        }
+    }
+
+    pub(crate) fn should_match_command_force_end(&self) -> bool {
+        match self {
+            TokenizerContext::Text => false,
+            TokenizerContext::LineComment => false,
+            TokenizerContext::BlockComment => false,
+            TokenizerContext::GenericCurlyStart => false, // TODO?
+            TokenizerContext::GenericCurlyStartCommand => true,
+            TokenizerContext::CommandName => false,
         }
     }
 }

@@ -54,7 +54,7 @@ pub fn parse_file_native(file_path: &str) {
 
     let mut parser = Parser::new(tokenizer);
 
-    let root_node = parser.parse().unwrap();
+    let _root_node = parser.parse().unwrap();
 
-    println!("root node dbg: {:#?}", root_node);
+    println!("root node dbg: {:#?}", _root_node);
 }

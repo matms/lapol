@@ -96,7 +96,8 @@ impl<'a> Parser<'a> {
                         source_start_col: curr_col,
                     }),
                     Token::CommandStartMarker(_) => {
-                        todo!()
+                        let c = self.parse_command()?;
+                        add_to_contents(c);
                     }
                     Token::BlockCommentStartMarker(_) => {
                         self.parse_block_comment()?;
@@ -110,7 +111,7 @@ impl<'a> Parser<'a> {
                             content: Cow::from(n),
                             source_start_line: curr_line,
                             source_start_col: curr_col,
-                        })
+                        });
                     }
                     Token::CloseCurly(n) => {
                         curly_bal -= 1;
@@ -132,7 +133,7 @@ impl<'a> Parser<'a> {
                                 content: Cow::from(n),
                                 source_start_line: curr_line,
                                 source_start_col: curr_col,
-                            })
+                            });
                         }
                     }
                     // These should not be emitted in Text context, instead normal Text(_) should
@@ -151,6 +152,34 @@ impl<'a> Parser<'a> {
         debug_assert!(matches!(_ctx, Some((TokenizerContext::Text, _))));
 
         Ok(contents)
+    }
+
+    fn parse_command(&mut self) -> Result<AstNode<'a>, ParserError> {
+        self.tokenizer.push_context(
+            TokenizerContext::CommandName,
+            self.tokenizer.get_escape_match(None),
+        );
+        let cmd_name = self.tokenizer.next();
+        let cmd_name = if let Some(Ok(Token::Text(cmd))) = cmd_name {
+            cmd
+        } else {
+            return Err(ParserError::UnexpectedToken(format!(
+                "Unexpected token {:?}",
+                cmd_name
+            )));
+        };
+        self.tokenizer.pop_context();
+
+        // TODO square args.
+
+        
+        // parse curly args.
+        // stop at any moment if semicolon.
+        Ok(AstNode::AstCommandNode {
+            command_name: cmd_name,
+            square_arg: None,
+            curly_args: Vec::new(),
+        })
     }
 
     fn parse_line_comment(&mut self) -> Result<(), ParserError> {

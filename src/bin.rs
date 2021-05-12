@@ -12,12 +12,10 @@ pub fn main() {
 
     let path = "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\parse2.lap";
 
-    /*
-    let path =
-        "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\stress_test_0.lap";
-    */
+    /*let path =
+    "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\stress_test_0.lap";*/
 
-    //while (true) {
+    //loop {
     let parse_start = Instant::now();
     parse::parse_file_native(path);
     let parse_dur = parse_start.elapsed();

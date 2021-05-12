@@ -221,9 +221,12 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn match_generic_open_curly(&mut self) -> Option<Result<Token<'a>, TokenizerError>> {
-        let start_idx = self.next_char_idx();
-
         let mut m = self.start_match();
+
+        let whitespace_chars = m.match_whitespace();
+        self.char_it_next_many(whitespace_chars);
+
+        let start_after_whitespace_idx = self.next_char_idx();
 
         if m.perform_match_char(&self.tok_cfg.special_brace_char) {
             todo!("Escaped Curly!")
@@ -231,7 +234,8 @@ impl<'a> Tokenizer<'a> {
             debug_assert!(m.num_chars_matched() == 1);
             self.char_it_next();
             Some(Ok(Token::OpenCurly(
-                self.text.get(start_idx..self.next_char_idx())?,
+                self.text
+                    .get(start_after_whitespace_idx..self.next_char_idx())?,
             )))
         } else {
             None
@@ -269,13 +273,50 @@ impl<'a> Tokenizer<'a> {
 
         None
     }
+
+    /// Note: Must be called AFTER match_start_comment.
+    fn match_command_start(&mut self) -> Option<Result<Token<'a>, TokenizerError>> {
+        let ec = self.curr_escape_ctx();
+        let start_idx = self.next_char_idx();
+
+        let mut m = self.start_match();
+
+        if m.perform_match(&ec.special) {
+            // We assume match_start_comment has already been tried and failed.
+            debug_assert!(!m.can_match_char(&self.tok_cfg.comment_marker_char));
+            self.char_it_next_many(m.num_chars_matched());
+            return Some(Ok(Token::CommandStartMarker(
+                self.text.get(start_idx..self.next_char_idx())?,
+            )));
+        }
+
+        None
+    }
+
+    fn match_command_force_end(&mut self) -> Option<Result<Token<'a>, TokenizerError>> {
+        let mut m = self.start_match();
+
+        let whitespace_chars = m.match_whitespace();
+        self.char_it_next_many(whitespace_chars);
+
+        let start_after_whitespace_idx = self.next_char_idx();
+
+        if m.perform_match_char(&self.tok_cfg.command_force_end_char) {
+            self.char_it_next_many(m.num_chars_matched());
+            return Some(Ok(Token::CommandForceEndMarker(
+                self.text.get(start_after_whitespace_idx..self.next_char_idx())?,
+            )));
+        }
+
+        None
+    }
 }
 
 macro_rules! gen_match {
     (
         $curr_tok_ctx: ident,
         $self: ident,
-        [ $(($should:ident, $mat:ident)),* ]  
+        [ $(($should:ident, $mat:ident)),* ]
     ) =>
     {
         $(
@@ -300,13 +341,20 @@ impl<'a> Iterator for Tokenizer<'a> {
 
         let curr_tok_ctx = *self.ctx_stack.last().unwrap();
 
-        gen_match!(curr_tok_ctx, self, 
-            [(should_match_crlf, match_crlf),
-             (should_match_newline, match_newline),
-             (should_match_comments, match_start_comment),
-             (should_match_generic_open_curly, match_generic_open_curly),
-             (should_match_open_curly, match_open_curly),
-             (should_match_close_curly, match_close_curly)]);
+        gen_match!(
+            curr_tok_ctx,
+            self,
+            [
+                (should_match_crlf, match_crlf),
+                (should_match_newline, match_newline),
+                (should_match_comments, match_start_comment),
+                (should_match_generic_open_curly, match_generic_open_curly),
+                (should_match_open_curly, match_open_curly),
+                (should_match_close_curly, match_close_curly),
+                (should_match_command_start, match_command_start),
+                (should_match_command_force_end, match_command_force_end)
+            ]
+        );
 
         // Text
         if let Some((start_idx, _)) = self.char_it_next() {

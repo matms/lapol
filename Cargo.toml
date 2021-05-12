@@ -14,6 +14,8 @@ path = "src/bin.rs"
 default = ["console_error_panic_hook"]
 
 [dependencies]
+lapol-parse-rs = {path = "../lapol-parse-rs"}
+
 wasm-bindgen = {version = "0.2.63", features = ["serde-serialize"] }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
