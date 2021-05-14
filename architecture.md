@@ -14,10 +14,13 @@ The compilation of a file is split into the follwing steps:
 The user is able to customize all the three passes, but is limited in their ability to customize
 the parsing step.
 
-Parsing is implemented by `lapol-rs`, which is compiled to WebAssembly.
+Parsing is implemented by `lapol-parse-rs`, which is used by `lapol-rs`. `lapol-rs` calls the parser
+(from `lapol-parse-rs`), then serializes the data
+(using `Serde`) into JSON, which is sent over to
+`lapol`.
 
-Evaluation, Processing and Output are implemented by this repo, `lapol`, and are very customizable
-by the lapol user.
+Evaluation, Processing and Output are implemented by this repo, `lapol`, and are meant to be
+very easily customizable by the lapol user.
 
 ## Parsing
 

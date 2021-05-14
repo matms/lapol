@@ -1,10 +1,11 @@
+import { parse_file } from "lapol-rs";
+import { strict as assert } from "assert";
 import { AstRootNode } from "./ast";
 import { DetNode } from "./det";
 import { evaluateAst } from "./evaluate/evaluate";
 import { outputDet, OutputData } from "./output/output";
-import { parse } from "./parse/parse";
 import { processDet } from "./process/process";
-import { readFile, writeFile } from "./utils";
+import { readFile, readFileBuffer, writeFile } from "./utils";
 
 export interface CompileInput {
     inputFilePath: string;
@@ -14,7 +15,7 @@ export interface CompileInput {
 
 export interface CompileOutput {
     dbgTimingInfo: string;
-    dbgInputText: string;
+    dbgInputText: Buffer;
     dbgParsed: AstRootNode;
     dbgEvaluated: DetNode;
     dbgProcessed: DetNode;
@@ -23,9 +24,10 @@ export interface CompileOutput {
 
 export async function compile(c: CompileInput): Promise<CompileOutput> {
     let t1 = Date.now();
-    let text = await readFile(c.inputFilePath);
+    let text_buf = await readFileBuffer(c.inputFilePath);
     let t2 = Date.now();
-    let parsed = await parse(text);
+    let parsed = parse_file(c.inputFilePath, text_buf) as AstRootNode;
+    assert(parsed.t === "AstRootNode");
     let t3 = Date.now();
     let evaluated = await evaluateAst(parsed);
     let t4 = Date.now();
@@ -47,7 +49,7 @@ export async function compile(c: CompileInput): Promise<CompileOutput> {
 
     return {
         dbgTimingInfo: dbgTimingInfo,
-        dbgInputText: text,
+        dbgInputText: text_buf,
         dbgParsed: parsed,
         dbgEvaluated: evaluated,
         dbgProcessed: processed,

@@ -19,7 +19,7 @@ export interface AstRootNode {
 }
 
 export enum AstNodeKind {
-    AstStrNode = "AstStrNode",
+    AstTextNode = "AstTextNode",
     AstCommandNode = "AstCommandNode",
     AstRootNode = "AstRootNode",
 }

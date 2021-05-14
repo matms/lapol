@@ -4,7 +4,7 @@
  */
 
 import { strict as assert } from "assert";
-import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstStrNode } from "../ast";
+import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstTextNode } from "../ast";
 import { Command } from "../command/command";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
@@ -35,14 +35,14 @@ export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
  * Note this function dispatches to `evaluate*` (e.g. `evaluateRoot`, `evaluateCommand`, etc.).
  */
 function evaluateNode(node: AstNode, env: Environment): DetNode {
-    switch (node.kind) {
+    switch (node.t) {
         case AstNodeKind.AstRootNode:
             return evaluateRoot(node, env);
             break;
         case AstNodeKind.AstCommandNode:
             return evaluateCommand(node, env);
             break;
-        case AstNodeKind.AstStrNode:
+        case AstNodeKind.AstTextNode:
             return evaluateStrNode(node, env);
         default:
             throw new LapolError("Ast Node Kind Unknown or cannot be directly evaluated.");
@@ -50,12 +50,12 @@ function evaluateNode(node: AstNode, env: Environment): DetNode {
 }
 
 function evaluateRoot(rootNode: AstRootNode, env: Environment): Expr {
-    assert(rootNode.kind === AstNodeKind.AstRootNode);
+    assert(rootNode.t === AstNodeKind.AstRootNode);
     return new Expr("root", evaluateNodeArray(rootNode.subNodes, env));
 }
 
 function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode {
-    assert(commandNode.kind === AstNodeKind.AstCommandNode);
+    assert(commandNode.t === AstNodeKind.AstCommandNode);
 
     let command = env.lookupCommand(commandNode.commandName);
 
@@ -83,8 +83,8 @@ function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode
     } else return out;
 }
 
-function evaluateStrNode(strNode: AstStrNode, env: Environment): Str {
-    assert(strNode.kind === AstNodeKind.AstStrNode);
+function evaluateStrNode(strNode: AstTextNode, env: Environment): Str {
+    assert(strNode.t === AstNodeKind.AstTextNode);
     return new Str(strNode.content);
 }
 

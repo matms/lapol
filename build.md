@@ -2,8 +2,9 @@
 
 ## Setup Dependecies
 
-To be able to use `lapol-rs` properly, as it is set up out of the box, you should place
-the `lapol-rs` folder BESIDES the `lapol` folder (see `package.json`'s dependencies).
+To be able to use `lapol-rs` properly, as it is set up out of the box, you should place both
+the `lapol-rs` folder and the `lapol-parse-rs` folder BESIDES the `lapol` folder
+(see `package.json`'s dependencies).
 
 You will want to build `lapol-rs` first, so see its `build.md` file.
 
@@ -27,8 +28,6 @@ To profile:
 `node --inspect ".\build\main.js" profile ".\test_scratch\stress_test_0.lap"`
 
 then use the debugger profiler (in the call stack tab).
-
-Check out: https://itnext.io/a-workerpool-from-scratch-in-typescript-and-node-c4352106ffde
 
 ## Using Chrome to profile (Line by Line profiling)
 

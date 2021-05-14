@@ -1,13 +1,6 @@
 import { debugDefaultActions, render } from "./internal/run";
-import {
-    init as lapol_rs_init,
-    greet,
-    parse_file,
-    receiveVal,
-    receiveStr,
-    receiveBuffer,
-} from "lapol-rs";
-import { readFile, readFileBuffer } from "./internal/utils";
+import { init as lapol_rs_init, parse_file } from "lapol-rs";
+import { readFileBuffer } from "./internal/utils";
 
 export async function consoleMain() {
     console.log("Hello, LaPoL!");
@@ -38,8 +31,7 @@ export async function consoleMain() {
 }
 
 async function test_rust() {
-    let path =
-        "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\stress_test_0.lap";
+    let path = "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\parse.lap";
 
     let tr = Date.now();
     let f = await readFileBuffer(path);
@@ -53,6 +45,8 @@ async function test_rust() {
 
     console.log(`NOTE: Rust parser Took time ${t2 - t1} millis`);
 
+    console.log(out);
+
     console.log("Bye!");
 }
 
@@ -60,7 +54,7 @@ lapol_rs_init();
 
 async function stress() {
     //while (true) {
-    await test_rust();
+    // await test_rust();
     await consoleMain();
     //}
 }
