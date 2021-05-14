@@ -6,7 +6,7 @@
 //
 // Original file link: https://github.com/Geal/nom/blob/8e09f0c3029d32421b5b69fb798cef6855d0c8df/examples/string.rs
 //
-// Original file licenced under MIT 
+// Original file licenced under MIT
 // (see https://github.com/Geal/nom/blob/master/LICENSE)
 //
 // =============================================================================
@@ -27,7 +27,7 @@
 extern crate nom;
 
 use nom::branch::alt;
-use nom::bytes::streaming::{is_not, take_while_m_n};
+use nom::bytes::streaming::{is_not, tag, take_while_m_n};
 use nom::character::streaming::{char, multispace1};
 use nom::combinator::{map, map_opt, map_res, value, verify};
 use nom::error::{FromExternalError, ParseError};
@@ -111,7 +111,8 @@ fn parse_escaped_whitespace<'a, E: ParseError<&'a str>>(
 fn parse_literal<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'a str, E> {
     // `is_not` parses a string of 0 or more characters that aren't one of the
     // given characters.
-    let not_quote_slash = is_not("\"\\");
+    // << CHANGE: Added \r break >>>
+    let not_quote_slash = is_not("\"\\\r");
 
     // `verify` runs a parser, then runs a verification function on the output of
     // the parser. The verification function accepts out output only if it
@@ -142,6 +143,7 @@ where
         map(parse_literal, StringFragment::Literal),
         map(parse_escaped_char, StringFragment::EscapedChar),
         value(StringFragment::EscapedWS, parse_escaped_whitespace),
+        value(StringFragment::Literal("\n"), tag("\r\n")),
     ))(input)
 }
 
