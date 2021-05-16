@@ -5,3 +5,4 @@ test_scratch
 md_style
 workspace.code-workspace
 notes_and_todo.md
+samples/out/*

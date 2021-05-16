@@ -11,47 +11,32 @@ import { Command } from "../command/command";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "../evaluate/environment";
-import { findModulePath, LapolModule } from "../module/module";
-import { ModuleLoader } from "../module/mod_utils";
+import { ModuleLoader } from "../module/loader";
 
 export function load(loader: ModuleLoader) {
     loader.exportCommands(commands);
 }
 
 /** The first argument is the file to load, the second is the module name. */
-class QuickImportCommand extends Command {
+class RequireCommand extends Command {
     constructor() {
         super("Other", "quick_import");
     }
     call(args: DetNode[][], env: Environment): undefined {
-        if (args.length !== 2) {
-            throw new LapolError(`${this._name} arity mismatch.`);
-        }
-
-        if (args[0].length !== 1 || !(args[0][0] instanceof Str))
-            throw new LapolError(`${this._name}: bad argument.`);
-        if (args[1].length !== 1 || !(args[1][0] instanceof Str))
-            throw new LapolError(`${this._name}: bad argument.`);
-
-        let mod_file = (args[0][0] as Str).text.trim();
-        let mod_name = (args[1][0] as Str).text.trim();
-
-        // TODO: Is using sync here a big performance downgrade?
-        // Can I avoid this with worker threads???
-        env.loadModule(mod_name, LapolModule.loadModuleFileSync(findModulePath(mod_file)));
-
-        return undefined;
+        throw new LapolError(
+            "__require shouldn't be evaluated, it is a special command. Probably you attempted to use __require within __doc, which is an error."
+        );
     }
 }
 
-const quickImport = new QuickImportCommand();
+const requireCommand = new RequireCommand();
 
 const commands = {
-    quick_import: quickImport,
-    doc: doc,
+    __require: requireCommand,
+    __doc: __doc,
     // import: "TODO",
 };
 
-function doc(arg1: DetNode[]): DetNode {
+function __doc(arg1: DetNode[]): DetNode {
     return new Expr("doc", arg1);
 }

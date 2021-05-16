@@ -5,7 +5,8 @@ import { DetNode } from "./det";
 import { evaluateAst } from "./evaluate/evaluate";
 import { outputDet, OutputData } from "./output/output";
 import { processDet } from "./process/process";
-import { readFile, readFileBuffer, writeFile } from "./utils";
+import { readFileBuffer, writeFile } from "./utils";
+import { LapolContext } from "./context";
 
 export interface CompileInput {
     inputFilePath: string;
@@ -22,14 +23,14 @@ export interface CompileOutput {
     dbgOutputted: OutputData;
 }
 
-export async function compile(c: CompileInput): Promise<CompileOutput> {
+export async function compile(c: CompileInput, lctx: LapolContext): Promise<CompileOutput> {
     let t1 = Date.now();
     let text_buf = await readFileBuffer(c.inputFilePath);
     let t2 = Date.now();
     let parsed = parse_file(c.inputFilePath, text_buf) as AstRootNode;
     assert(parsed.t === "AstRootNode");
     let t3 = Date.now();
-    let evaluated = await evaluateAst(parsed);
+    let evaluated = await evaluateAst(parsed, lctx, c.inputFilePath);
     let t4 = Date.now();
     let processed = await processDet(evaluated);
     let t5 = Date.now();

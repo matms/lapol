@@ -6,10 +6,11 @@
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstTextNode } from "../ast";
 import { Command } from "../command/command";
+import { LapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
-import { findDefaultModulePath, LapolModule } from "../module/module";
 import { Environment } from "./environment";
+import { evaluateRoot } from "./root";
 
 /** Evaluate the Abstract Syntax Tree.
  *
@@ -21,12 +22,12 @@ import { Environment } from "./environment";
  *
  * TODO: Should default modules be loaded statically?
  */
-export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
-    let env = new Environment();
-    let defaultModule = await LapolModule.loadModuleFile(findDefaultModulePath("core"));
-    env.loadModule("default", defaultModule);
-
-    let out = evaluateNode(node, env);
+export async function evaluateAst(
+    node: AstRootNode,
+    lctx: LapolContext,
+    filePath: string
+): Promise<DetNode> {
+    let out = await evaluateRoot(node, lctx, filePath);
     return out;
 }
 
@@ -34,10 +35,10 @@ export async function evaluateAst(node: AstRootNode): Promise<DetNode> {
  *
  * Note this function dispatches to `evaluate*` (e.g. `evaluateRoot`, `evaluateCommand`, etc.).
  */
-function evaluateNode(node: AstNode, env: Environment): DetNode {
+export function evaluateNode(node: AstNode, env: Environment): DetNode {
     switch (node.t) {
         case AstNodeKind.AstRootNode:
-            return evaluateRoot(node, env);
+            throw new LapolError("evaluateRoot should be called directly.");
             break;
         case AstNodeKind.AstCommandNode:
             return evaluateCommand(node, env);
@@ -47,11 +48,6 @@ function evaluateNode(node: AstNode, env: Environment): DetNode {
         default:
             throw new LapolError("Ast Node Kind Unknown or cannot be directly evaluated.");
     }
-}
-
-function evaluateRoot(rootNode: AstRootNode, env: Environment): Expr {
-    assert(rootNode.t === AstNodeKind.AstRootNode);
-    return new Expr("root", evaluateNodeArray(rootNode.subNodes, env));
 }
 
 function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode {

@@ -1,17 +1,28 @@
 import { compile } from "./compile";
 import * as nodePath from "path";
 import { LapolError } from "./errors";
+import { initGlobalLapoLContext } from "./context";
+import { outFilePath } from "./utils";
 
 export async function compileDbg(inFilePath: string, outFilePath: string) {
     console.log("\n====== Starting to compile ======\n");
 
-    let o = await compile({
-        inputFilePath: inFilePath,
-        outputFilePath: outFilePath,
-        targetLanguage: "html",
-    });
+    let lctx = initGlobalLapoLContext();
 
-    console.log(`\nFinished compiling '${inFilePath}', outputted to '${outFilePath}'.\n`);
+    let o = await compile(
+        {
+            inputFilePath: nodePath.resolve(inFilePath),
+            outputFilePath: outFilePath,
+            targetLanguage: "html",
+        },
+        lctx
+    );
+
+    console.log(
+        `\nFinished compiling '${inFilePath}' (${nodePath.resolve(
+            inFilePath
+        )}), outputted to '${outFilePath}'.\n`
+    );
 
     console.log(o.dbgTimingInfo);
 
@@ -23,25 +34,7 @@ export async function render(
     target: string = "html",
     forcePathKind?: "windows" | "posix" | undefined
 ) {
-    // TODO: Currently, if folder 'out' does not exist, this gives an error. So, create the folder
-    // out automatically, if it doesn't exist.
-    function outFilePath(inFilePath: string) {
-        if (forcePathKind === "windows") {
-            let p = nodePath.win32.parse(inFilePath);
-            let sep = nodePath.win32.sep;
-            return p.root + p.dir + sep + "out" + sep + p.name + "." + target;
-        } else if (forcePathKind === "posix") {
-            let p = nodePath.posix.parse(inFilePath);
-            let sep = nodePath.posix.sep;
-            return p.root + p.dir + sep + "out" + sep + p.name + "." + target;
-        } else {
-            let p = nodePath.parse(inFilePath);
-            let sep = nodePath.sep;
-            return p.root + p.dir + sep + "out" + sep + p.name + "." + target;
-        }
-    }
-
-    let ofp = outFilePath(filePath);
+    let ofp = outFilePath(filePath, target, forcePathKind);
     console.log(`Will render ${filePath} to ${ofp}`);
     await compileDbg(filePath, ofp);
     console.log("Done!");

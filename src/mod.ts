@@ -4,4 +4,4 @@
 export { Command } from "./internal/command/command";
 export { DetNode, Str, Expr, Data } from "./internal/det";
 export { Environment } from "./internal/evaluate/environment";
-export { ModuleLoader } from "./internal/module/mod_utils";
+export { ModuleLoader } from "./internal/module/loader";
