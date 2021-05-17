@@ -7,7 +7,13 @@
     100, 120
     ],
     "cSpell.words": [
+        "Serde",
+        "jsxdev",
         "lapol",
-        "lctx"
-    ]
+        "lctx",
+        "matms",
+        
+        "xnnnnnnnnnnnn"
+    ],
+    "eslint.lintTask.enable": true
 }

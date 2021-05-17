@@ -8,10 +8,15 @@
     "start": "node build/main.js"
   },
   "author": "matms",
-  "license": "UNLICENCED",
+  "license": "UNLICENSED",
   "devDependencies": {
     "@types/mkdirp": "^1.0.1",
-    "@types/node": "^15.0.1"
+    "@types/node": "^15.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.24.0",
+    "@typescript-eslint/parser": "^4.24.0",
+    "eslint": "^7.26.0",
+    "eslint-plugin-only-warn": "^1.0.2",
+    "typescript": "^4.2.4"
   },
   "dependencies": {
     "lapol-rs": "file:../lapol-rs/pkg",
