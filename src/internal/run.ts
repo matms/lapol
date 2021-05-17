@@ -1,6 +1,5 @@
 import { compile } from "./compile";
 import * as nodePath from "path";
-import { LapolError } from "./errors";
 import { initGlobalLapoLContext } from "./context";
 import { outFilePath } from "./utils";
 

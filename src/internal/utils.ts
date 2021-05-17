@@ -1,17 +1,30 @@
 import { promises as fsp } from "fs";
+import mkdirp from "mkdirp";
 import * as nodePath from "path";
+import { LaPath } from "./la_path";
 
-export async function readFile(filePath: string): Promise<string> {
-    return await fsp.readFile(filePath, { encoding: "utf8", flag: "r" });
+/** WARNING: Promises are truthy, I think. MAKE SURE TO AWAIT THIS! */
+export async function canAccess(filePath: LaPath): Promise<boolean> {
+    try {
+        await fsp.access(filePath.fullPath);
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
-export async function readFileBuffer(filePath: string): Promise<Buffer> {
-    return await fsp.readFile(filePath, { encoding: null, flag: "r" });
+export async function readFile(filePath: LaPath): Promise<string> {
+    return await fsp.readFile(filePath.fullPath, { encoding: "utf8", flag: "r" });
 }
 
-export async function writeFile(filePath: string, data: string) {
+export async function readFileBuffer(filePath: LaPath): Promise<Buffer> {
+    return await fsp.readFile(filePath.fullPath, { encoding: null, flag: "r" });
+}
+
+export async function writeFile(filePath: LaPath, data: string) {
+    await mkdirp(filePath.parsed.dir);
     // await fsp.writeFile(filePath, data, { encoding: "utf8" });
-    await fsp.writeFile(filePath, data);
+    await fsp.writeFile(filePath.fullPath, data);
 }
 
 /** Return true iff `str` is comprised solely of whitespace characters.
@@ -42,21 +55,5 @@ export function outFilePath(
         let p = nodePath.parse(inFilePath);
         let sep = nodePath.sep;
         return p.dir + sep + "out" + sep + p.name + "." + targetExt;
-    }
-}
-
-export function anonModPath(inFilePath: string, forcePathKind?: "windows" | "posix" | undefined) {
-    if (forcePathKind === "windows") {
-        let p = nodePath.win32.parse(inFilePath);
-        let sep = nodePath.win32.sep;
-        return p.dir + sep + p.name + "." + "js";
-    } else if (forcePathKind === "posix") {
-        let p = nodePath.posix.parse(inFilePath);
-        let sep = nodePath.posix.sep;
-        return p.dir + sep + p.name + "." + "js";
-    } else {
-        let p = nodePath.parse(inFilePath);
-        let sep = nodePath.sep;
-        return p.dir + sep + p.name + "." + "js";
     }
 }

@@ -7,6 +7,7 @@ import { outputDet, OutputData } from "./output/output";
 import { processDet } from "./process/process";
 import { readFileBuffer, writeFile } from "./utils";
 import { LapolContext } from "./context";
+import { LaPath } from "./la_path";
 
 export interface CompileInput {
     inputFilePath: string;
@@ -25,7 +26,7 @@ export interface CompileOutput {
 
 export async function compile(c: CompileInput, lctx: LapolContext): Promise<CompileOutput> {
     let t1 = Date.now();
-    let text_buf = await readFileBuffer(c.inputFilePath);
+    let text_buf = await readFileBuffer(new LaPath(c.inputFilePath));
     let t2 = Date.now();
     let parsed = parse_file(c.inputFilePath, text_buf) as AstRootNode;
     assert(parsed.t === "AstRootNode");
@@ -36,7 +37,7 @@ export async function compile(c: CompileInput, lctx: LapolContext): Promise<Comp
     let t5 = Date.now();
     let output = await outputDet(processed, c.targetLanguage);
     let t6 = Date.now();
-    await writeFile(c.outputFilePath, output.str);
+    await writeFile(new LaPath(c.outputFilePath), output.str);
     let t7 = Date.now();
 
     let dbgTimingInfo =

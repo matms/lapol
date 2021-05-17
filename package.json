@@ -10,9 +10,11 @@
   "author": "matms",
   "license": "UNLICENCED",
   "devDependencies": {
+    "@types/mkdirp": "^1.0.1",
     "@types/node": "^15.0.1"
   },
   "dependencies": {
-    "lapol-rs": "file:../lapol-rs/pkg"
+    "lapol-rs": "file:../lapol-rs/pkg",
+    "mkdirp": "^1.0.4"
   }
 }

@@ -4,8 +4,10 @@ import { Command } from "../command/command";
 import { LapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
+import { LaPath } from "../la_path";
+import { procureAnonMod } from "../module/find/find";
 import { resolveModule, resolveModuleFromPath } from "../module/module";
-import { anonModPath, isWhitespace } from "../utils";
+import { isWhitespace } from "../utils";
 import { Environment } from "./environment";
 import { evaluateNode } from "./evaluate";
 
@@ -51,8 +53,8 @@ export async function evaluateRoot(
     lctx: LapolContext,
     filePath: string
 ): Promise<Expr> {
-    function getAnonModPath(): string {
-        return anonModPath(filePath);
+    async function getAnonModPath(): Promise<string> {
+        return (await procureAnonMod(new LaPath(filePath))).fullPath;
     }
 
     let t0 = Date.now();
@@ -69,11 +71,11 @@ export async function evaluateRoot(
 
     let modulesToLoad = [resolveModule("std:core")];
 
-    let requiredModules = header
+    let requiredModulesP = header
         .filter((n) => n.commandName === "__require")
-        .map((n) => {
+        .map(async (n) => {
             if (n.curlyArgs.length === 0) {
-                let identifier = resolveModuleFromPath(getAnonModPath(), "__require_anon");
+                let identifier = resolveModuleFromPath(await getAnonModPath(), "__require_anon");
                 return identifier;
             } else {
                 assert(n.curlyArgs.length === 1);
@@ -85,6 +87,8 @@ export async function evaluateRoot(
                 return identifier;
             }
         });
+
+    let requiredModules = await Promise.all(requiredModulesP);
 
     modulesToLoad.push(...requiredModules);
 

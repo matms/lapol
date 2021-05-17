@@ -6,3 +6,6 @@ md_style
 workspace.code-workspace
 notes_and_todo.md
 samples/out/*
+tsconfig.tsbuildinfo
+samples/*/out/*
+samples/*/.lapol/*

@@ -1,6 +1,5 @@
-import { debugDefaultActions, render } from "./internal/run";
-import { init as lapol_rs_init, parse_file } from "lapol-rs";
-import { readFileBuffer } from "./internal/utils";
+import { render } from "./internal/run";
+import { init as lapol_rs_init } from "lapol-rs";
 
 export async function consoleMain() {
     console.log("Hello, LaPoL!");
@@ -10,9 +9,7 @@ export async function consoleMain() {
     console.log(args);
 
     if (args.length === 0) {
-        console.log("No arguments passed, using default debug mode");
-
-        debugDefaultActions();
+        console.log("No arguments passed, so not doing anything, I think (?)");
     } else {
         if (args[0] === "render") {
             if (args.length !== 2) {
@@ -30,33 +27,15 @@ export async function consoleMain() {
     }
 }
 
-async function test_rust() {
-    let path = "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\parse.lap";
-
-    let tr = Date.now();
-    let f = await readFileBuffer(path);
-    let tr2 = Date.now();
-
-    console.log(`NOTE: Reading buffer for rust took time ${tr2 - tr} millis.`);
-
-    let t1 = Date.now();
-    let out = parse_file(path, f);
-    let t2 = Date.now();
-
-    console.log(`NOTE: Rust parser Took time ${t2 - t1} millis`);
-
-    console.log(out);
-
-    console.log("Bye!");
-}
-
 lapol_rs_init();
 
+consoleMain();
+
+/*
 async function stress() {
     //while (true) {
     // await test_rust();
     await consoleMain();
     //}
 }
-
-stress();
+*/
