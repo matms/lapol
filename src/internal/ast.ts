@@ -1,9 +1,16 @@
 //! These are _manually_ generated from rust
 //! See lapol-parse-rs file ast.rs for details on these types.
 
+export interface AstNodeMeta {
+    startOffset: number;
+    startLine: number;
+    startCol: number;
+}
+
 export interface AstTextNode {
     t: "AstTextNode";
     content: string;
+    meta: AstNodeMeta;
 }
 
 export interface AstCommandNode {
@@ -11,11 +18,13 @@ export interface AstCommandNode {
     commandName: string;
     squareArgs: SquareArg[] | null;
     curlyArgs: AstNode[][];
+    meta: AstNodeMeta;
 }
 
 export interface AstRootNode {
     t: "AstRootNode";
     subNodes: AstNode[];
+    meta: AstNodeMeta;
 }
 
 export enum AstNodeKind {
