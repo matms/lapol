@@ -15,10 +15,13 @@ use std::borrow::{Borrow, Cow};
 
 use std::fmt::Debug;
 
+use crate::{ast, parse::ast_meta_utils::ast_meta_from_span};
+
 use self::string::parse_string;
 
 use super::ast::{AstNode, SquareArg, SquareEntry};
 
+mod ast_meta_utils;
 mod identifier;
 mod string;
 
@@ -125,6 +128,7 @@ fn generic_text<'a, E: ParseError<Span<'a>>>(
         rest,
         Some(AstNode::AstTextNode {
             content: Cow::Borrowed(matched),
+            meta: ast_meta_from_span(i),
         }),
     ))
 }
@@ -170,6 +174,7 @@ fn text<'a, E: ParseError<Span<'a>> + Debug>(
             rest = r;
             add_to_contents(AstNode::AstTextNode {
                 content: Cow::Borrowed(t.fragment()),
+                meta: ast_meta_from_span(t),
             });
         } else if let Ok((r, t)) = rec_close(rest) {
             brace_balance -= 1;
@@ -179,6 +184,7 @@ fn text<'a, E: ParseError<Span<'a>> + Debug>(
                 rest = r;
                 add_to_contents(AstNode::AstTextNode {
                     content: Cow::Borrowed(t.fragment()),
+                    meta: ast_meta_from_span(t),
                 });
             }
         } else {
@@ -293,6 +299,7 @@ fn one_newline<'a, E: ParseError<Span<'a>>>(i: Span<'a>) -> IResult<Span<'a>, Op
         r,
         Some(AstNode::AstTextNode {
             content: Cow::Borrowed(m.fragment()),
+            meta: ast_meta_from_span(m),
         }),
     ))
 }
@@ -368,13 +375,15 @@ fn command<'a, E: ParseError<Span<'a>> + Debug>(
     let (rest, _) = peek(none_of("%|{"))(rest)?;
     // We can't just use ? because if a command fails to match, we don't
     // want the command getting treated as some arbitrary text, we WANT a panic.
-    let (rest, o) = command_contents::<E>(rest).expect(
+    let (rest, o) = command_contents::<E>(i, rest).expect(
         "Malformed command --- once the command syntax @ matches, a command being malformed is an error."
     );
     return Ok((rest, o));
 }
 
+/// start_span is used only for finding AST meta data.
 fn command_contents<'a, E: ParseError<Span<'a>> + Debug>(
+    start_span: Span<'a>,
     i: Span<'a>,
 ) -> IResult<Span<'a>, AstNode<'a>, E> {
     let (rest, command_name) = identifier(i)?;
@@ -395,6 +404,7 @@ fn command_contents<'a, E: ParseError<Span<'a>> + Debug>(
                 command_name: &command_name,
                 square_args: None,
                 curly_args: Vec::new(),
+                meta: ast_meta_from_span(start_span),
             },
         ));
     }
@@ -432,6 +442,7 @@ fn command_contents<'a, E: ParseError<Span<'a>> + Debug>(
                 command_name: &command_name,
                 square_args,
                 curly_args: Vec::new(),
+                meta: ast_meta_from_span(start_span),
             },
         ));
     }
@@ -460,6 +471,7 @@ fn command_contents<'a, E: ParseError<Span<'a>> + Debug>(
             command_name: &command_name,
             square_args,
             curly_args,
+            meta: ast_meta_from_span(start_span),
         },
     ))
 
@@ -482,7 +494,13 @@ fn parse_root<'a, E: ParseError<Span<'a>> + Debug>(
 ) -> IResult<Span<'a>, AstNode<'a>, E> {
     let (r, nodes) = text(true, &DEFAULT_ESCAPE_MATCH, i)?;
     assert!(*r.fragment() == ""); // We are at EOF.
-    Ok((r, AstNode::AstRootNode { sub_nodes: nodes }))
+    Ok((
+        r,
+        AstNode::AstRootNode {
+            sub_nodes: nodes,
+            meta: ast_meta_from_span(i),
+        },
+    ))
 }
 
 /// Takes in a reference to a string containing the input LaPoL code,

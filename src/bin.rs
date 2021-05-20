@@ -23,7 +23,7 @@ fn parse_file_native(file_path: &str) {
     let parsed = parse(&file_content);
     let parse_dur = parse_start.elapsed();
 
-    //println!("Parsed --- output:\n{:#?}", parsed);
+    // println!("Parsed --- output:\n{:#?}", parsed);
 
     println!("\n----------\nParsing took: {:?}", parse_dur);
 }

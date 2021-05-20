@@ -42,6 +42,7 @@ pub enum AstNode<'a> {
     AstRootNode {
         #[serde(rename = "subNodes")]
         sub_nodes: Vec<AstNode<'a>>,
+        meta: AstNodeMeta,
     },
     AstCommandNode {
         #[serde(rename = "commandName")]
@@ -50,10 +51,22 @@ pub enum AstNode<'a> {
         square_args: Option<Vec<SquareArg<'a>>>,
         #[serde(rename = "curlyArgs")]
         curly_args: Vec<Vec<AstNode<'a>>>,
+        meta: AstNodeMeta,
     },
     AstTextNode {
         content: Cow<'a, str>,
         //source_start_col: usize,
         //source_start_line: usize,
+        meta: AstNodeMeta,
     },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AstNodeMeta {
+    #[serde(rename = "startOffset")]
+    pub start_offset: usize,
+    #[serde(rename = "startLine")]
+    pub start_line: usize,
+    #[serde(rename = "startCol")]
+    pub start_col: usize,
 }
