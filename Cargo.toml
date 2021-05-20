@@ -18,6 +18,7 @@ path = "src/bin.rs"
 
 thiserror = "1.0"
 nom = { version = "6.1.2", features = ["alloc"] }
+nom_locate = "3.0.1"
 serde = { version = "1.0", features = ["derive"] }
 
 [profile.release]

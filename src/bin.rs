@@ -23,7 +23,7 @@ fn parse_file_native(file_path: &str) {
     let parsed = parse(&file_content);
     let parse_dur = parse_start.elapsed();
 
-    println!("Parsed --- output:\n{:#?}", parsed);
+    //println!("Parsed --- output:\n{:#?}", parsed);
 
     println!("\n----------\nParsing took: {:?}", parse_dur);
 }
@@ -34,7 +34,7 @@ pub fn main() {
     let path =
         "X:\\programming\\programming\\LaPoL Project\\lapol-parse-rs\\parse_tests\\parse3.lap";
 
-    //let path = "X:\\programming\\programming\\LaPoL Project\\lapol-parse-rs\\parse_tests\\stress_test_0.lap";
+    // let path = "X:\\programming\\programming\\LaPoL Project\\lapol-parse-rs\\parse_tests\\stress_test_0.lap";
 
     parse_file_native(path);
 }

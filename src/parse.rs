@@ -9,6 +9,7 @@ use nom::{
     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
+use nom_locate::LocatedSpan;
 
 use std::borrow::{Borrow, Cow};
 
@@ -22,6 +23,8 @@ mod identifier;
 mod string;
 
 use identifier::identifier;
+
+type Span<'a> = LocatedSpan<&'a str>;
 
 struct EscapeMatch<'a> {
     open: Cow<'a, str>,
@@ -37,18 +40,18 @@ const DEFAULT_ESCAPE_MATCH: EscapeMatch = EscapeMatch {
 
 const ALLOWED_ESCAPE_SYMBOLS: &'static str = "<([";
 
-fn generic_open_curly<'a, E: ParseError<&'a str>>(
-    i: &'a str,
-) -> IResult<&'a str, (&'a str, EscapeMatch), E> {
+fn generic_open_curly<'a, E: ParseError<Span<'a>>>(
+    i: Span<'a>,
+) -> IResult<Span, (Span, EscapeMatch), E> {
     let (r, m) = recognize(pair(
         opt(pair(tag("|"), opt(is_a(ALLOWED_ESCAPE_SYMBOLS)))),
         tag("{"),
     ))(i)?;
 
     let em = EscapeMatch {
-        open: Cow::Borrowed(m),
-        close: get_matching_close_curly(m),
-        escape: Cow::Borrowed(get_matching_escape(m)),
+        open: Cow::Borrowed(&m),
+        close: get_matching_close_curly(&m),
+        escape: Cow::Borrowed(get_matching_escape(&m)),
     };
 
     Ok((r, (m, em)))
@@ -103,9 +106,9 @@ fn get_matching_escape(open_curly_form: &str) -> &str {
 /// a single char, and merging them afterwards, we instead try to form the
 /// longest possible text node that we can ensure is DEFINITELY not something
 /// else.
-fn generic_text<'a, E: ParseError<&'a str>>(
-    i: &'a str,
-) -> IResult<&'a str, Option<AstNode<'a>>, E> {
+fn generic_text<'a, E: ParseError<Span<'a>>>(
+    i: Span<'a>,
+) -> IResult<Span<'a>, Option<AstNode<'a>>, E> {
     let (rest, (_c, _s)) = pair(
         // Take any character, then take as many as you can after that
         anychar,
@@ -116,7 +119,7 @@ fn generic_text<'a, E: ParseError<&'a str>>(
     let split = unsafe { rest.as_ptr().offset_from(i.as_ptr()) };
     let (matched, remaining) = i.split_at(split as usize);
 
-    debug_assert_eq!(remaining, rest);
+    debug_assert_eq!(remaining, *rest.fragment());
 
     Ok((
         rest,
@@ -126,16 +129,16 @@ fn generic_text<'a, E: ParseError<&'a str>>(
     ))
 }
 
-fn text<'a, E: ParseError<&'a str> + Debug>(
+fn text<'a, E: ParseError<Span<'a>> + Debug>(
     root_context: bool,
     em: &EscapeMatch,
-    i: &'a str,
-) -> IResult<&'a str, Vec<AstNode<'a>>, E> {
+    i: Span<'a>,
+) -> IResult<Span<'a>, Vec<AstNode<'a>>, E> {
     let open_brace = em.open.borrow();
     let close_brace = em.close.borrow();
 
-    let rec_open = tag::<&str, &str, ()>(open_brace);
-    let rec_close = tag::<&str, &str, ()>(close_brace);
+    let rec_open = tag::<&str, Span, ()>(open_brace);
+    let rec_close = tag::<&str, Span, ()>(close_brace);
 
     // Start at one because of preceding
     // open brace that this doesn't match.
@@ -166,7 +169,7 @@ fn text<'a, E: ParseError<&'a str> + Debug>(
             brace_balance += 1;
             rest = r;
             add_to_contents(AstNode::AstTextNode {
-                content: Cow::Borrowed(t),
+                content: Cow::Borrowed(t.fragment()),
             });
         } else if let Ok((r, t)) = rec_close(rest) {
             brace_balance -= 1;
@@ -175,12 +178,12 @@ fn text<'a, E: ParseError<&'a str> + Debug>(
             } else {
                 rest = r;
                 add_to_contents(AstNode::AstTextNode {
-                    content: Cow::Borrowed(t),
+                    content: Cow::Borrowed(t.fragment()),
                 });
             }
         } else {
             // Handle EOF
-            if rest == "" {
+            if *rest.fragment() == "" {
                 break;
             }
 
@@ -209,15 +212,15 @@ fn text<'a, E: ParseError<&'a str> + Debug>(
     Ok((rest, contents))
 }
 
-fn block_comment_text<'a, E: ParseError<&'a str>>(
+fn block_comment_text<'a, E: ParseError<Span<'a>>>(
     em: &EscapeMatch,
-    i: &'a str,
-) -> IResult<&'a str, (), E> {
+    i: Span<'a>,
+) -> IResult<Span<'a>, (), E> {
     let open_brace = em.open.borrow();
     let close_brace = em.close.borrow();
 
-    let rec_open = tag::<&str, &str, ()>(open_brace);
-    let rec_close = tag::<&str, &str, ()>(close_brace);
+    let rec_open = tag::<&str, Span, ()>(open_brace);
+    let rec_close = tag::<&str, Span, ()>(close_brace);
 
     // Start at one because of preceding
     // open brace that this doesn't match.
@@ -247,10 +250,10 @@ fn block_comment_text<'a, E: ParseError<&'a str>>(
     Ok((rest, ()))
 }
 
-fn block_comment<'a, E: ParseError<&'a str>>(
+fn block_comment<'a, E: ParseError<Span<'a>>>(
     em: &EscapeMatch,
-    i: &'a str,
-) -> IResult<&'a str, Option<AstNode<'a>>, E> {
+    i: Span<'a>,
+) -> IResult<Span<'a>, Option<AstNode<'a>>, E> {
     let (rest, _) = tag(em.escape.borrow())(i)?;
     let (rest, _) = tag("@%")(rest)?;
     let (rest, (_, em)) = generic_open_curly(rest)?;
@@ -261,10 +264,10 @@ fn block_comment<'a, E: ParseError<&'a str>>(
 }
 
 /// Assuming block comment didn't match.
-fn line_comment<'a, E: ParseError<&'a str>>(
+fn line_comment<'a, E: ParseError<Span<'a>>>(
     em: &EscapeMatch,
-    i: &'a str,
-) -> IResult<&'a str, Option<AstNode<'a>>, E> {
+    i: Span<'a>,
+) -> IResult<Span<'a>, Option<AstNode<'a>>, E> {
     let (r, _) = tuple((
         //
         tag(em.escape.borrow()),
@@ -277,36 +280,36 @@ fn line_comment<'a, E: ParseError<&'a str>>(
     Ok((r, None))
 }
 
-fn comment<'a, E: ParseError<&'a str>>(
+fn comment<'a, E: ParseError<Span<'a>>>(
     em: &EscapeMatch,
-    i: &'a str,
-) -> IResult<&'a str, Option<AstNode<'a>>, E> {
+    i: Span<'a>,
+) -> IResult<Span<'a>, Option<AstNode<'a>>, E> {
     alt((|i| block_comment(em, i), |i| line_comment(em, i)))(i)
 }
 
-fn one_newline<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Option<AstNode>, E> {
+fn one_newline<'a, E: ParseError<Span<'a>>>(i: Span<'a>) -> IResult<Span<'a>, Option<AstNode>, E> {
     let (r, m) = alt((preceded(tag("\r"), tag("\n")), tag("\n")))(i)?;
     Ok((
         r,
         Some(AstNode::AstTextNode {
-            content: Cow::Borrowed(m),
+            content: Cow::Borrowed(m.fragment()),
         }),
     ))
 }
 
-fn comma_sep<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E> {
+fn comma_sep<'a, E: ParseError<Span<'a>>>(i: Span<'a>) -> IResult<Span<'a>, (), E> {
     value((), delimited(opt(multispace1), tag(","), opt(multispace1)))(i)
 }
 
-fn square_entry<'a, E: ParseError<&'a str> + Debug>(
-    i: &'a str,
-) -> IResult<&'a str, SquareEntry, E> {
+fn square_entry<'a, E: ParseError<Span<'a>> + Debug>(
+    i: Span<'a>,
+) -> IResult<Span<'a>, SquareEntry, E> {
     delimited(
         opt(multispace1),
         alt((
             map(bool, |b| SquareEntry::Bool(b)),
             map(double, |n| SquareEntry::Num(n)),
-            map(identifier, |s| SquareEntry::Ident(s)),
+            map(identifier, |s| SquareEntry::Ident(s.borrow())),
             map(parse_string, |s| SquareEntry::QuotedStr(s)),
             map(
                 |i| command(&DEFAULT_ESCAPE_MATCH, i),
@@ -317,7 +320,7 @@ fn square_entry<'a, E: ParseError<&'a str> + Debug>(
     )(i)
 }
 
-fn square_arg<'a, E: ParseError<&'a str> + Debug>(i: &'a str) -> IResult<&'a str, SquareArg, E> {
+fn square_arg<'a, E: ParseError<Span<'a>> + Debug>(i: Span<'a>) -> IResult<Span<'a>, SquareArg, E> {
     alt((
         //
         map(
@@ -333,15 +336,15 @@ fn square_arg<'a, E: ParseError<&'a str> + Debug>(i: &'a str) -> IResult<&'a str
     ))(i)
 }
 
-fn square_args<'a, E: ParseError<&'a str> + Debug>(
-    i: &'a str,
-) -> IResult<&'a str, Vec<SquareArg<'a>>, E> {
+fn square_args<'a, E: ParseError<Span<'a>> + Debug>(
+    i: Span<'a>,
+) -> IResult<Span<'a>, Vec<SquareArg<'a>>, E> {
     terminated(separated_list0(comma_sep, square_arg), opt(comma_sep))(i)
 }
 
-fn curly_argument<'a, E: ParseError<&'a str> + Debug>(
-    i: &'a str,
-) -> IResult<&'a str, Vec<AstNode<'a>>, E> {
+fn curly_argument<'a, E: ParseError<Span<'a>> + Debug>(
+    i: Span<'a>,
+) -> IResult<Span<'a>, Vec<AstNode<'a>>, E> {
     let (rest, (_, em)) = generic_open_curly(i)?;
     let (rest, nodes) = text(false, &em, rest)?;
     let (rest, _) = tag(em.close.borrow())(rest)?;
@@ -349,17 +352,17 @@ fn curly_argument<'a, E: ParseError<&'a str> + Debug>(
     Ok((rest, nodes))
 }
 
-fn bool<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, bool, E> {
+fn bool<'a, E: ParseError<Span<'a>>>(i: Span<'a>) -> IResult<Span<'a>, bool, E> {
     alt((
         value(true, tag_no_case("true")),
         value(false, tag_no_case("false")),
     ))(i)
 }
 
-fn command<'a, E: ParseError<&'a str> + Debug>(
+fn command<'a, E: ParseError<Span<'a>> + Debug>(
     em: &EscapeMatch,
-    i: &'a str,
-) -> IResult<&'a str, AstNode<'a>, E> {
+    i: Span<'a>,
+) -> IResult<Span<'a>, AstNode<'a>, E> {
     let (rest, _) = tag(em.escape.borrow())(i)?;
     let (rest, _) = tag("@")(rest)?;
     let (rest, _) = peek(none_of("%|{"))(rest)?;
@@ -371,9 +374,9 @@ fn command<'a, E: ParseError<&'a str> + Debug>(
     return Ok((rest, o));
 }
 
-fn command_contents<'a, E: ParseError<&'a str> + Debug>(
-    i: &'a str,
-) -> IResult<&'a str, AstNode<'a>, E> {
+fn command_contents<'a, E: ParseError<Span<'a>> + Debug>(
+    i: Span<'a>,
+) -> IResult<Span<'a>, AstNode<'a>, E> {
     let (rest, command_name) = identifier(i)?;
 
     let (rest, end_here_opt) = opt(preceded(
@@ -389,7 +392,7 @@ fn command_contents<'a, E: ParseError<&'a str> + Debug>(
         return Ok((
             rest,
             AstNode::AstCommandNode {
-                command_name,
+                command_name: &command_name,
                 square_args: None,
                 curly_args: Vec::new(),
             },
@@ -426,7 +429,7 @@ fn command_contents<'a, E: ParseError<&'a str> + Debug>(
         return Ok((
             rest,
             AstNode::AstCommandNode {
-                command_name,
+                command_name: &command_name,
                 square_args,
                 curly_args: Vec::new(),
             },
@@ -454,7 +457,7 @@ fn command_contents<'a, E: ParseError<&'a str> + Debug>(
     Ok((
         rest,
         AstNode::AstCommandNode {
-            command_name,
+            command_name: &command_name,
             square_args,
             curly_args,
         },
@@ -474,9 +477,11 @@ fn command_contents<'a, E: ParseError<&'a str> + Debug>(
     )) */
 }
 
-fn parse_root<'a, E: ParseError<&'a str> + Debug>(i: &'a str) -> IResult<&'a str, AstNode<'a>, E> {
+fn parse_root<'a, E: ParseError<Span<'a>> + Debug>(
+    i: Span<'a>,
+) -> IResult<Span<'a>, AstNode<'a>, E> {
     let (r, nodes) = text(true, &DEFAULT_ESCAPE_MATCH, i)?;
-    assert!(r == ""); // We are at EOF.
+    assert!(*r.fragment() == ""); // We are at EOF.
     Ok((r, AstNode::AstRootNode { sub_nodes: nodes }))
 }
 
@@ -485,8 +490,10 @@ fn parse_root<'a, E: ParseError<&'a str> + Debug>(i: &'a str) -> IResult<&'a str
 ///
 /// TODO: Support configurable use of Nom VerboseError (by default it is
 /// too slow)
-pub fn parse<'a>(i: &'a str) -> Result<AstNode<'a>, super::error::ParserError> {
-    let out = parse_root::<nom::error::Error<&str>>(i);
+pub fn parse<'a>(input: &'a str) -> Result<AstNode<'a>, super::error::ParserError> {
+    let i = Span::new(input);
+
+    let out = parse_root::<nom::error::Error<Span>>(i);
 
     match out {
         Ok((_, root)) => Ok(root),
