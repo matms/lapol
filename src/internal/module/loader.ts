@@ -1,4 +1,3 @@
-import { LapolError } from "../errors";
 import { LapolModule, resolveModule } from "./module";
 import { ModuleIdentifier } from "./metadata";
 import { strict as assert } from "assert";

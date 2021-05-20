@@ -21,7 +21,7 @@ export async function readFileBuffer(filePath: LaPath): Promise<Buffer> {
     return await fsp.readFile(filePath.fullPath, { encoding: null, flag: "r" });
 }
 
-export async function writeFile(filePath: LaPath, data: string) {
+export async function writeFile(filePath: LaPath, data: string): Promise<void> {
     await mkdirp(filePath.parsed.dir);
     // await fsp.writeFile(filePath, data, { encoding: "utf8" });
     await fsp.writeFile(filePath.fullPath, data);
@@ -31,7 +31,7 @@ export async function writeFile(filePath: LaPath, data: string) {
  *
  *  Note newline is considered whitespace.
  */
-export function isWhitespace(str: string) {
+export function isWhitespace(str: string): boolean {
     return str.trim() === "";
     // https://stackoverflow.com/questions/1496826/check-if-a-single-character-is-a-whitespace
 }
@@ -44,16 +44,16 @@ export function outFilePath(
     forcePathKind?: "windows" | "posix" | undefined
 ) {
     if (forcePathKind === "windows") {
-        let p = nodePath.win32.parse(inFilePath);
-        let sep = nodePath.win32.sep;
+        const p = nodePath.win32.parse(inFilePath);
+        const sep = nodePath.win32.sep;
         return p.dir + sep + "out" + sep + p.name + "." + targetExt;
     } else if (forcePathKind === "posix") {
-        let p = nodePath.posix.parse(inFilePath);
-        let sep = nodePath.posix.sep;
+        const p = nodePath.posix.parse(inFilePath);
+        const sep = nodePath.posix.sep;
         return p.dir + sep + "out" + sep + p.name + "." + targetExt;
     } else {
-        let p = nodePath.parse(inFilePath);
-        let sep = nodePath.sep;
+        const p = nodePath.parse(inFilePath);
+        const sep = nodePath.sep;
         return p.dir + sep + "out" + sep + p.name + "." + targetExt;
     }
 }

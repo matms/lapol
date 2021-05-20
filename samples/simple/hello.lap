@@ -1,0 +1,23 @@
+
+@__require;
+
+@__doc{
+
+@h1{Hello}
+
+Hello. This is a very simple LaPoL document.
+
+This document intends to show the very basics of
+using LaPoL. For instance, we will add an h2 tag now.
+
+@h2{Section}
+
+Interesting!
+
+@h2{More Stuff}
+
+Awesome!
+Truly incredible!
+
+
+} @% __doc

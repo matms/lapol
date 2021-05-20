@@ -1,6 +1,6 @@
 import { LapolError } from "../../errors";
 import { LaPath } from "../../la_path";
-import { makeJsModFromTs } from "../../shell/compile_ts";
+import { jsModFromTs } from "../../shell/compile_ts";
 import { canAccess } from "../../utils";
 
 function neighboringJs(inFilePath: LaPath): LaPath {
@@ -23,7 +23,7 @@ export async function procureAnonMod(inFilePath: LaPath): Promise<LaPath> {
     }
     let b = neighboringTs(inFilePath);
     if (await canAccess(b)) {
-        return await makeJsModFromTs(b);
+        return await jsModFromTs(b);
     }
     throw new LapolError(`Cannot find anonymous module corresponding to ${inFilePath.fullPath}`);
 }

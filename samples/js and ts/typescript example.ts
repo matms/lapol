@@ -1,8 +1,7 @@
-// Note we must point to build, NOT TO src!!!
-import { ModuleLoader } from "../../build/mod";
+import { ModuleLoader } from "lapol/mod";
 
 // You must define a function that takes in a single parameter, the loader.
-export async function load(loader: ModuleLoader) {
+export function load(loader: ModuleLoader): void {
     // Cool!!
     // console.log("\n====== HELLO FROM simple page.js ======\n")
 
