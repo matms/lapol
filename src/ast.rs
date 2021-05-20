@@ -8,6 +8,7 @@ use std::borrow::Cow;
 /// This enum has two variants. `Val` represents a single value passed in (e.g.
 /// "a"), `KeyVal` represents a keyword argument (e.g. "c=true")
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "t", content = "c")]
 pub enum SquareArg<'a> {
     Val(SquareEntry<'a>),
     KeyVal(#[serde(borrow)] SquareEntry<'a>, SquareEntry<'a>),
@@ -21,9 +22,10 @@ pub enum SquareArg<'a> {
 ///
 /// TODO: Introduce numerical arguments (distinguish from ident).
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "t", content = "c")]
 pub enum SquareEntry<'a> {
     Num(f64),
-    IdentStr(&'a str),
+    Ident(&'a str),
     Bool(bool),
     QuotedStr(String),
     AstNode(AstNode<'a>),
@@ -35,13 +37,18 @@ pub enum SquareEntry<'a> {
 /// - `AstCommandNode` -> Represents a command invocation (at-syntax)
 /// - `AstTextNode` -> Represents arbitrary text.
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "t")]
 pub enum AstNode<'a> {
     AstRootNode {
+        #[serde(rename = "subNodes")]
         sub_nodes: Vec<AstNode<'a>>,
     },
     AstCommandNode {
+        #[serde(rename = "commandName")]
         command_name: &'a str,
+        #[serde(rename = "squareArgs")]
         square_args: Option<Vec<SquareArg<'a>>>,
+        #[serde(rename = "curlyArgs")]
         curly_args: Vec<Vec<AstNode<'a>>>,
     },
     AstTextNode {

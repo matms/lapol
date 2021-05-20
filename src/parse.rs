@@ -1,8 +1,8 @@
 use nom::{
     branch::alt,
     bytes::complete::{is_a, is_not, tag, tag_no_case},
-    character::complete::{alpha1, alphanumeric1, anychar, multispace1, none_of},
-    combinator::{map, opt, peek, recognize, value, verify},
+    character::complete::{anychar, multispace1, none_of},
+    combinator::{map, opt, peek, recognize, value},
     error::ParseError,
     multi::{many0, separated_list0},
     number::complete::double,
@@ -18,7 +18,10 @@ use self::string::parse_string;
 
 use super::ast::{AstNode, SquareArg, SquareEntry};
 
+mod identifier;
 mod string;
+
+use identifier::identifier;
 
 struct EscapeMatch<'a> {
     open: Cow<'a, str>,
@@ -303,7 +306,7 @@ fn square_entry<'a, E: ParseError<&'a str> + Debug>(
         alt((
             map(bool, |b| SquareEntry::Bool(b)),
             map(double, |n| SquareEntry::Num(n)),
-            map(identifier, |s| SquareEntry::IdentStr(s)),
+            map(identifier, |s| SquareEntry::Ident(s)),
             map(parse_string, |s| SquareEntry::QuotedStr(s)),
             map(
                 |i| command(&DEFAULT_ESCAPE_MATCH, i),
@@ -344,30 +347,6 @@ fn curly_argument<'a, E: ParseError<&'a str> + Debug>(
     let (rest, _) = tag(em.close.borrow())(rest)?;
 
     Ok((rest, nodes))
-}
-
-/// TODO: Reserve what is needed!
-fn is_reserved_identifier(candidate: &str) -> bool {
-    candidate.eq_ignore_ascii_case("true")
-        || candidate.eq_ignore_ascii_case("false")
-        || candidate.eq_ignore_ascii_case("undefined") // TODO: handle
-        || candidate.eq_ignore_ascii_case("null") // TODO: handle
-}
-
-// TODO: Allow . and :: syntax where appropriate.
-// Adapted From https://docs.rs/nom/6.1.2/nom/recipes/index.html#rust-style-identifiers
-fn identifier<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    verify(
-        recognize(pair(
-            alt((alpha1, tag("_"))),
-            many0(alt((alphanumeric1, tag("_")))),
-        )),
-        |s: &str| s.is_ascii() && !is_reserved_identifier(s),
-    )(i)
-    /*take_while1(|c: char| {
-        // TODO: Expand?
-        c.is_ascii_alphanumeric() || c == '_'
-    })(i)*/
 }
 
 fn bool<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, bool, E> {
