@@ -7,11 +7,11 @@
  * In this case, you WILL BE ABLE TO (can't yet) access these with 'core:import'
  */
 
-import { Command } from "../command/command";
-import { DetNode, Expr, Str } from "../det";
-import { LapolError } from "../errors";
-import { Environment } from "../evaluate/environment";
-import { ModuleLoader } from "../module/loader";
+import { Command } from "../internal/command/command";
+import { DetNode, Expr, Str } from "../internal/det";
+import { LapolError } from "../internal/errors";
+import { Environment } from "../internal/evaluate/environment";
+import { ModuleLoader } from "../internal/module/loader";
 
 export function load(loader: ModuleLoader) {
     loader.exportCommands(commands);

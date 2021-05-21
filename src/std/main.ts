@@ -1,4 +1,4 @@
-import { DetNode, Expr, Str, ModuleLoader } from "../../mod";
+import { DetNode, Expr, Str, ModuleLoader } from "../mod";
 
 export function load(loader: ModuleLoader) {
     loader.exportCommands(commands);

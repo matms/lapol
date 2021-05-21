@@ -1,4 +1,4 @@
-import { DetNode, Expr, Str, ModuleLoader } from "../../mod";
+import { DetNode, Expr, Str, ModuleLoader } from "../mod";
 
 export async function load(loader: ModuleLoader) {
     loader.declareRequire("std:main");

@@ -21,7 +21,7 @@ export class ModuleManager {
     }
 
     private findStdModulePath(modName: string): string {
-        const o = path.normalize(path.join(__dirname, "/../default_lapol_modules/", modName));
+        const o = path.normalize(path.join(__dirname, "/../../std/", modName));
         return o;
     }
 
