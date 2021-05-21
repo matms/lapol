@@ -1,10 +1,5 @@
-import { strict as assert } from "assert";
-
-import { Command, JsFnCommand } from "../command/command";
-import { LapolContext } from "../context";
-import { LapolError, LapolModuleError } from "../errors";
-import { ModuleLoader } from "./loader";
-import { ModuleManager } from "./manager";
+import { Command } from "../command/command";
+import { LapolError } from "../errors";
 import { ModuleIdentifier, ModuleMetadata } from "./metadata";
 
 export const LA_MOD_LOADER_FN_NAME = "load";
@@ -26,7 +21,7 @@ export class LapolModule {
         return this._commands;
     }
 
-    get metadata() {
+    get metadata(): ModuleMetadata {
         return this._metadata;
     }
 }
@@ -41,7 +36,7 @@ export function resolveModuleFromPath(path: string, identStr: string): ModuleIde
 }
 
 export function resolveModule(identStr: string): ModuleIdentifier {
-    let a = identStr.split(":");
+    const a = identStr.split(":");
     if (a.length === 2) {
         if (a[0] === "std") {
             return { isStd: true, modName: a[1], fullIdStr: "<module-id>[" + identStr + "]" };

@@ -1,6 +1,5 @@
 import { strict as assert } from "assert";
-import { resolve } from "node:path";
-import { LapolError, LapolModuleError } from "../errors";
+import { LapolModuleError } from "../errors";
 import { LapolModule, LA_MOD_LOADER_FN_NAME, resolveModule } from "./module";
 import path from "path";
 import { ModuleIdentifier } from "./metadata";
@@ -16,13 +15,13 @@ export class ModuleManager {
     }
 
     private findModulePath(moduleIdentifier: ModuleIdentifier): string {
-        if (moduleIdentifier.isStd === true) {
+        if (moduleIdentifier.isStd) {
             return this.findStdModulePath(moduleIdentifier.modName);
         } else return moduleIdentifier.path;
     }
 
     private findStdModulePath(modName: string): string {
-        let o = path.normalize(__dirname + "/../default_lapol_modules/" + modName);
+        const o = path.normalize(path.join(__dirname, "/../default_lapol_modules/", modName));
         return o;
     }
 
@@ -35,28 +34,34 @@ export class ModuleManager {
     }
 
     private async fromImportedJsFile(
-        loadedJsMod: any,
-        identifier: ModuleIdentifier,
-        modManager: ModuleManager
+        loadedJsMod: Record<string | number | symbol, unknown>,
+        identifier: ModuleIdentifier
     ): Promise<LapolModule> {
         if (
-            !loadedJsMod.hasOwnProperty(LA_MOD_LOADER_FN_NAME) ||
+            !Object.prototype.hasOwnProperty.call(loadedJsMod, LA_MOD_LOADER_FN_NAME) ||
             typeof loadedJsMod[LA_MOD_LOADER_FN_NAME] !== "function"
         ) {
             throw new LapolModuleError(`No ${LA_MOD_LOADER_FN_NAME} function in module`);
         }
 
-        let moduleLoadFunction = loadedJsMod[LA_MOD_LOADER_FN_NAME] as (_: ModuleLoader) => void;
+        // Here we take a leap of faith and assume the user provided a function with the correct
+        // arity. If they did not, and error should occur at runtime.
+        const moduleLoadFunction = loadedJsMod[LA_MOD_LOADER_FN_NAME] as (
+            _: ModuleLoader
+        ) => unknown;
 
-        let moduleLoader = ModuleLoader._make(identifier);
+        const moduleLoader = ModuleLoader._make(identifier);
 
+        // The user might have provided a promise, or maybe not.
+        // Either way, await to be safe (awaiting non promises just resolves immediately)
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         await moduleLoadFunction(moduleLoader);
 
         moduleLoader._afterSelfLoad();
 
-        let rMods = new Map();
+        const rMods = new Map();
 
-        for await (let requiredMod of moduleLoader.requiredModules) {
+        for await (const requiredMod of moduleLoader.requiredModules) {
             rMods.set(requiredMod.fullIdStr, await this.requireModule(requiredMod));
         }
 
@@ -65,15 +70,16 @@ export class ModuleManager {
         return moduleLoader._finalize();
     }
 
-    /** INTERNAL USE ONLY. Make sure you don't wanna use requireModule instead.*/
+    /** INTERNAL USE ONLY. Make sure you don't wanna use requireModule instead. */
     public async _loadModule(modId: ModuleIdentifier): Promise<LapolModule> {
         // Check: we aren't trying to load a module that is being loaded
         assert(!this._currentlyLoadingModules.has(modId.fullIdStr));
 
-        let modPath = this.findModulePath(modId);
+        const modPath = this.findModulePath(modId);
 
-        let importedJsFile = await import(modPath);
-        let mod = await this.fromImportedJsFile(importedJsFile, modId, this);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const importedJsFile = await import(modPath);
+        const mod = await this.fromImportedJsFile(importedJsFile, modId);
 
         // Check: we aren't trying to load a module that has already been loaded.
         assert(this._loadedMods.get(modId.fullIdStr) === undefined);
@@ -87,7 +93,7 @@ export class ModuleManager {
      * desired module name. Custom user defined modules will be supported, but aren't yet.
      */
     public async requireModule(modId: ModuleIdentifier): Promise<LapolModule> {
-        let m = this._loadedMods.get(modId.fullIdStr);
+        const m = this._loadedMods.get(modId.fullIdStr);
         if (m !== undefined) {
             ModuleManager.log(`requireModule: using cached module ${modId.fullIdStr}.`);
             return m;
@@ -99,7 +105,7 @@ export class ModuleManager {
                 ) as Promise<LapolModule>);
             } else {
                 ModuleManager.log(`requireModule: loading module ${modId.fullIdStr}...`);
-                let promise = this._loadModule(modId);
+                const promise = this._loadModule(modId);
                 this._currentlyLoadingModules.set(modId.fullIdStr, promise);
                 return await promise;
             }
@@ -110,8 +116,8 @@ export class ModuleManager {
      * before. If it hasn't, then this will throw an error.
      */
     public getLoadedModule(identStr: string): LapolModule {
-        let modId = resolveModule(identStr);
-        let m = this._loadedMods.get(modId.fullIdStr);
+        const modId = resolveModule(identStr);
+        const m = this._loadedMods.get(modId.fullIdStr);
         if (m !== undefined) {
             return m;
         } else {
@@ -119,7 +125,7 @@ export class ModuleManager {
         }
     }
 
-    private static log(str: string) {
+    private static log(str: string): void {
         console.log("[ModuleManager] " + str);
     }
 }

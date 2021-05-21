@@ -12,16 +12,16 @@ export function processLinebreaks(node: DetNode): DetNode {
     if (node instanceof Str) return node;
     if (node instanceof Data) return node;
     if (node instanceof Expr) {
-        let nNode = node.contentsMap(processLinebreaks);
+        const nNode = node.contentsMap(processLinebreaks);
 
         if (nNode.contentsLength() <= 1) return nNode;
 
         const LINEBREAK_INDICATOR = "n";
 
-        let contHelper: (DetNode | "n")[] = [];
+        const contHelper: Array<DetNode | "n"> = [];
 
         for (let i = 0; i < nNode.contentsLength(); i++) {
-            let curr = nNode.unsafeBorrowContents()[i];
+            const curr = nNode.unsafeBorrowContents()[i];
             if (!isNewline(curr)) contHelper.push(curr);
             else if (isNewline(nNode.unsafeBorrowContents()[i + 1])) {
                 if (
@@ -42,7 +42,7 @@ export function processLinebreaks(node: DetNode): DetNode {
             }
         }
 
-        let finalContents = contHelper.map((v) =>
+        const finalContents = contHelper.map((v) =>
             v !== LINEBREAK_INDICATOR ? v : new Expr(BREAK_MARKER_TAG)
         );
 
@@ -55,16 +55,16 @@ export function processParagraphs(node: DetNode): DetNode {
     if (node instanceof Str) return node;
     if (node instanceof Data) return node;
     if (node instanceof Expr) {
-        let nNode = node.contentsMap(processParagraphs);
+        const nNode = node.contentsMap(processParagraphs);
 
-        let outContents: DetNode[] = [];
+        const outContents: DetNode[] = [];
 
         let pAccum: DetNode[] = [];
 
         let numParas = 0;
 
         for (let i = 0; i < nNode.contentsLength(); i++) {
-            let curr = nNode.unsafeBorrowContents()[i];
+            const curr = nNode.unsafeBorrowContents()[i];
 
             if (curr instanceof Expr && curr.tag === BREAK_MARKER_TAG) {
                 if (pAccum.length >= 1) {
@@ -98,10 +98,10 @@ export function processParagraphs(node: DetNode): DetNode {
  * and filter out any paragraphs that become empty as a result (i.e. which were only whitespace
  * before). Non paragraph nodes should be unaffected.
  */
-function trimParas(contents: DetNode[]) {
-    const trimSingleParaNode = (node: DetNode) => {
+function trimParas(contents: DetNode[]): DetNode[] {
+    const trimSingleParaNode = (node: DetNode): DetNode => {
         if (node instanceof Expr && node.tag === PARAGRAPH_TAG) {
-            let newCont: DetNode[] = [...node.unsafeBorrowContents()]; // Copy array.
+            const newCont: DetNode[] = [...node.unsafeBorrowContents()]; // Copy array.
             while (newCont[0] instanceof Str && isWhitespace((newCont[0] as Str).text)) {
                 newCont.shift();
             }
@@ -115,7 +115,7 @@ function trimParas(contents: DetNode[]) {
         } else return node;
     };
 
-    const isParaNodeEmpty = (node: DetNode) => {
+    const isParaNodeEmpty = (node: DetNode): boolean => {
         if (node instanceof Expr && node.tag === PARAGRAPH_TAG && node.contentsLength() === 0)
             return false;
         else return true;
@@ -123,8 +123,6 @@ function trimParas(contents: DetNode[]) {
 
     return contents.map(trimSingleParaNode).filter(isParaNodeEmpty);
 }
-
-// function isBlock(node: DetNode | symbol): boolean {}
 
 function isNewline(node: DetNode): boolean {
     return node instanceof Str && node.text === "\n";

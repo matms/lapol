@@ -6,7 +6,7 @@ export function outputNodeToHtml(node: DetNode): string {
     if (node instanceof Data) throw new LapolError("Cannot output DET node of type Data to HTML.");
     if (node instanceof Expr) {
         if (node.tag === "root") {
-            let cs = node
+            const cs = node
                 .unsafeBorrowContents()
                 .map((c) => outputNodeToHtml(c))
                 .reduce((a, b) => a + b, "");
@@ -15,7 +15,7 @@ export function outputNodeToHtml(node: DetNode): string {
         } else {
             if (node.unsafeBorrowContents().length === 0) return `<${node.tag}/>`;
 
-            let cs = node
+            const cs = node
                 .unsafeBorrowContents()
                 .map((c) => outputNodeToHtml(c))
                 .reduce((a, b) => a + b, "");

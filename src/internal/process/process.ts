@@ -6,12 +6,12 @@
 import { DetNode } from "../det";
 import { processLinebreaks, processParagraphs } from "./paragraph";
 
-const PROCESSING_PASSES: ((node: DetNode) => DetNode)[] = [processLinebreaks, processParagraphs];
+const PROCESSING_PASSES: Array<(node: DetNode) => DetNode> = [processLinebreaks, processParagraphs];
 
 export async function processDet(detRootNode: DetNode): Promise<DetNode> {
     let out = detRootNode;
 
-    for (let pass of PROCESSING_PASSES) {
+    for (const pass of PROCESSING_PASSES) {
         out = pass(out);
     }
 
