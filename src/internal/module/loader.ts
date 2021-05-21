@@ -4,12 +4,16 @@ import { strict as assert } from "assert";
 import { Command, JsFnCommand } from "../command/command";
 
 export class ModuleLoader {
+    /* eslint-disable  @typescript-eslint/prefer-readonly */
+
     private _commands: Map<string, Command>;
     private _identifier: ModuleIdentifier;
     private _requiredModules: ModuleIdentifier[];
 
     private _requiredModulesLoaded: undefined | Map<string, LapolModule>;
-    private _finalizeActions: (() => void)[];
+    private _finalizeActions: Array<() => void>;
+
+    /* eslint-enable  @typescript-eslint/prefer-readonly */
 
     private constructor(identifier: ModuleIdentifier) {
         this._identifier = identifier;
@@ -18,7 +22,7 @@ export class ModuleLoader {
         this._commands = new Map();
     }
 
-    get requiredModules() {
+    get requiredModules(): ModuleIdentifier[] {
         return this._requiredModules;
     }
 
@@ -35,14 +39,16 @@ export class ModuleLoader {
      * Called after _make but before _afterRequiredLoad, specifically right after this module's
      * load() function has been run.
      */
-    public _afterSelfLoad() {}
+    public _afterSelfLoad(): void {
+        // TODO: Need to do anything here?
+    }
 
     /** Internal use --- Module developer MUST NOT CALL!
      *
      * Called after _afterSelfLoad but before _finalize, after all the required modules have been
      * loaded.
      */
-    public _afterRequiredLoad(mods: Map<string, LapolModule>) {
+    public _afterRequiredLoad(mods: Map<string, LapolModule>): void {
         this._requiredModulesLoaded = mods;
     }
 
@@ -52,7 +58,7 @@ export class ModuleLoader {
      * requires the modules to be loaded should be done here.
      */
     public _finalize(): LapolModule {
-        for (let f of this._finalizeActions) {
+        for (const f of this._finalizeActions) {
             f();
         }
 
@@ -75,12 +81,12 @@ export class ModuleLoader {
      *
      * Note this doesn't load the command immediately, it simply enqueues the command for loading.
      */
-    public exportCommands(commands: any) {
+    public exportCommands(commands: Record<string, unknown>): void {
         this._finalizeActions.push(() => {
             assert(typeof commands === "object");
 
-            for (let prop of Object.getOwnPropertyNames(commands)) {
-                let val = commands[prop];
+            for (const prop of Object.getOwnPropertyNames(commands)) {
+                const val = commands[prop];
                 if (typeof val === "function") {
                     this._commands.set(prop, JsFnCommand.fromJsFunction(val, prop));
                 } else if (Array.isArray(val)) {
@@ -96,12 +102,12 @@ export class ModuleLoader {
     /** Export all commands from a different module. Note that module must be required, see
      * declareRequire().
      */
-    public exportAllCommandsFrom(otherModule: string) {
+    public exportAllCommandsFrom(otherModule: string): void {
         this._finalizeActions.push(() => {
             assert(this._requiredModulesLoaded !== undefined);
-            let mod = this._requiredModulesLoaded.get(resolveModule(otherModule).fullIdStr);
+            const mod = this._requiredModulesLoaded.get(resolveModule(otherModule).fullIdStr);
             assert(mod !== undefined);
-            for (let [k, cmd] of mod.borrowCommands()) {
+            for (const [k, cmd] of mod.borrowCommands()) {
                 this._commands.set(k, cmd);
             }
         });
@@ -111,11 +117,11 @@ export class ModuleLoader {
      * not load the module into the environment automatically. Note that this does not load
      * the module immediately (i.e. we do not await for the module to load)
      */
-    public declareRequire(moduleName: string) {
+    public declareRequire(moduleName: string): void {
         this._requiredModules.push(resolveModule(moduleName));
     }
 
-    private static log(str: string) {
+    private static log(str: string): void {
         console.log("[ModuleLoader] " + str);
     }
 }
