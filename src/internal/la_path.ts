@@ -12,7 +12,7 @@ export class LaPath {
         const np = getNodePathLib(forcePathKind);
 
         this.pathKind = forcePathKind;
-        this.fullPath = path;
+        this.fullPath = np.resolve(path);
         this.parsed = np.parse(path);
         this.sep = np.sep;
     }
