@@ -1,8 +1,10 @@
+/* eslint-disable import/first */
 // Setup the NODE_PATH variable before importing stuff.
 _setupNodePath();
 
 import { render } from "./internal/run";
 import { init as lapol_rs_init } from "lapol-rs";
+import { LaPath } from "./internal/la_path";
 
 export async function consoleMain(): Promise<void> {
     console.log("Hello, LaPoL!");
@@ -17,14 +19,14 @@ export async function consoleMain(): Promise<void> {
         if (args[0] === "render") {
             if (args.length !== 2) {
                 console.error(`LAPOL ERROR <@ main>: Must indicate exactly one file to render`);
-            } else await render(args[1]);
+            } else await render(new LaPath(args[1]));
         } else if (args[0] === "profile") {
             if (args.length !== 2) {
                 console.error(`LAPOL ERROR <@ main>: Must indicate exactly one file to render`);
             } else {
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
-                    await render(args[1]);
+                    await render(new LaPath(args[1]));
                 }
             }
         } else console.error(`LAPOL ERROR <@ main>: Unknown command ${args[0]}`);
@@ -33,16 +35,8 @@ export async function consoleMain(): Promise<void> {
 
 lapol_rs_init();
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 consoleMain();
-
-/*
-async function stress() {
-    //while (true) {
-    // await test_rust();
-    await consoleMain();
-    //}
-}
-*/
 
 // ================================================================================================
 
@@ -65,11 +59,15 @@ async function stress() {
  * 2. lapol/internal/shell/compile_ts, namely, `makeTsCfg`, which is responsible for setting up the
  *    TypeScript compilation settings for dynamically compiled LaPoL modules.
  */
-function _setupNodePath() {
+function _setupNodePath(): void {
     // See https://stackoverflow.com/questions/21358994/node-js-programmatically-setting-node-path/33976627#33976627
     // Explanation: This serves SOLELY to allow user defined modules to load lapol files using lapol/*
     // For instance, "lapol/main" resolves to this file.
+
+    // We cant use path.join because we should set this up before importing anything!
+    // eslint-disable-next-line node/no-path-concat
     process.env.NODE_PATH = `${__dirname}/..`; // = folder build
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     require("module").Module._initPaths();
 }

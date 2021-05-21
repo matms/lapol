@@ -1,37 +1,38 @@
+// TODO: Will we allow mutation of Str, Expr and Data?
+
 /** DET = Document Expression Tree
  *
+ *
+ * ## Plan
+ *
+ * Should these be classes with inheritance?
+ *
+ * DetNode = Str | Expr | Data
+ *
+ * Str <= "DetTextStr"
+ *     - kind = Str
+ *     - text = string
+ * Expr <= "DetTag + DetRoot + etc."
+ *     - kind = Expr
+ *     - tag = string
+ *     - attrs = Map() (or Object?)
+ *     - contents = Node[]
+ * Data <= Miscellaneous Javascript types (we use Data to distinguish objects from the other types).
+ *     - kind = Data
+ *     - data = any
+ *     * Cannot be compiled into final document directly, gives error.
+ *     * Can be used by processing commands.
+ *
+ *
+ * ## Unsure
+ *
+ * Maybe?
+ *
+ * All will be immutable (HOW TO ENFORCE THIS IN JS? CAN I?)
+ *
+ * All will be serializeable (to the extent possible)
+ *
  */
-
-// TODO: Change the way DET works, maybe use objects with certain methods and private attributes?
-
-// Plan:
-/* 
-
-Should these be classes with inheritance?
-
-DetNode = Str | Expr | Data
-
-Str <= "DetTextStr"
-    - kind = Str
-    - text = string
-Expr <= "DetTag + DetRoot + etc."
-    - kind = Expr
-    - tag = string
-    - attrs = Map() (or Object?)
-    - contents = Node[]
-Data <= Miscellaneous Javascript types (we use Data to distinguish objects from the other types).
-    - kind = Data
-    - data = any
-    * Cannot be compiled into final document directly, gives error.
-    * Can be used by processing commands.
-
-All will be immutable (HOW TO ENFORCE THIS IN JS? CAN I?)
-
-All will be serializeable (to the extent possible)
-
-*/
-
-// Note: https://stackoverflow.com/questions/56067863/discriminating-a-union-of-classes
 
 /**
  *
@@ -40,7 +41,7 @@ All will be serializeable (to the extent possible)
  * Note: These nodes are considered _de facto_ immutable, but they are not frozen. Use internal
  * methods to "safely mutate" (i.e. return a new copy).
  *
- * IMPORTANT: Before using any public function prefixed with unsafe, read their documentation
+ * IMPORTANT: Before using any public function prefixed with unsafe, read its documentation
  * very carefully.
  */
 export abstract class DetNode {
@@ -59,7 +60,7 @@ export class Str extends DetNode {
         this._text = text;
     }
 
-    public get text() {
+    public get text(): string {
         return this._text;
     }
 }
@@ -71,7 +72,6 @@ export class Expr extends DetNode {
     private _attrs: Map<string, any>; // TODO: Do we want to allow numbers?
     private _contents: DetNode[];
 
-    /**a */
     constructor(tag: string, contents?: DetNode[], attrs?: Map<string, any>) {
         super();
         this._tag = tag;
@@ -122,14 +122,20 @@ export class Data extends DetNode {
     readonly kind = "Data";
 
     private _data: any;
+    private _dataKind: string;
 
-    constructor(data: any) {
+    constructor(data: any, dataKind: string = "NOT_PROVIDED") {
         super();
         this._data = data;
+        this._dataKind = dataKind;
     }
 
-    /** The user MUST NOT mutate the returned array under any circumstances. */
-    public unsafe_borrow_data(): DetNode[] {
+    public get dataKind(): string {
+        return this._dataKind;
+    }
+
+    /** The user MUST NOT mutate the returned data */
+    public unsafe_borrow_data(): any {
         return this._data;
     }
 }

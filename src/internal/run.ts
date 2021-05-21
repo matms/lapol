@@ -1,16 +1,16 @@
 import { compile } from "./compile";
-import * as nodePath from "path";
 import { initGlobalLapoLContext } from "./context";
 import { outFilePath } from "./utils";
+import { LaPath } from "./la_path";
 
-export async function compileDbg(inFilePath: string, outFilePath: string) {
+export async function compileDbg(inFilePath: LaPath, outFilePath: LaPath): Promise<void> {
     console.log("\n====== Starting to compile ======\n");
 
-    let lctx = initGlobalLapoLContext();
+    const lctx = initGlobalLapoLContext();
 
-    let o = await compile(
+    const o = await compile(
         {
-            inputFilePath: nodePath.resolve(inFilePath),
+            inputFilePath: inFilePath,
             outputFilePath: outFilePath,
             targetLanguage: "html",
         },
@@ -18,9 +18,7 @@ export async function compileDbg(inFilePath: string, outFilePath: string) {
     );
 
     console.log(
-        `\nFinished compiling '${inFilePath}' (${nodePath.resolve(
-            inFilePath
-        )}), outputted to '${outFilePath}'.\n`
+        `\nFinished compiling '${inFilePath.fullPath}', outputted to '${outFilePath.fullPath}'.\n`
     );
 
     console.log(o.dbgTimingInfo);
@@ -28,20 +26,9 @@ export async function compileDbg(inFilePath: string, outFilePath: string) {
     console.log("Done with compileDbg");
 }
 
-export async function render(
-    filePath: string,
-    target: string = "html",
-    forcePathKind?: "windows" | "posix" | undefined
-) {
-    let ofp = outFilePath(filePath, target, forcePathKind);
-    console.log(`Will render ${filePath} to ${ofp}`);
+export async function render(filePath: LaPath, target: string = "html"): Promise<void> {
+    const ofp = outFilePath(filePath, target);
+    console.log(`Will render ${filePath.fullPath} to ${ofp.fullPath}`);
     await compileDbg(filePath, ofp);
     console.log("Done!");
-}
-
-// What to do if no parameters are passed (this is useful for debugging with vscode)
-export function debugDefaultActions() {
-    console.log("Calling compile");
-    render("test_scratch/stress_test_0.lap", "html", "posix");
-    console.log("Called compile, now wait for the promises!");
 }

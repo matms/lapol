@@ -10,8 +10,8 @@ import { LapolContext } from "./context";
 import { LaPath } from "./la_path";
 
 export interface CompileInput {
-    inputFilePath: string;
-    outputFilePath: string;
+    inputFilePath: LaPath;
+    outputFilePath: LaPath;
     targetLanguage: string;
 }
 
@@ -25,22 +25,22 @@ export interface CompileOutput {
 }
 
 export async function compile(c: CompileInput, lctx: LapolContext): Promise<CompileOutput> {
-    let t1 = Date.now();
-    let text_buf = await readFileBuffer(new LaPath(c.inputFilePath));
-    let t2 = Date.now();
-    let parsed = parse_file(c.inputFilePath, text_buf) as AstRootNode;
+    const t1 = Date.now();
+    const textBuf = await readFileBuffer(c.inputFilePath);
+    const t2 = Date.now();
+    const parsed = parse_file(c.inputFilePath.fullPath, textBuf) as AstRootNode;
     assert(parsed.t === "AstRootNode");
-    let t3 = Date.now();
-    let evaluated = await evaluateAst(parsed, lctx, c.inputFilePath);
-    let t4 = Date.now();
-    let processed = await processDet(evaluated);
-    let t5 = Date.now();
-    let output = await outputDet(processed, c.targetLanguage);
-    let t6 = Date.now();
-    await writeFile(new LaPath(c.outputFilePath), output.str);
-    let t7 = Date.now();
+    const t3 = Date.now();
+    const evaluated = await evaluateAst(parsed, lctx, c.inputFilePath.fullPath);
+    const t4 = Date.now();
+    const processed = await processDet(evaluated);
+    const t5 = Date.now();
+    const output = await outputDet(processed, c.targetLanguage);
+    const t6 = Date.now();
+    await writeFile(c.outputFilePath, output.str);
+    const t7 = Date.now();
 
-    let dbgTimingInfo =
+    const dbgTimingInfo =
         `COMPILATION TIMINGS (All in milliseconds)\n` +
         `Read file in: ${t2 - t1} | Cumulative time: ${t2 - t1}\n` +
         `Parsing: ${t3 - t2} | Cumulative time: ${t3 - t1}\n` +
@@ -51,7 +51,7 @@ export async function compile(c: CompileInput, lctx: LapolContext): Promise<Comp
 
     return {
         dbgTimingInfo: dbgTimingInfo,
-        dbgInputText: text_buf,
+        dbgInputText: textBuf,
         dbgParsed: parsed,
         dbgEvaluated: evaluated,
         dbgProcessed: processed,

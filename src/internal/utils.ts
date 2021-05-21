@@ -1,6 +1,5 @@
 import { promises as fsp } from "fs";
 import mkdirp from "mkdirp";
-import * as nodePath from "path";
 import { LaPath } from "./la_path";
 
 /** WARNING: Promises are truthy, I think. MAKE SURE TO AWAIT THIS! */
@@ -38,22 +37,8 @@ export function isWhitespace(str: string): boolean {
 
 // TODO: Currently, if folder 'out' does not exist, this gives an error. So, create the folder
 // out automatically, if it doesn't exist.
-export function outFilePath(
-    inFilePath: string,
-    targetExt: string,
-    forcePathKind?: "windows" | "posix" | undefined
-) {
-    if (forcePathKind === "windows") {
-        const p = nodePath.win32.parse(inFilePath);
-        const sep = nodePath.win32.sep;
-        return p.dir + sep + "out" + sep + p.name + "." + targetExt;
-    } else if (forcePathKind === "posix") {
-        const p = nodePath.posix.parse(inFilePath);
-        const sep = nodePath.posix.sep;
-        return p.dir + sep + "out" + sep + p.name + "." + targetExt;
-    } else {
-        const p = nodePath.parse(inFilePath);
-        const sep = nodePath.sep;
-        return p.dir + sep + "out" + sep + p.name + "." + targetExt;
-    }
+export function outFilePath(inFilePath: LaPath, targetExt: string): LaPath {
+    const p = inFilePath.parsed;
+    const sep = inFilePath.sep;
+    return new LaPath(p.dir + sep + "out" + sep + p.name + "." + targetExt, inFilePath.pathKind);
 }
