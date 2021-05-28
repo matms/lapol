@@ -4,13 +4,18 @@
  */
 
 import { strict as assert } from "assert";
-import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstTextNode } from "../ast";
-import { Command } from "../command/command";
+import { AstNode, AstNodeKind, AstRootNode, AstTextNode } from "../ast";
 import { LapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "./environment";
+import { evaluateCommand } from "./evaluate_command";
 import { evaluateRoot } from "./root";
+
+/** An Expr(tag = SPLICE_EXPR) node will be spliced into the surrounding node. That is, the subnodes
+ * of this node will become part of the surrounding node's subnodes.
+ */
+export const SPLICE_EXPR = "splice";
 
 /** Evaluate the Abstract Syntax Tree.
  *
@@ -50,45 +55,16 @@ export function evaluateNode(node: AstNode, env: Environment): DetNode {
     }
 }
 
-function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode {
-    assert(commandNode.t === AstNodeKind.AstCommandNode);
-
-    let command = env.lookupCommand(commandNode.commandName);
-
-    if (command === undefined) {
-        throw new LapolError(`Command (name: ${commandNode.commandName}) not in environment.`);
-    } else if (!(command instanceof Command)) {
-        throw new LapolError(`Value (command name: ${commandNode.commandName}) is not a Command.`);
-    }
-
-    // TODO commandNode.squareArg;
-
-    // TODO: Allow some commands to defer evaluation of their arguments (e.g. "if")
-    // "lazy arguments"
-    let evalCurlyArgs: DetNode[][] = [];
-    for (let curlyArg of commandNode.curlyArgs) {
-        evalCurlyArgs.push(evaluateNodeArray(curlyArg, env));
-    }
-    // TODO Implement
-
-    let out = command.call(evalCurlyArgs, env);
-
-    if (out === undefined) {
-        // Splicing in an empty array means adding nothing to the DET.
-        return new Expr("splice", []);
-    } else return out;
-}
-
 function evaluateStrNode(strNode: AstTextNode, env: Environment): Str {
     assert(strNode.t === AstNodeKind.AstTextNode);
     return new Str(strNode.content);
 }
 
-function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {
+export function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {
     let cont = [];
     for (let node of nodeArray) {
         let n = evaluateNode(node, env);
-        if (n instanceof Expr && n.tag === "splice") {
+        if (n instanceof Expr && n.tag === SPLICE_EXPR) {
             for (let sn of n.contentsIter()) cont.push(sn);
         } else {
             cont.push(n);
