@@ -6,7 +6,7 @@ export interface StdModuleIdentifier {
 
 export interface UserModuleIdentifier {
     isStd: false;
-    path: string;
+    pathStr: string;
     modName: string;
     fullIdStr: string;
 }

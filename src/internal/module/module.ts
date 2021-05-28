@@ -30,7 +30,7 @@ export function resolveModuleFromPath(path: string, identStr: string): ModuleIde
     return {
         isStd: false,
         modName: identStr,
-        path: path,
+        pathStr: path,
         fullIdStr: "<module-id>[" + identStr + "]",
     };
 }

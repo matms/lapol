@@ -17,7 +17,7 @@ export class ModuleManager {
     private findModulePath(moduleIdentifier: ModuleIdentifier): string {
         if (moduleIdentifier.isStd) {
             return this.findStdModulePath(moduleIdentifier.modName);
-        } else return moduleIdentifier.path;
+        } else return moduleIdentifier.pathStr;
     }
 
     private findStdModulePath(modName: string): string {
