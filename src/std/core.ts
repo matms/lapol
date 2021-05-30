@@ -7,7 +7,7 @@
  * In this case, you WILL BE ABLE TO (can't yet) access these with 'core:import'
  */
 
-import { CommandArguments } from "../internal/command/argument";
+import { CommandArguments as Args } from "../internal/command/argument";
 import { Command } from "../internal/command/command";
 import { DetNode, Expr, Str } from "../internal/det";
 import { LapolError } from "../internal/errors";
@@ -23,7 +23,7 @@ class RequireCommand extends Command {
         super("Other", "quick_import");
     }
 
-    call(a: CommandArguments): undefined {
+    call(a: Args): undefined {
         throw new LapolError(
             "__require shouldn't be evaluated, it is a special command. Probably you attempted to use __require within __doc, which is an error."
         );
@@ -38,6 +38,6 @@ const commands = {
     // import: "TODO",
 };
 
-function __doc(a: CommandArguments): DetNode {
+function __doc(a: Args): DetNode {
     return new Expr("doc", a.ca(0));
 }
