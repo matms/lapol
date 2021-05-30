@@ -1,26 +1,50 @@
 import { Data, DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
+import { NodeOutputter } from "./node_outputter";
+import { OutputCtx } from "./output";
 
-export function outputNodeToHtml(node: DetNode): string {
-    if (node instanceof Str) return node.text;
-    if (node instanceof Data) throw new LapolError("Cannot output DET node of type Data to HTML.");
-    if (node instanceof Expr) {
-        if (node.tag === "root") {
-            const cs = node
-                .unsafeBorrowContents()
-                .map((c) => outputNodeToHtml(c))
-                .reduce((a, b) => a + b, "");
-            // TODO: Use template.
-            return `<html><head><meta charset="UTF-8"></head><body>${cs}</body></html>`;
-        } else {
-            if (node.unsafeBorrowContents().length === 0) return `<${node.tag}/>`;
+export class DefaultHtmlStrOutputter extends NodeOutputter<Str, string> {
+    nodeKind: "Str" = "Str";
+    nodeTag = undefined;
 
-            const cs = node
-                .unsafeBorrowContents()
-                .map((c) => outputNodeToHtml(c))
-                .reduce((a, b) => a + b, "");
-            return `<${node.tag}>${cs}</${node.tag}>`;
-        }
+    public output(ctx: OutputCtx<string>, node: Str): string {
+        // TODO: HTML Escaping!
+        return node.text;
     }
-    throw new LapolError("Unsupported / Unknown DetNode type");
+}
+
+export class GenericHtmlTagOutputter extends NodeOutputter<Expr, string> {
+    nodeKind: "Expr" = "Expr";
+    nodeTag: string;
+    htmlTag: string;
+
+    constructor(nodeTag: string, htmlTag: string) {
+        super();
+        this.nodeTag = nodeTag;
+        this.htmlTag = htmlTag;
+    }
+
+    public output(ctx: OutputCtx<string>, node: Expr): string {
+        if (node.unsafeBorrowContents().length === 0) return `<${this.htmlTag}/>`;
+
+        const cs = node
+            .unsafeBorrowContents()
+            .map((c) => ctx.output(c))
+            .reduce((a, b) => a + b, "");
+        return `<${this.htmlTag}>${cs}</${this.htmlTag}>`;
+    }
+}
+
+export class HtmlRootOutputter extends NodeOutputter<Expr, string> {
+    nodeKind: "Expr" = "Expr";
+    nodeTag: string = "root";
+
+    public output(ctx: OutputCtx<string>, node: Expr): string {
+        const cs = node
+            .unsafeBorrowContents()
+            .map((c) => ctx.output(c))
+            .reduce((a, b) => a + b, "");
+        // TODO: Use template.
+        return `<html><head><meta charset="UTF-8"></head><body>${cs}</body></html>`;
+    }
 }
