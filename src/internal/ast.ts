@@ -39,7 +39,7 @@ export interface SquareArgVal {
 }
 
 export interface SquareArgKeyVal {
-    t: "Val";
+    t: "KeyVal";
     c: SquareEntry[];
 }
 
