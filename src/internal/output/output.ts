@@ -18,6 +18,7 @@ export async function outputDet(detRootNode: DetNode, target: string): Promise<O
             exprOutputterMap.set("root", new HtmlRootOutputter());
             exprOutputterMap.set("h1", new GenericHtmlTagOutputter("h1", "h1"));
             exprOutputterMap.set("h2", new GenericHtmlTagOutputter("h2", "h2"));
+            exprOutputterMap.set("h3", new GenericHtmlTagOutputter("h3", "h3"));
             exprOutputterMap.set("doc", new GenericHtmlTagOutputter("doc", "div"));
             exprOutputterMap.set("p", new GenericHtmlTagOutputter("p", "p"));
             exprOutputterMap.set("i", new GenericHtmlTagOutputter("i", "i"));

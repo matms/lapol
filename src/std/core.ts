@@ -9,9 +9,12 @@
 
 import { CommandArguments as Args } from "../internal/command/argument";
 import { Command } from "../internal/command/command";
+import { CommandContext } from "../internal/command/context";
 import { DetNode, Expr, Str } from "../internal/det";
 import { LapolError } from "../internal/errors";
+import { parseIdentifier } from "../internal/identifier";
 import { ModuleLoader } from "../internal/module/loader";
+import { Namespace } from "../internal/namespace";
 
 export function load(loader: ModuleLoader): void {
     loader.exportCommands(commands);
@@ -30,10 +33,79 @@ class RequireCommand extends Command {
     }
 }
 
+class UsingCommand extends Command {
+    constructor() {
+        super("Other", "__using");
+    }
+
+    call(a: Args, ctx: CommandContext): undefined {
+        const thing = a.sa(0);
+        if (thing === undefined)
+            throw new LapolError(`__using: Must provide thing to use (as 0th square argument)`);
+        if (typeof thing !== "string")
+            throw new LapolError(
+                `__using: thing to use (0th square argument) must be identifier string.`
+            );
+
+        let from = a.kwa("from");
+        if (from !== undefined && typeof from !== "string")
+            throw new LapolError(`__using: from must be identifier string.`);
+
+        if (from === undefined) {
+            from = "";
+        } else {
+            from += ":";
+        }
+
+        const as = a.kwa("as");
+        if (as === undefined) throw new LapolError(`__using: Must provide as`);
+        if (typeof as !== "string") throw new LapolError(`__using: as must be identifier string.`);
+
+        const target = ctx.currNamespace.lookup(parseIdentifier(from + thing));
+
+        if (target === undefined) throw new LapolError(`__using: Could not find "from"`);
+
+        ctx.currNamespace.addUsing(as, target);
+        return undefined;
+    }
+}
+
+class UsingAllCommand extends Command {
+    constructor() {
+        super("Other", "__using_all");
+    }
+
+    call(a: Args, ctx: CommandContext): undefined {
+        const from = a.kwa("from");
+        if (from === undefined)
+            throw new LapolError(`__using_all: Must provide thing to use (as 0th square argument)`);
+        if (typeof from !== "string")
+            throw new LapolError(`__using_all: from must be identifier string.`);
+
+        const prefixIn = a.kwa("prefix_in", "");
+        if (typeof prefixIn !== "string")
+            throw new LapolError(`__using_all: prefix_in must be string.`);
+
+        const target = ctx.currNamespace.lookup(parseIdentifier(from));
+        if (!(target instanceof Namespace))
+            throw new LapolError(`using_all: from must be namespace.`);
+
+        for (const [k, v] of target.children) {
+            ctx.currNamespace.addUsing(prefixIn + k, v);
+        }
+
+        return undefined;
+    }
+}
+
 const requireCommand = new RequireCommand();
+const usingCommand = new UsingCommand();
+const usingAllCommand = new UsingAllCommand();
 
 const commands = {
     __require: requireCommand,
+    __using: usingCommand,
+    __using_all: usingAllCommand,
     __doc: __doc,
     // import: "TODO",
 };

@@ -4,12 +4,17 @@ import { Command } from "../command/command";
 import { LapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
+import { parseIdentifier } from "../identifier";
 import { LaPath } from "../la_path";
 import { procureAnonMod } from "../module/find/find";
 import { resolveModule, resolveModuleFromPath } from "../module/module";
+import { Namespace } from "../namespace";
 import { isWhitespace } from "../utils";
 import { Environment } from "./environment";
 import { evaluateNode } from "./evaluate";
+
+const STD_CORE_MOD = "std/core";
+const DEFAULT_USE_FROM_CORE = ["__doc", "__require", "__using", "__using_all"];
 
 function isDocNode(n: AstNode) {
     return n.t === AstNodeKind.AstCommandNode && n.commandName == "__doc";
@@ -69,13 +74,13 @@ export async function evaluateRoot(
         .slice(0, docIndex)
         .filter((n) => n.t === AstNodeKind.AstCommandNode) as AstCommandNode[];
 
-    let modulesToLoad = [resolveModule("std:core")];
+    let modulesToLoad = [resolveModule(STD_CORE_MOD)];
 
     let requiredModulesP = header
         .filter((n) => n.commandName === "__require")
         .map(async (n) => {
             if (n.curlyArgs.length === 0) {
-                let identifier = resolveModuleFromPath(await getAnonModPath(), "__require_anon");
+                let identifier = resolveModuleFromPath(await getAnonModPath(), "__anon__");
                 return identifier;
             } else {
                 assert(n.curlyArgs.length === 1);
@@ -130,8 +135,21 @@ export async function evaluateRoot(
         `<evaluateRoot> Directly loaded mods (note other modules may be indirectly loaded by these): \n\t ${loadedModNames}.`
     );
 
-    let doc = rootNode.subNodes[docIndex];
+    function addUsingFromCoreHelper(cmd: string): void {
+        env.rootNamespace.addUsing(
+            `${cmd}`,
+            env.rootNamespace.lookupItem(parseIdentifier(`core:${cmd}`)) as Command
+        );
+    }
 
+    DEFAULT_USE_FROM_CORE.forEach(addUsingFromCoreHelper);
+
+    // TODO: IMPORTANT -> Error out if any of these comes before __require, or at least
+    // warn the user that execution is non-linear.
+    const afterRequires = header.filter((n) => n.commandName !== "__require");
+    afterRequires.forEach((n) => evaluateNode(n, env));
+
+    let doc = rootNode.subNodes[docIndex];
     let out = new Expr("root", [evaluateNode(doc, env)]);
 
     let t3 = Date.now();

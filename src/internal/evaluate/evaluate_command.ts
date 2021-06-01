@@ -1,5 +1,5 @@
 import { strict as assert } from "assert";
-import { AstCommandNode, AstNodeKind } from "../ast";
+import { AstCommandNode, AstNodeKind, SquareEntry } from "../ast";
 import { CmdSquareArg, EagerCommandArguments } from "../command/argument";
 import { Command } from "../command/command";
 import { DetNode, Expr } from "../det";
@@ -22,7 +22,7 @@ export function evaluateCommand(commandNode: AstCommandNode, env: Environment): 
 
     const commandArguments = evaluateEagerCommandArguments(commandNode, env);
 
-    const out = command.call(commandArguments);
+    const out = command.call(commandArguments, { currNamespace: env.rootNamespace });
 
     if (out === undefined) {
         // Splicing in an empty array means adding nothing to the DET.
@@ -34,11 +34,28 @@ function evaluateEagerCommandArguments(
     commandNode: AstCommandNode,
     env: Environment
 ): EagerCommandArguments {
-    // TODO: Square Args
-    const evalKeywordArgs = new Map();
-
-    // TODO: Keyword Args
+    const evalKeywordArgs: Map<string, CmdSquareArg> = new Map();
     const evalSquareArgs: CmdSquareArg[] = [];
+
+    // TODO
+    if (commandNode.squareArgs !== null) {
+        for (const sq of commandNode.squareArgs) {
+            switch (sq.t) {
+                case "Val": {
+                    evalSquareArgs.push(evaluateSquareEntry(sq.c, env));
+                    break;
+                }
+                case "KeyVal": {
+                    const [key, val] = sq.c;
+                    const key_eval = evaluateSquareEntry(key, env);
+                    if (typeof key_eval !== "string")
+                        throw new LapolError(`Key for Keyword argument must evaluate to string.`);
+                    evalKeywordArgs.set(key_eval, evaluateSquareEntry(val, env));
+                    break;
+                }
+            }
+        }
+    }
 
     const evalCurlyArgs: DetNode[][] = [];
     for (const curlyArg of commandNode.curlyArgs) {
@@ -46,4 +63,24 @@ function evaluateEagerCommandArguments(
     }
 
     return new EagerCommandArguments(evalKeywordArgs, evalSquareArgs, evalCurlyArgs);
+}
+
+function evaluateSquareEntry(
+    v: SquareEntry,
+    env: Environment
+): string | boolean | number | DetNode {
+    switch (v.t) {
+        case "Bool":
+        case "Ident":
+        case "Num":
+        case "QuotedStr": {
+            return v.c;
+            break;
+        }
+        case "AstNode": {
+            assert(v.c.t === "AstCommandNode");
+            return evaluateCommand(v.c, env);
+            break;
+        }
+    }
 }

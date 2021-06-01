@@ -3,6 +3,7 @@ import { DetNode } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "../evaluate/environment";
 import { ArgumentEvaluationStrategy, CommandArguments } from "./argument";
+import { CommandContext } from "./context";
 
 type CommandKind = "JsFnCommand" | "Other";
 
@@ -16,7 +17,7 @@ export abstract class Command {
         this._name = name;
     }
 
-    public abstract call(args: CommandArguments): DetNode | undefined;
+    public abstract call(args: CommandArguments, ctx: CommandContext): DetNode | undefined;
 }
 
 export class JsFnCommand extends Command {
