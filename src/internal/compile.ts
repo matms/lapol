@@ -5,8 +5,8 @@ import { DetNode } from "./det";
 import { evaluateAst } from "./evaluate/evaluate";
 import { outputDet, OutputData } from "./output/output";
 import { processDet } from "./process/process";
-import { readFileBuffer, writeFile } from "./utils";
-import { InternalLapolContext } from "./internal_context";
+import { outFilePath, readFileBuffer, writeFile } from "./utils";
+import { initInternalLapoLContext, InternalLapolContext } from "./internal_context";
 import { LaPath } from "./la_path";
 
 export interface CompileInput {
@@ -24,7 +24,7 @@ export interface CompileOutput {
     dbgOutputted: OutputData;
 }
 
-export async function compile(c: CompileInput, lctx: InternalLapolContext): Promise<CompileOutput> {
+async function compile(c: CompileInput, lctx: InternalLapolContext): Promise<CompileOutput> {
     const t1 = Date.now();
     const textBuf = await readFileBuffer(c.inputFilePath);
     const t2 = Date.now();
@@ -57,4 +57,29 @@ export async function compile(c: CompileInput, lctx: InternalLapolContext): Prom
         dbgProcessed: processed,
         dbgOutputted: output,
     };
+}
+
+const COMPILE_DBG_PRINT = true;
+
+export async function render(filePath: LaPath, target: string = "html"): Promise<void> {
+    const inPath = filePath;
+    const outPath = outFilePath(filePath, target);
+
+    if (COMPILE_DBG_PRINT) console.log("\n====== Starting to compile LaPoL file ======\n");
+
+    const lctx = initInternalLapoLContext();
+    const o = await compile(
+        {
+            inputFilePath: inPath,
+            outputFilePath: outPath,
+            targetLanguage: "html",
+        },
+        lctx
+    );
+
+    if (COMPILE_DBG_PRINT) {
+        console.log(`\nTiming info ('${inPath.fullPath}' to '${outPath.fullPath}').\n`);
+        console.log(o.dbgTimingInfo);
+        console.log(`\nFinished compiling ('${inPath.fullPath}' to '${outPath.fullPath}').\n`);
+    }
 }

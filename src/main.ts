@@ -1,44 +1,24 @@
 /* eslint-disable import/first */
-// Setup the NODE_PATH variable before importing stuff.
-_setupNodePath();
 
-import { render } from "./internal/run";
-import { init as lapol_rs_init } from "lapol-rs";
-import { LaPath } from "./internal/la_path";
+let isNodePathInit = false;
+let isLapolRsInit = false;
 
-export async function consoleMain(): Promise<void> {
-    console.log("Hello, LaPoL!");
-    console.log(process.argv);
-
-    const args = process.argv.slice(2);
-    console.log(args);
-
-    if (args.length === 0) {
-        console.log("No arguments passed, so not doing anything, I think (?)");
-    } else {
-        if (args[0] === "render") {
-            if (args.length !== 2) {
-                console.error(`LAPOL ERROR <@ main>: Must indicate exactly one file to render`);
-            } else await render(new LaPath(args[1]));
-        } else if (args[0] === "profile") {
-            if (args.length !== 2) {
-                console.error(`LAPOL ERROR <@ main>: Must indicate exactly one file to render`);
-            } else {
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
-                    await render(new LaPath(args[1]));
-                }
-            }
-        } else console.error(`LAPOL ERROR <@ main>: Unknown command ${args[0]}`);
-    }
+// It is important to run setupNodePath _before_ importing (it messes with NODE_PATH).
+if (!isNodePathInit) {
+    setupNodePath();
+    isNodePathInit = true;
 }
 
-lapol_rs_init();
+import { init as lapol_rs_init } from "lapol-rs";
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-consoleMain();
+if (!isLapolRsInit) {
+    lapol_rs_init(); // Sets up rust panic handler.
+    isLapolRsInit = true;
+}
 
-// ================================================================================================
+export function isLapolGloballyInitialized(): boolean {
+    return isNodePathInit && isLapolRsInit;
+}
 
 /** Setup NODE_PATH to point to the folder "build" (refer to tsconfig.json).
  *
@@ -59,7 +39,7 @@ consoleMain();
  * 2. lapol/internal/shell/compile_ts, namely, `makeTsCfg`, which is responsible for setting up the
  *    TypeScript compilation settings for dynamically compiled LaPoL modules.
  */
-function _setupNodePath(): void {
+function setupNodePath(): void {
     // See https://stackoverflow.com/questions/21358994/node-js-programmatically-setting-node-path/33976627#33976627
     // Explanation: This serves SOLELY to allow user defined modules to load lapol files using lapol/*
     // For instance, "lapol/main" resolves to this file.

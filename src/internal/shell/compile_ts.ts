@@ -97,17 +97,8 @@ async function needCompile(modFile: LaPath): Promise<boolean> {
 export async function jsModFromTs(modFile: LaPath): Promise<LaPath> {
     const tPre = Date.now();
     if (!(await needCompile(modFile))) {
-        const tPost = Date.now();
-        console.log(
-            `<jsModFromTs> Timestamp matches, NOT recompiling "${modFile.fullPath}". Took ${
-                tPost - tPre
-            } millis to verify this.`
-        );
         return compileOutFilePath(modFile);
     }
-    console.log(
-        `\n<jsModFromTs> Compiling Typescript module "${modFile.fullPath}" to Javascript\n`
-    );
 
     const s = await fsStat(modFile.fullPath, { bigint: true });
     const srcMTimeNs = s.mtimeNs;
@@ -117,13 +108,12 @@ export async function jsModFromTs(modFile: LaPath): Promise<LaPath> {
     try {
         const t0 = Date.now();
 
-        await makeTsCfg(modFile);
+        console.log(`<jsModFromTs> Starting to compile '${modFile.fullPath}'.`);
 
-        console.log("Cool.");
+        await makeTsCfg(modFile);
 
         const cmd2 = `tsc -p "${p.dir}${sep}${TSCONFIG_FILE_NAME}"`;
 
-        console.log(`<jsModFromTs> cmd = {${cmd2}}`);
         const { stdout, stderr } = await exec(cmd2, {
             cwd: p.dir,
             shell: os_type() === "Windows_NT" ? "powershell.exe" : undefined,
@@ -137,11 +127,9 @@ export async function jsModFromTs(modFile: LaPath): Promise<LaPath> {
         const t2 = Date.now();
 
         console.log(
-            `<jsModFromTs> Finished compiling TS module after ${t1 - t0} (+ ${
-                t2 - t1
-            } extra) millis (path ${modFile.fullPath})`
+            `<jsModFromTs> Finished compiling '${modFile.parsed.base}' after ${t2 - tPre} ms.`
         );
-        console.log(`<jsModFromTs> Total time: ${t2 - tPre}`);
+
         if (stdout !== "" || stderr !== "") {
             console.log(
                 `<jsModFromTs> "${modFile.fullPath}", exec outputted something! Notably:\n\tstdout: ${stdout}\n\tstderr:${stderr}`
