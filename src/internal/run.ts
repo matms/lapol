@@ -1,12 +1,12 @@
 import { compile } from "./compile";
-import { initGlobalLapoLContext } from "./context";
+import { initInternalLapoLContext } from "./internal_context";
 import { outFilePath } from "./utils";
 import { LaPath } from "./la_path";
 
 export async function compileDbg(inFilePath: LaPath, outFilePath: LaPath): Promise<void> {
     console.log("\n====== Starting to compile ======\n");
 
-    const lctx = initGlobalLapoLContext();
+    const lctx = initInternalLapoLContext();
 
     const o = await compile(
         {

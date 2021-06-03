@@ -5,7 +5,7 @@
 
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstRootNode, AstTextNode } from "../ast";
-import { LapolContext } from "../context";
+import { InternalLapolContext } from "../internal_context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "./environment";
@@ -29,7 +29,7 @@ export const SPLICE_EXPR = "splice";
  */
 export async function evaluateAst(
     node: AstRootNode,
-    lctx: LapolContext,
+    lctx: InternalLapolContext,
     filePath: string
 ): Promise<DetNode> {
     let out = await evaluateRoot(node, lctx, filePath);

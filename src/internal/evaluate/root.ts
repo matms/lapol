@@ -1,7 +1,7 @@
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstTextNode } from "../ast";
 import { Command } from "../command/command";
-import { LapolContext } from "../context";
+import { InternalLapolContext } from "../internal_context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { parseIdentifier } from "../identifier";
@@ -55,7 +55,7 @@ function checkRoot(rootNode: AstRootNode, docIndex: number) {
 
 export async function evaluateRoot(
     rootNode: AstRootNode,
-    lctx: LapolContext,
+    lctx: InternalLapolContext,
     filePath: string
 ): Promise<Expr> {
     async function getAnonModPath(): Promise<string> {

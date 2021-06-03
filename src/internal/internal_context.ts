@@ -1,9 +1,9 @@
 import { ModuleManager } from "./module/manager";
 
-export interface LapolContext {
+export interface InternalLapolContext {
     moduleManager: ModuleManager;
 }
 
-export function initGlobalLapoLContext(): LapolContext {
+export function initInternalLapoLContext(): InternalLapolContext {
     return { moduleManager: ModuleManager._create() };
 }

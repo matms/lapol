@@ -6,7 +6,7 @@ import { evaluateAst } from "./evaluate/evaluate";
 import { outputDet, OutputData } from "./output/output";
 import { processDet } from "./process/process";
 import { readFileBuffer, writeFile } from "./utils";
-import { LapolContext } from "./context";
+import { InternalLapolContext } from "./internal_context";
 import { LaPath } from "./la_path";
 
 export interface CompileInput {
@@ -24,7 +24,7 @@ export interface CompileOutput {
     dbgOutputted: OutputData;
 }
 
-export async function compile(c: CompileInput, lctx: LapolContext): Promise<CompileOutput> {
+export async function compile(c: CompileInput, lctx: InternalLapolContext): Promise<CompileOutput> {
     const t1 = Date.now();
     const textBuf = await readFileBuffer(c.inputFilePath);
     const t2 = Date.now();
