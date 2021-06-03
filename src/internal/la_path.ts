@@ -13,7 +13,7 @@ export class LaPath {
 
         this.pathKind = forcePathKind;
         this.fullPath = np.resolve(path);
-        this.parsed = np.parse(path);
+        this.parsed = np.parse(this.fullPath);
         this.sep = np.sep;
     }
 }
