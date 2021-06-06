@@ -49,47 +49,42 @@ function checkRoot(rootNode: AstRootNode, docIndex: number): void {
     }
 }
 
-export async function evaluateRoot(
+export function evaluateRoot(
     lctx: InternalLapolContext,
     rootNode: AstRootNode,
     filePath: string
-): Promise<Expr> {
+): Expr {
     const t0 = Date.now();
+
     const env = new Environment();
+    setupCoreModule(lctx, env);
 
     const docIndex = rootNode.subNodes.findIndex(isDocNode);
     checkRoot(rootNode, docIndex);
-
-    const header: AstCommandNode[] = rootNode.subNodes
+    const header = rootNode.subNodes
         .slice(0, docIndex)
         .filter((n) => n.t === AstNodeKind.AstCommandNode) as AstCommandNode[];
 
-    const requiredModules = [STD_CORE_MOD].concat(
-        header
-            .filter((n) => n.commandName === "__require")
-            .map((n) => {
-                if (n.curlyArgs.length === 0) {
-                    throw new LapolError("__require: You must indicate what module is required.");
-                } else {
-                    assert(n.curlyArgs.length === 1);
-                    assert(n.curlyArgs[0].length === 1);
-                    const t = n.curlyArgs[0][0];
-                    assert(t.t === AstNodeKind.AstTextNode);
-                    const name = t.content.trim();
-                    return name;
-                }
-            })
+    header.forEach((n) => evaluateNode(n, lctx, env)); // TODO
+
+    const doc = rootNode.subNodes[docIndex];
+
+    const t1 = Date.now();
+
+    const out = new Expr("root", [evaluateNode(doc, lctx, env)]);
+
+    const t2 = Date.now();
+    console.log(
+        `<evaluateRoot> eval header: ${t1 - t0}, eval __doc: ${t2 - t1}, cumulative: ${
+            t2 - t0
+        } (millis)`
     );
 
-    for (const modName of requiredModules) {
-        const mod = lctx.modules.get(modName);
-        if (mod === undefined)
-            throw new LapolError(
-                `Module ${modName} was required: you need to provide it when building LapolContext.`
-            );
-        env.loadModule(modName, mod);
-    }
+    return out;
+}
 
+/** Sets up "std::core". Also automatically "uses" the core commands. */
+function setupCoreModule(lctx: InternalLapolContext, env: Environment): void {
     function addUsingFromCoreHelper(cmd: string): void {
         env.rootNamespace.addUsing(
             `${cmd}`,
@@ -97,23 +92,12 @@ export async function evaluateRoot(
         );
     }
 
+    const mod = lctx.modules.get(STD_CORE_MOD);
+    if (mod === undefined)
+        throw new LapolError(
+            `Module ${STD_CORE_MOD} was required: you need to provide it when building LapolContext.`
+        );
+    env.loadModule(STD_CORE_MOD, mod);
+
     DEFAULT_USE_FROM_CORE.forEach(addUsingFromCoreHelper);
-
-    // TODO: IMPORTANT -> Error out if any of these comes before __require, or at least
-    // warn the user that execution is non-linear.
-    const afterRequires = header.filter((n) => n.commandName !== "__require");
-    afterRequires.forEach((n) => evaluateNode(n, env));
-
-    const doc = rootNode.subNodes[docIndex];
-
-    const t1 = Date.now();
-
-    const out = new Expr("root", [evaluateNode(doc, env)]);
-
-    const t2 = Date.now();
-    console.log(
-        `<evaluateRoot> setup: ${t1 - t0}, eval __doc: ${t2 - t1}, cumulative: ${t2 - t0} (millis)`
-    );
-
-    return out;
 }

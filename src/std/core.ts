@@ -7,6 +7,7 @@
  * In this case, you WILL BE ABLE TO (can't yet) access these with 'core:import'
  */
 
+import { AstNodeKind } from "../internal/ast";
 import { CommandArguments as Args } from "../internal/command/argument";
 import { Command } from "../internal/command/command";
 import { CommandContext } from "../internal/command/context";
@@ -28,10 +29,25 @@ class RequireCommand extends Command {
         super("Other", "quick_import");
     }
 
-    call(a: Args): undefined {
-        throw new LapolError(
-            "__require shouldn't be evaluated, it is a special command. Probably you attempted to use __require within __doc, which is an error."
-        );
+    call(a: Args, ctx: CommandContext): undefined {
+        const lctx = ctx.lctx;
+        const env = ctx.currEnv;
+
+        const modNode = a.caOrErr(0)[0];
+        if (!(modNode instanceof Str))
+            throw new LapolError("__require: Must pass in a single module name string");
+
+        const modName = modNode.text.trim();
+
+        const mod = lctx.modules.get(modName);
+        if (mod === undefined)
+            throw new LapolError(
+                `__require: Module ${modName} was required: you need to provide it when building LapolContext.`
+            );
+
+        env.loadModule(modName, mod);
+
+        return undefined;
     }
 }
 
@@ -109,7 +125,6 @@ const commands = {
     __using: usingCommand,
     __using_all: usingAllCommand,
     __doc: __doc,
-    // import: "TODO",
 };
 
 function __doc(a: Args): DetNode {

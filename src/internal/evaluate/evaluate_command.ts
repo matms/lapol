@@ -2,12 +2,17 @@ import { strict as assert } from "assert";
 import { AstCommandNode, AstNodeKind, SquareEntry } from "../ast";
 import { CmdSquareArg, EagerCommandArguments } from "../command/argument";
 import { Command } from "../command/command";
+import { InternalLapolContext } from "../context";
 import { DetNode, Expr } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "./environment";
 import { evaluateNodeArray, SPLICE_EXPR } from "./evaluate";
 
-export function evaluateCommand(commandNode: AstCommandNode, env: Environment): DetNode {
+export function evaluateCommand(
+    commandNode: AstCommandNode,
+    lctx: InternalLapolContext,
+    env: Environment
+): DetNode {
     assert(commandNode.t === AstNodeKind.AstCommandNode);
 
     const command = env.lookupCommand(commandNode.commandName);
@@ -18,11 +23,16 @@ export function evaluateCommand(commandNode: AstCommandNode, env: Environment): 
         throw new LapolError(`Value (command name: ${commandNode.commandName}) is not a Command.`);
     }
 
-    assert(command.argumentEvaluation === "eager"); // TODO: Allow lazy commands!
+    // TODO: Allow lazy commands!
+    assert(command.argumentEvaluation === "eager");
 
-    const commandArguments = evaluateEagerCommandArguments(commandNode, env);
+    const commandArguments = evaluateEagerCommandArguments(commandNode, lctx, env);
 
-    const out = command.call(commandArguments, { currNamespace: env.rootNamespace });
+    const out = command.call(commandArguments, {
+        lctx: lctx,
+        currEnv: env,
+        currNamespace: env.rootNamespace,
+    });
 
     if (out === undefined) {
         // Splicing in an empty array means adding nothing to the DET.
@@ -32,25 +42,25 @@ export function evaluateCommand(commandNode: AstCommandNode, env: Environment): 
 
 function evaluateEagerCommandArguments(
     commandNode: AstCommandNode,
+    lctx: InternalLapolContext,
     env: Environment
 ): EagerCommandArguments {
     const evalKeywordArgs: Map<string, CmdSquareArg> = new Map();
     const evalSquareArgs: CmdSquareArg[] = [];
 
-    // TODO
     if (commandNode.squareArgs !== null) {
         for (const sq of commandNode.squareArgs) {
             switch (sq.t) {
                 case "Val": {
-                    evalSquareArgs.push(evaluateSquareEntry(sq.c, env));
+                    evalSquareArgs.push(evaluateSquareEntry(sq.c, lctx, env));
                     break;
                 }
                 case "KeyVal": {
                     const [key, val] = sq.c;
-                    const keyEval = evaluateSquareEntry(key, env);
+                    const keyEval = evaluateSquareEntry(key, lctx, env);
                     if (typeof keyEval !== "string")
                         throw new LapolError(`Key for Keyword argument must evaluate to string.`);
-                    evalKeywordArgs.set(keyEval, evaluateSquareEntry(val, env));
+                    evalKeywordArgs.set(keyEval, evaluateSquareEntry(val, lctx, env));
                     break;
                 }
             }
@@ -59,7 +69,7 @@ function evaluateEagerCommandArguments(
 
     const evalCurlyArgs: DetNode[][] = [];
     for (const curlyArg of commandNode.curlyArgs) {
-        evalCurlyArgs.push(evaluateNodeArray(curlyArg, env));
+        evalCurlyArgs.push(evaluateNodeArray(curlyArg, lctx, env));
     }
 
     return new EagerCommandArguments(evalKeywordArgs, evalSquareArgs, evalCurlyArgs);
@@ -67,6 +77,7 @@ function evaluateEagerCommandArguments(
 
 function evaluateSquareEntry(
     v: SquareEntry,
+    lctx: InternalLapolContext,
     env: Environment
 ): string | boolean | number | DetNode {
     switch (v.t) {
@@ -78,7 +89,7 @@ function evaluateSquareEntry(
         }
         case "AstNode": {
             assert(v.c.t === "AstCommandNode");
-            return evaluateCommand(v.c, env);
+            return evaluateCommand(v.c, lctx, env);
         }
     }
 }

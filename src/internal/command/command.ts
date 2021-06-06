@@ -8,7 +8,8 @@ import { CommandContext } from "./context";
 type CommandKind = "JsFnCommand" | "Other";
 
 export abstract class Command {
-    public readonly argumentEvaluation: ArgumentEvaluationStrategy = "eager"; // TODO: Allow lazy commands.
+    // TODO: Allow lazy commands.
+    public readonly argumentEvaluation: ArgumentEvaluationStrategy = "eager";
     protected readonly _kind: CommandKind;
     protected _name: string;
 
