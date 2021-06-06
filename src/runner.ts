@@ -9,6 +9,10 @@ import { isLapolGloballyInitialized } from "./main";
 
 const LA_PROJECT_MAIN = "main";
 
+export interface ProjectMainArgs {
+    filesToRender: "all" | string[];
+}
+
 interface RenderCommand {
     t: "render";
     projectPath: string;
@@ -109,14 +113,11 @@ async function render_command(projectPath: string, filesToRender: "all" | string
             throw new Error(`Project file should be .js or .ts`);
     }
 
-    // TODO: Annotate appropriately, passing in useful data.
-    const mainFn = jsFile[LA_PROJECT_MAIN] as () => unknown;
+    const mainFn = jsFile[LA_PROJECT_MAIN] as (a: ProjectMainArgs) => unknown;
 
     // Note we are allowed to await whether or not mainFn returns a promise (normal js types
     // are awaitable!)
-
-    // TODO: Pass in arguments.
-    await mainFn();
+    await mainFn({ filesToRender: filesToRender });
 }
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises

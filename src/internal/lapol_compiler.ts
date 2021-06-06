@@ -39,7 +39,7 @@ export class LapolCompiler {
         this._ctx = internalCtx;
     }
 
-    /** Renders a file. TODO. */
+    /** Renders a file to a given target (e.g. "html"). */
     public async render(file: LaPath, target: string): Promise<void> {
         await runRender(this._ctx, file, target);
     }

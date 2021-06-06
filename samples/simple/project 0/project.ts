@@ -5,17 +5,21 @@ import {
     ModuleLoader,
     CommandArguments as Args,
     Expr,
+    ProjectMainArgs,
 } from "lapol/mod";
 import { mod as moduleMain } from "lapol/std/main";
 
-export async function main() {
+export async function main(args: ProjectMainArgs) {
+    if (args.filesToRender !== "all") {
+        // TODO: Handle one-file-renders.
+    }
+
     // TODO: Introduce better mechanism for getting local directory.
     const here = `${__dirname}/../..`;
     const file = new LaPath(`${here}/hello world.lap`);
 
     console.log(`<<< Rendering '${file.fullPath}'. >>>`);
 
-    // TODO: Load modules
     const lc: LapolCompiler = await new LapolCompilerBuilder()
         .withModule("__proj__", dunderProjMod)
         .withModule("std::main", moduleMain)

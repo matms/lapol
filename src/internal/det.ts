@@ -69,7 +69,7 @@ export class Expr extends DetNode {
     readonly kind = "Expr";
 
     private _tag: string;
-    private _attrs: Map<string, any>; // TODO: Do we want to allow numbers?
+    private _attrs: Map<string, any>; // TODO: Restrict the possible attribute types.
     private _contents: DetNode[];
 
     constructor(tag: string, contents?: DetNode[], attrs?: Map<string, any>) {

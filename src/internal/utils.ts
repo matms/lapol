@@ -21,8 +21,9 @@ export async function readFileBuffer(filePath: LaPath): Promise<Buffer> {
 }
 
 export async function writeFile(filePath: LaPath, data: string): Promise<void> {
+    // Create the directory which will contain this file, if it doesn't already exist
     await mkdirp(filePath.parsed.dir);
-    // await fsp.writeFile(filePath, data, { encoding: "utf8" });
+
     await fsp.writeFile(filePath.fullPath, data);
 }
 
@@ -35,8 +36,6 @@ export function isWhitespace(str: string): boolean {
     // https://stackoverflow.com/questions/1496826/check-if-a-single-character-is-a-whitespace
 }
 
-// TODO: Currently, if folder 'out' does not exist, this gives an error. So, create the folder
-// out automatically, if it doesn't exist.
 export function outFilePath(inFilePath: LaPath, targetExt: string): LaPath {
     const p = inFilePath.parsed;
     const sep = inFilePath.sep;

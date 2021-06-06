@@ -4,11 +4,9 @@ import { LapolModule, ModuleIdentifier } from "../module/module";
 import { Namespace, RootNamespace } from "../namespace";
 
 export class Environment {
-    // TODO: Is _rootNamespace inside of this a good idea?
     readonly rootNamespace: Namespace;
     readonly loadedModules: ModuleIdentifier[];
 
-    // TODO: Allow outerEnv?
     constructor() {
         this.loadedModules = [];
         this.rootNamespace = new RootNamespace();
