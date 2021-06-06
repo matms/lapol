@@ -34,10 +34,7 @@ export class JsFnCommand extends Command {
      * If `options` is not provided, all configurations will be assumed to be default.
      *
      * Options:
-     * - `varArgs` (boolean):
-     *   If true, the command will accept any number of curly args.
-     *   If false, the command will require a specific number of curly args (depending on `func`'s
-     *   signature).
+     *  none, currently.
      */
     public static fromJsFunction(func: Function, cmdName: string, options?: any): JsFnCommand {
         if (options === undefined) options = {};

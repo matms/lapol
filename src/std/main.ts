@@ -1,7 +1,9 @@
 import { CommandArguments as Args } from "../internal/command/argument";
 import { DetNode, Expr, Str, ModuleLoader } from "../mod";
 
-export function load(loader: ModuleLoader): void {
+export const mod = { loaderFn: load };
+
+function load(loader: ModuleLoader): void {
     loader.exportCommands(commands);
 }
 

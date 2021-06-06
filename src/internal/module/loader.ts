@@ -1,5 +1,4 @@
-import { LapolModule, resolveModule } from "./module";
-import { ModuleIdentifier } from "./metadata";
+import { LapolModule, ModuleIdentifier } from "./module";
 import { strict as assert } from "assert";
 import { Command, JsFnCommand } from "../command/command";
 
@@ -62,12 +61,9 @@ export class ModuleLoader {
             f();
         }
 
-        ModuleLoader.log(`_finalize: Finished loading ${this._identifier.fullIdStr}`);
+        ModuleLoader.log(`_finalize: Finished loading ${this._identifier.name}`);
 
-        return new LapolModule(this._commands, {
-            identifier: this._identifier,
-            requiredModules: this._requiredModules,
-        });
+        return new LapolModule(this._commands, this._identifier, this._requiredModules);
     }
 
     /** Export one or more commands.
@@ -103,6 +99,8 @@ export class ModuleLoader {
      * declareRequire().
      */
     public exportAllCommandsFrom(otherModule: string): void {
+        throw new Error("Not implemented.");
+        /*
         this._finalizeActions.push(() => {
             assert(this._requiredModulesLoaded !== undefined);
             const mod = this._requiredModulesLoaded.get(resolveModule(otherModule).fullIdStr);
@@ -111,6 +109,7 @@ export class ModuleLoader {
                 this._commands.set(k, cmd);
             }
         });
+        */
     }
 
     /** Declare that a module is required for this module to function. Note that this does
@@ -118,7 +117,7 @@ export class ModuleLoader {
      * the module immediately (i.e. we do not await for the module to load)
      */
     public declareRequire(moduleName: string): void {
-        this._requiredModules.push(resolveModule(moduleName));
+        this._requiredModules.push({ name: moduleName });
     }
 
     private static log(str: string): void {

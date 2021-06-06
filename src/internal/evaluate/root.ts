@@ -1,26 +1,22 @@
 import { strict as assert } from "assert";
-import { AstNode, AstNodeKind, AstCommandNode, AstRootNode, AstTextNode } from "../ast";
+import { AstNode, AstNodeKind, AstCommandNode, AstRootNode } from "../ast";
 import { Command } from "../command/command";
-import { InternalLapolContext } from "../internal_context";
-import { DetNode, Expr, Str } from "../det";
+import { InternalLapolContext } from "../context";
+import { Expr } from "../det";
 import { LapolError } from "../errors";
 import { parseIdentifier } from "../identifier";
-import { LaPath } from "../la_path";
-import { procureAnonMod } from "../module/find/find";
-import { resolveModule, resolveModuleFromPath } from "../module/module";
-import { Namespace } from "../namespace";
 import { isWhitespace } from "../utils";
 import { Environment } from "./environment";
 import { evaluateNode } from "./evaluate";
 
-const STD_CORE_MOD = "std/core";
+const STD_CORE_MOD = "std::core";
 const DEFAULT_USE_FROM_CORE = ["__doc", "__require", "__using", "__using_all"];
 
-function isDocNode(n: AstNode) {
-    return n.t === AstNodeKind.AstCommandNode && n.commandName == "__doc";
+function isDocNode(n: AstNode): boolean {
+    return n.t === AstNodeKind.AstCommandNode && n.commandName === "__doc";
 }
 
-function checkRoot(rootNode: AstRootNode, docIndex: number) {
+function checkRoot(rootNode: AstRootNode, docIndex: number): void {
     assert(rootNode.t === AstNodeKind.AstRootNode);
     if (
         rootNode.subNodes
@@ -54,91 +50,50 @@ function checkRoot(rootNode: AstRootNode, docIndex: number) {
 }
 
 export async function evaluateRoot(
-    rootNode: AstRootNode,
     lctx: InternalLapolContext,
+    rootNode: AstRootNode,
     filePath: string
 ): Promise<Expr> {
-    async function getAnonModPath(): Promise<string> {
-        return (await procureAnonMod(new LaPath(filePath))).fullPath;
-    }
+    const t0 = Date.now();
+    const env = new Environment();
 
-    let t0 = Date.now();
-
-    let env = new Environment();
-
-    let docIndex = rootNode.subNodes.findIndex(isDocNode);
-
+    const docIndex = rootNode.subNodes.findIndex(isDocNode);
     checkRoot(rootNode, docIndex);
 
-    let header: AstCommandNode[] = rootNode.subNodes
+    const header: AstCommandNode[] = rootNode.subNodes
         .slice(0, docIndex)
         .filter((n) => n.t === AstNodeKind.AstCommandNode) as AstCommandNode[];
 
-    let modulesToLoad = [resolveModule(STD_CORE_MOD)];
-
-    let requiredModulesP = header
-        .filter((n) => n.commandName === "__require")
-        .map(async (n) => {
-            if (n.curlyArgs.length === 0) {
-                let identifier = resolveModuleFromPath(await getAnonModPath(), "__anon__");
-                return identifier;
-            } else {
-                assert(n.curlyArgs.length === 1);
-                assert(n.curlyArgs[0].length === 1);
-                let t = n.curlyArgs[0][0];
-                assert(t.t === AstNodeKind.AstTextNode);
-                let name = t.content.trim();
-                let identifier = resolveModule(name);
-                return identifier;
-            }
-        });
-
-    let requiredModules = await Promise.all(requiredModulesP);
-
-    modulesToLoad.push(...requiredModules);
-
-    let modsPromise = modulesToLoad.map((id) => {
-        return lctx.moduleManager.requireModule(id).then((mod) => {
-            let tBeforeLoad = Date.now();
-            env.loadModule(id.fullIdStr, mod);
-            let tNow = Date.now();
-            return id.fullIdStr;
-        });
-    });
-
-    /*
-    let modsPromise = modulesToLoad.map((name) => {
-        assert(name.startsWith("std:"));
-        let stdMod = name.substr("std:".length);
-        let defaultModule = LapolModule.loadModuleFile(findStdModulePath(stdMod));
-        return defaultModule.then((mod) => {
-            let tBeforeLoad = Date.now();
-            env.loadModule(name, mod);
-            let tNow = Date.now();
-            console.log(
-                `Finished loading mod ${name} after ${tBeforeLoad - t0} millis (load JS Mod) +  ${
-                    tNow - tBeforeLoad
-                } millis (Load into env). Total ${tNow - tBeforeLoad}.`
-            );
-            return name;
-        });
-    }); */
-
-    let t1 = Date.now();
-    console.log(`<evaluateRoot> Took time ${t1 - t0} millis to set up require promises.`);
-
-    let loadedModNames = await Promise.all(modsPromise);
-
-    let t2 = Date.now();
-    console.log(`<evaluateRoot> Took time ${t2 - t1} millis to load all required mods.`);
-    console.log(
-        `<evaluateRoot> Directly loaded mods (note other modules may be indirectly loaded by these): \n\t ${loadedModNames}.`
+    const requiredModules = [STD_CORE_MOD].concat(
+        header
+            .filter((n) => n.commandName === "__require")
+            .map((n) => {
+                if (n.curlyArgs.length === 0) {
+                    throw new LapolError("__require: You must indicate what module is required.");
+                } else {
+                    assert(n.curlyArgs.length === 1);
+                    assert(n.curlyArgs[0].length === 1);
+                    const t = n.curlyArgs[0][0];
+                    assert(t.t === AstNodeKind.AstTextNode);
+                    const name = t.content.trim();
+                    return name;
+                }
+            })
     );
+
+    for (const modName of requiredModules) {
+        const mod = lctx.modules.get(modName);
+        if (mod === undefined)
+            throw new LapolError(
+                `Module ${modName} was required: you need to provide it when building LapolContext.`
+            );
+        env.loadModule(modName, mod);
+    }
 
     function addUsingFromCoreHelper(cmd: string): void {
         env.rootNamespace.addUsing(
             `${cmd}`,
-            env.rootNamespace.lookupItem(parseIdentifier(`core:${cmd}`)) as Command
+            env.rootNamespace.lookupItem(parseIdentifier(`${STD_CORE_MOD}:${cmd}`)) as Command
         );
     }
 
@@ -149,12 +104,16 @@ export async function evaluateRoot(
     const afterRequires = header.filter((n) => n.commandName !== "__require");
     afterRequires.forEach((n) => evaluateNode(n, env));
 
-    let doc = rootNode.subNodes[docIndex];
-    let out = new Expr("root", [evaluateNode(doc, env)]);
+    const doc = rootNode.subNodes[docIndex];
 
-    let t3 = Date.now();
-    console.log(`<evaluateRoot> Took time ${t3 - t2} millis to evaluate __doc.`);
-    console.log(`<evaluateRoot> Cumulative time: ${t3 - t0} millis.`);
+    const t1 = Date.now();
+
+    const out = new Expr("root", [evaluateNode(doc, env)]);
+
+    const t2 = Date.now();
+    console.log(
+        `<evaluateRoot> setup: ${t1 - t0}, eval __doc: ${t2 - t1}, cumulative: ${t2 - t0} (millis)`
+    );
 
     return out;
 }

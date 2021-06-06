@@ -5,7 +5,7 @@
 
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstRootNode, AstTextNode } from "../ast";
-import { InternalLapolContext } from "../internal_context";
+import { InternalLapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "./environment";
@@ -28,12 +28,11 @@ export const SPLICE_EXPR = "splice";
  * TODO: Should default modules be loaded statically?
  */
 export async function evaluateAst(
-    node: AstRootNode,
     lctx: InternalLapolContext,
+    node: AstRootNode,
     filePath: string
 ): Promise<DetNode> {
-    let out = await evaluateRoot(node, lctx, filePath);
-    return out;
+    return await evaluateRoot(lctx, node, filePath);
 }
 
 /** Evaluate `node` using environment `env`, returns a `DetNode`.
@@ -44,10 +43,8 @@ export function evaluateNode(node: AstNode, env: Environment): DetNode {
     switch (node.t) {
         case AstNodeKind.AstRootNode:
             throw new LapolError("evaluateRoot should be called directly.");
-            break;
         case AstNodeKind.AstCommandNode:
             return evaluateCommand(node, env);
-            break;
         case AstNodeKind.AstTextNode:
             return evaluateStrNode(node, env);
         default:
@@ -61,11 +58,11 @@ function evaluateStrNode(strNode: AstTextNode, env: Environment): Str {
 }
 
 export function evaluateNodeArray(nodeArray: AstNode[], env: Environment): DetNode[] {
-    let cont = [];
-    for (let node of nodeArray) {
-        let n = evaluateNode(node, env);
+    const cont = [];
+    for (const node of nodeArray) {
+        const n = evaluateNode(node, env);
         if (n instanceof Expr && n.tag === SPLICE_EXPR) {
-            for (let sn of n.contentsIter()) cont.push(sn);
+            for (const sn of n.contentsIter()) cont.push(sn);
         } else {
             cont.push(n);
         }

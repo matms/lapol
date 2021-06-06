@@ -47,10 +47,10 @@ function evaluateEagerCommandArguments(
                 }
                 case "KeyVal": {
                     const [key, val] = sq.c;
-                    const key_eval = evaluateSquareEntry(key, env);
-                    if (typeof key_eval !== "string")
+                    const keyEval = evaluateSquareEntry(key, env);
+                    if (typeof keyEval !== "string")
                         throw new LapolError(`Key for Keyword argument must evaluate to string.`);
-                    evalKeywordArgs.set(key_eval, evaluateSquareEntry(val, env));
+                    evalKeywordArgs.set(keyEval, evaluateSquareEntry(val, env));
                     break;
                 }
             }
@@ -75,12 +75,10 @@ function evaluateSquareEntry(
         case "Num":
         case "QuotedStr": {
             return v.c;
-            break;
         }
         case "AstNode": {
             assert(v.c.t === "AstCommandNode");
             return evaluateCommand(v.c, env);
-            break;
         }
     }
 }

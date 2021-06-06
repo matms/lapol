@@ -1,25 +1,14 @@
-import { LaPath } from "./la_path";
-import { render as runRender } from "./compile";
+import { LapolModule } from "./module/module";
 
-export class LapolContextBuilder {
-    constructor() {}
-
-    public async build(): Promise<LapolContext> {
-        // TODO: Pass necessary arguments.
-        return LapolContext._make();
-    }
-}
-
-export class LapolContext {
-    private constructor() {}
+/** @internal If you are a LaPoL user (i.e., you aren't writing core LaPoL code), do NOT use this.
+ *
+ * Instead, use LapolContext
+ */
+export class InternalLapolContext {
+    readonly modules: Map<string, LapolModule>;
 
     /** @internal Do not use directly. Instead, use `LapolContextBuilder`. */
-    public static _make(): LapolContext {
-        return new LapolContext();
-    }
-
-    /** Renders a file. TODO. */
-    public async render(file: LaPath, target: string): Promise<void> {
-        await runRender(file, target);
+    public constructor(modules: Map<string, LapolModule>) {
+        this.modules = modules;
     }
 }

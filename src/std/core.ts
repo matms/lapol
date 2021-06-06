@@ -16,7 +16,9 @@ import { parseIdentifier } from "../internal/identifier";
 import { ModuleLoader } from "../internal/module/loader";
 import { Namespace } from "../internal/namespace";
 
-export function load(loader: ModuleLoader): void {
+export const mod = { loaderFn: load };
+
+function load(loader: ModuleLoader): void {
     loader.exportCommands(commands);
 }
 

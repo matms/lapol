@@ -6,8 +6,8 @@ import { evaluateAst } from "./evaluate/evaluate";
 import { outputDet, OutputData } from "./output/output";
 import { processDet } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
-import { initInternalLapoLContext, InternalLapolContext } from "./internal_context";
 import { LaPath } from "./la_path";
+import { InternalLapolContext } from "./context";
 
 export interface CompileInput {
     inputFilePath: LaPath;
@@ -24,14 +24,14 @@ export interface CompileOutput {
     dbgOutputted: OutputData;
 }
 
-async function compile(c: CompileInput, lctx: InternalLapolContext): Promise<CompileOutput> {
+async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<CompileOutput> {
     const t1 = Date.now();
     const textBuf = await readFileBuffer(c.inputFilePath);
     const t2 = Date.now();
     const parsed = parse_file(c.inputFilePath.fullPath, textBuf) as AstRootNode;
     assert(parsed.t === "AstRootNode");
     const t3 = Date.now();
-    const evaluated = await evaluateAst(parsed, lctx, c.inputFilePath.fullPath);
+    const evaluated = await evaluateAst(lctx, parsed, c.inputFilePath.fullPath);
     const t4 = Date.now();
     const processed = await processDet(evaluated);
     const t5 = Date.now();
@@ -61,21 +61,21 @@ async function compile(c: CompileInput, lctx: InternalLapolContext): Promise<Com
 
 const COMPILE_DBG_PRINT = true;
 
-export async function render(filePath: LaPath, target: string = "html"): Promise<void> {
+export async function render(
+    lctx: InternalLapolContext,
+    filePath: LaPath,
+    target: string = "html"
+): Promise<void> {
     const inPath = filePath;
     const outPath = outFilePath(filePath, target);
 
     if (COMPILE_DBG_PRINT) console.log("\n====== Starting to compile LaPoL file ======\n");
 
-    const lctx = initInternalLapoLContext();
-    const o = await compile(
-        {
-            inputFilePath: inPath,
-            outputFilePath: outPath,
-            targetLanguage: "html",
-        },
-        lctx
-    );
+    const o = await compile(lctx, {
+        inputFilePath: inPath,
+        outputFilePath: outPath,
+        targetLanguage: "html",
+    });
 
     if (COMPILE_DBG_PRINT) {
         console.log(`\nTiming info ('${inPath.fullPath}' to '${outPath.fullPath}').\n`);

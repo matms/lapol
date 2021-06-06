@@ -1,6 +1,14 @@
 
+@__require{__proj__}
+@__require{std::main}
+
+@__using_all[from = __proj__]
+@__using_all[from = std::main]
+
 @__doc{
 
-Hello. This is a very simple LaPoL document!
+    @h1{Hello World}
+
+    Hello. This is a very simple LaPoL document!
 
 } @% __doc
