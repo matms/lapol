@@ -1,15 +1,19 @@
-import { LapolModule, ModuleIdentifier } from "./module";
+import { LapolModule, ModuleIdentifier, ModuleTarget } from "./module";
 import { strict as assert } from "assert";
 import { Command, JsFnCommand } from "../command/command";
+import { CommandArguments } from "../command/argument";
+import { DetNode, Expr } from "../det";
+import { NodeOutputter } from "../output/node_outputter";
+import { LapolError } from "../errors";
 
 export class ModuleLoader {
     /* eslint-disable  @typescript-eslint/prefer-readonly */
 
     private _commands: Map<string, Command>;
+    private _targets: Map<string, ModuleTarget>;
     private _identifier: ModuleIdentifier;
     private _requiredModules: ModuleIdentifier[];
 
-    private _requiredModulesLoaded: undefined | Map<string, LapolModule>;
     private _finalizeActions: Array<() => void>;
 
     /* eslint-enable  @typescript-eslint/prefer-readonly */
@@ -19,6 +23,7 @@ export class ModuleLoader {
         this._requiredModules = [];
         this._finalizeActions = [];
         this._commands = new Map();
+        this._targets = new Map();
     }
 
     get requiredModules(): ModuleIdentifier[] {
@@ -35,24 +40,6 @@ export class ModuleLoader {
 
     /** Internal use --- Module developer MUST NOT CALL!
      *
-     * Called after _make but before _afterRequiredLoad, specifically right after this module's
-     * load() function has been run.
-     */
-    public _afterSelfLoad(): void {
-        // TODO: Need to do anything here?
-    }
-
-    /** Internal use --- Module developer MUST NOT CALL!
-     *
-     * Called after _afterSelfLoad but before _finalize, after all the required modules have been
-     * loaded.
-     */
-    public _afterRequiredLoad(mods: Map<string, LapolModule>): void {
-        this._requiredModulesLoaded = mods;
-    }
-
-    /** Internal use --- Module developer MUST NOT CALL!
-     *
      * This is called last, after the requiredModules have been loaded. Anything that
      * requires the modules to be loaded should be done here.
      */
@@ -63,10 +50,39 @@ export class ModuleLoader {
 
         ModuleLoader.log(`_finalize: Finished loading ${this._identifier.name}`);
 
-        return new LapolModule(this._commands, this._identifier, this._requiredModules);
+        return new LapolModule(
+            this._commands,
+            this._targets,
+            this._identifier,
+            this._requiredModules
+        );
     }
 
-    /** Export one or more commands.
+    public declareTarget(name: string): void {
+        this._targets.set(name, { exprOutputters: new Map() });
+    }
+
+    // TODO: what should the type of 'options?' be?
+    public exportCommand(
+        name: string,
+        command: (a: CommandArguments) => DetNode | undefined,
+        options?: Record<string, boolean>
+    ): void;
+    public exportCommand(name: string, command: Command): void;
+
+    public exportCommand(
+        name: string,
+        command: Command | ((a: CommandArguments) => DetNode | undefined),
+        options?: Record<string, boolean>
+    ): void {
+        if (typeof command === "function")
+            this._commands.set(name, JsFnCommand.fromJsFunction(command, name, options));
+        else if (command instanceof Command) this._commands.set(name, command);
+    }
+
+    /** @deprecated Use exportCommand().
+     *
+     * Export one or more commands.
      *
      * `commands` should be an object "mapping" a command name to a command definition.
      *
@@ -112,12 +128,30 @@ export class ModuleLoader {
         */
     }
 
+    public exportExprOutputter(
+        target_: string,
+        tag: string,
+        outputter: NodeOutputter<Expr, unknown>
+    ): void {
+        const target = this._targets.get(target_);
+        if (target === undefined)
+            throw new LapolError(
+                `Target ${target_} has not been declared in ${this._identifier.name}.`
+            );
+        if (target.exprOutputters.has(tag))
+            throw new LapolError(
+                `Outputter for Expr ${tag} (targetting ${target_}) has already been set in ${this._identifier.name}.`
+            );
+        target.exprOutputters.set(tag, outputter);
+    }
+
     /** Declare that a module is required for this module to function. Note that this does
      * not load the module into the environment automatically. Note that this does not load
      * the module immediately (i.e. we do not await for the module to load)
      */
     public declareRequire(moduleName: string): void {
-        this._requiredModules.push({ name: moduleName });
+        throw new Error("Not implemented.");
+        // this._requiredModules.push({ name: moduleName });
     }
 
     private static log(str: string): void {

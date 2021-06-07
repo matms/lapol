@@ -1,34 +1,53 @@
 /** Outputting, AKA the "Back Pass" */
 
+import { InternalLapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { DefaultHtmlStrOutputter, GenericHtmlTagOutputter, HtmlRootOutputter } from "./html";
 import { NodeOutputter } from "./node_outputter";
 
+// Cf. `ModuleTarget`
+export interface OutputTarget {
+    exprOutputters: Map<string, NodeOutputter<Expr, unknown>>;
+}
+
 export interface OutputData {
     str: string;
 }
 
-export async function outputDet(detRootNode: DetNode, target: string): Promise<OutputData> {
+export async function outputDet(
+    lctx: InternalLapolContext,
+    detRootNode: DetNode,
+    target: string
+): Promise<OutputData> {
+    const targetData = lctx.targets.get(target);
+    if (targetData === undefined) throw new LapolError(`Target ${target} not properly setup.`);
+
+    // TODO: Allow user configuration of the string outputter.
+    // TODO: Escape strings by default, but allow non-escaped strings.
+    let strOutputter = undefined;
     switch (target) {
         case "html": {
-            const defaultHtmlStringOutputter = new DefaultHtmlStrOutputter();
-            // TODO: Take in the appropriate map for the current target.
-            const exprOutputterMap = new Map();
-            exprOutputterMap.set("root", new HtmlRootOutputter());
-            exprOutputterMap.set("h1", new GenericHtmlTagOutputter("h1", "h1"));
-            exprOutputterMap.set("h2", new GenericHtmlTagOutputter("h2", "h2"));
-            exprOutputterMap.set("h3", new GenericHtmlTagOutputter("h3", "h3"));
-            exprOutputterMap.set("doc", new GenericHtmlTagOutputter("doc", "div"));
-            exprOutputterMap.set("p", new GenericHtmlTagOutputter("p", "p"));
-            exprOutputterMap.set("i", new GenericHtmlTagOutputter("i", "i"));
-            const outputter = new OutputCtx<string>(defaultHtmlStringOutputter, exprOutputterMap);
-            return { str: outputter.output(detRootNode) };
+            strOutputter = new DefaultHtmlStrOutputter();
+            break;
         }
-
         default:
-            throw new LapolError(`Unknown compilation target language ${target}.`);
+            throw new LapolError(`Need to setup string outputter for ${target}. TODO`);
     }
+
+    // TODO: Can we check that "string" is the appropriate output type?
+    const exprOutputterMap = targetData.exprOutputters as Map<string, NodeOutputter<Expr, string>>;
+
+    /* exprOutputterMap.set("root", new HtmlRootOutputter());
+                exprOutputterMap.set("h1", new GenericHtmlTagOutputter("h1", "h1"));
+                exprOutputterMap.set("h2", new GenericHtmlTagOutputter("h2", "h2"));
+                exprOutputterMap.set("h3", new GenericHtmlTagOutputter("h3", "h3"));
+                exprOutputterMap.set("doc", new GenericHtmlTagOutputter("doc", "div"));
+                exprOutputterMap.set("p", new GenericHtmlTagOutputter("p", "p"));
+                exprOutputterMap.set("i", new GenericHtmlTagOutputter("i", "i")); */
+
+    const outputter = new OutputCtx<string>(strOutputter, exprOutputterMap);
+    return { str: outputter.output(detRootNode) };
 }
 
 export class OutputCtx<T> {

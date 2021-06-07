@@ -35,7 +35,7 @@ async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<Com
     const t4 = Date.now();
     const processed = await processDet(evaluated);
     const t5 = Date.now();
-    const output = await outputDet(processed, c.targetLanguage);
+    const output = await outputDet(lctx, processed, c.targetLanguage);
     const t6 = Date.now();
     await writeFile(c.outputFilePath, output.str);
     const t7 = Date.now();

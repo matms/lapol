@@ -11,6 +11,7 @@ import { evaluateNode } from "./evaluate";
 
 const STD_CORE_MOD = "std::core";
 const DEFAULT_USE_FROM_CORE = ["__doc", "__require", "__using", "__using_all"];
+const ROOT_TAG = "__root";
 
 function isDocNode(n: AstNode): boolean {
     return n.t === AstNodeKind.AstCommandNode && n.commandName === "__doc";
@@ -71,7 +72,7 @@ export function evaluateRoot(
 
     const t1 = Date.now();
 
-    const out = new Expr("root", [evaluateNode(doc, lctx, env)]);
+    const out = new Expr(ROOT_TAG, [evaluateNode(doc, lctx, env)]);
 
     const t2 = Date.now();
     console.log(

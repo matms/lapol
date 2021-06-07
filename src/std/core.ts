@@ -16,11 +16,18 @@ import { LapolError } from "../internal/errors";
 import { parseIdentifier } from "../internal/identifier";
 import { ModuleLoader } from "../internal/module/loader";
 import { Namespace } from "../internal/namespace";
+import { GenericHtmlTagOutputter, HtmlRootOutputter } from "../internal/output/html";
 
 export const mod = { loaderFn: load };
 
-function load(loader: ModuleLoader): void {
-    loader.exportCommands(commands);
+function load(l: ModuleLoader): void {
+    // TODO: change deprecated fn.
+    l.exportCommands(commands);
+
+    l.declareTarget("html");
+    l.exportExprOutputter("html", "__root", new HtmlRootOutputter());
+    l.exportExprOutputter("html", "__doc", new GenericHtmlTagOutputter("__doc", "div"));
+    l.exportExprOutputter("html", "__p", new GenericHtmlTagOutputter("__p", "p"));
 }
 
 /** The first argument is the file to load, the second is the module name. */
@@ -128,5 +135,5 @@ const commands = {
 };
 
 function __doc(a: Args): DetNode {
-    return new Expr("doc", a.ca(0));
+    return new Expr("__doc", a.ca(0));
 }

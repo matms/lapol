@@ -1,18 +1,28 @@
 import { CommandArguments as Args } from "../internal/command/argument";
+import { GenericHtmlTagOutputter, HtmlRootOutputter } from "../internal/output/html";
 import { DetNode, Expr, Str, ModuleLoader } from "../mod";
 
 export const mod = { loaderFn: load };
 
-function load(loader: ModuleLoader): void {
-    loader.exportCommands(commands);
-}
+function load(l: ModuleLoader): void {
+    l.declareTarget("html");
 
-const commands = {
-    title: title,
-    section: section,
-    bf: bf,
-    it: it,
-};
+    l.exportCommand("title", title);
+    l.exportCommand("section", section);
+    l.exportCommand("bf", bf);
+    l.exportCommand("it", it);
+
+    const declareDefaultHtmlOutputter = ([tag, htmlTag]: string[]): void => {
+        l.exportExprOutputter("html", tag, new GenericHtmlTagOutputter(tag, htmlTag));
+    };
+
+    [
+        ["h1", "h1"],
+        ["h2", "h2"],
+        ["bold", "b"],
+        ["italic", "i"],
+    ].forEach(declareDefaultHtmlOutputter);
+}
 
 function title(a: Args): DetNode {
     const [arg1] = a.cas();
@@ -24,9 +34,9 @@ function section(a: Args): DetNode {
 }
 
 function bf(a: Args): DetNode {
-    return new Expr("b", a.ca(0));
+    return new Expr("bold", a.ca(0));
 }
 
 function it(a: Args): DetNode {
-    return new Expr("i", a.ca(0));
+    return new Expr("italic", a.ca(0));
 }

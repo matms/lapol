@@ -9,6 +9,6 @@
 
     @h1{Hello World}
 
-    Hello. This is a very simple LaPoL document!
+    Hello. This is a @textit{very} simple LaPoL document!
 
 } @% __doc

@@ -3,7 +3,7 @@ import { LapolError } from "../errors";
 import { isWhitespace } from "../utils";
 
 const BREAK_MARKER_TAG = "para-br-marker";
-const PARAGRAPH_TAG = "p";
+const PARAGRAPH_TAG = "__p";
 
 // TODO: Strip empty lines (whitespace only lines.)
 // TODO: Newline should become a space.

@@ -1,5 +1,7 @@
 import { Command } from "../command/command";
+import { Expr } from "../det";
 import { Namespace } from "../namespace";
+import { NodeOutputter } from "../output/node_outputter";
 import { ModuleLoader } from "./loader";
 
 // TODO: Multiple names + "as"?
@@ -11,17 +13,25 @@ export interface ModuleDeclaration {
     loaderFn: ((loader: ModuleLoader) => void) | ((loader: ModuleLoader) => Promise<void>);
 }
 
+// Cf. `OutputTarget`
+export interface ModuleTarget {
+    exprOutputters: Map<string, NodeOutputter<Expr, unknown>>;
+}
+
 export const LA_MOD_LOADER_FN_NAME = "load";
 export class LapolModule {
+    readonly targets: Map<string, ModuleTarget>;
     readonly namespace: Namespace;
     readonly identifier: ModuleIdentifier;
     readonly requiredMods: ModuleIdentifier[];
 
     constructor(
         commands: Map<string, Command>,
+        targets: Map<string, ModuleTarget>,
         identifier: ModuleIdentifier,
         requiredMods: ModuleIdentifier[]
     ) {
+        this.targets = targets;
         this.identifier = identifier;
         this.requiredMods = requiredMods;
 
@@ -39,16 +49,6 @@ export async function loadModule(name: string, mod: ModuleDeclaration): Promise<
     const moduleLoader = ModuleLoader._make({ name: name });
 
     await load(moduleLoader);
-
-    moduleLoader._afterSelfLoad();
-
-    if (moduleLoader.requiredModules.length !== 0) {
-        throw new Error("Required modules functionality not yet implemented");
-    }
-
-    const rMods = new Map();
-
-    moduleLoader._afterRequiredLoad(rMods);
 
     return moduleLoader._finalize();
 }
