@@ -55,13 +55,27 @@ export class Str extends DetNode {
 
     private _text: string;
 
+    /** Whether to escape the string when outputting (e.g. HTML, LaTeX) */
+    private _escape: boolean;
+
     constructor(text: string) {
         super();
         this._text = text;
+        this._escape = true;
+    }
+
+    public static newWithoutEscape(text: string): Str {
+        const out = new Str(text);
+        out._escape = false;
+        return out;
     }
 
     public get text(): string {
         return this._text;
+    }
+
+    public get escape(): boolean {
+        return this._escape;
     }
 }
 

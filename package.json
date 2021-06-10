@@ -25,6 +25,8 @@
     "typescript": "^4.2.4"
   },
   "dependencies": {
+    "@types/he": "^1.1.1",
+    "he": "^1.2.0",
     "lapol-rs": "file:../lapol-rs/pkg",
     "mkdirp": "^1.0.4",
     "yargs": "^17.0.1"

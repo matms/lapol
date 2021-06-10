@@ -2,14 +2,18 @@ import { Data, DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { NodeOutputter } from "./node_outputter";
 import { OutputCtx } from "./output";
+import { encode as heEncode } from "he";
 
 export class DefaultHtmlStrOutputter extends NodeOutputter<Str, string> {
     nodeKind: "Str" = "Str";
     nodeTag = undefined;
 
     public output(ctx: OutputCtx<string>, node: Str): string {
-        // TODO: HTML Escaping!
-        return node.text;
+        if (node.escape) {
+            return heEncode(node.text, { strict: true });
+        } else {
+            return node.text;
+        }
     }
 }
 
