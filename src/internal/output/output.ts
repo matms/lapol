@@ -3,7 +3,7 @@
 import { InternalLapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
-import { DefaultHtmlStrOutputter, GenericHtmlTagOutputter, HtmlRootOutputter } from "./html";
+import { DefaultHtmlStrOutputter } from "./html";
 import { NodeOutputter } from "./node_outputter";
 
 // Cf. `ModuleTarget`
@@ -24,8 +24,7 @@ export async function outputDet(
     if (targetData === undefined) throw new LapolError(`Target ${target} not properly setup.`);
 
     // TODO: Allow user configuration of the string outputter.
-    // TODO: Escape strings by default, but allow non-escaped strings.
-    let strOutputter = undefined;
+    let strOutputter;
     switch (target) {
         case "html": {
             strOutputter = new DefaultHtmlStrOutputter();
@@ -37,14 +36,6 @@ export async function outputDet(
 
     // TODO: Can we check that "string" is the appropriate output type?
     const exprOutputterMap = targetData.exprOutputters as Map<string, NodeOutputter<Expr, string>>;
-
-    /* exprOutputterMap.set("root", new HtmlRootOutputter());
-                exprOutputterMap.set("h1", new GenericHtmlTagOutputter("h1", "h1"));
-                exprOutputterMap.set("h2", new GenericHtmlTagOutputter("h2", "h2"));
-                exprOutputterMap.set("h3", new GenericHtmlTagOutputter("h3", "h3"));
-                exprOutputterMap.set("doc", new GenericHtmlTagOutputter("doc", "div"));
-                exprOutputterMap.set("p", new GenericHtmlTagOutputter("p", "p"));
-                exprOutputterMap.set("i", new GenericHtmlTagOutputter("i", "i")); */
 
     const outputter = new OutputCtx<string>(strOutputter, exprOutputterMap);
     return { str: outputter.output(detRootNode) };

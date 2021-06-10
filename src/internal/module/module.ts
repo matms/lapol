@@ -1,5 +1,6 @@
 import { Command } from "../command/command";
 import { Expr } from "../det";
+import { ExprMetaDeclaration } from "../expr_meta";
 import { Namespace } from "../namespace";
 import { NodeOutputter } from "../output/node_outputter";
 import { ModuleLoader } from "./loader";
@@ -24,16 +25,19 @@ export class LapolModule {
     readonly namespace: Namespace;
     readonly identifier: ModuleIdentifier;
     readonly requiredMods: ModuleIdentifier[];
+    readonly exprMetaDeclarations: Map<string, ExprMetaDeclaration>;
 
     constructor(
         commands: Map<string, Command>,
         targets: Map<string, ModuleTarget>,
         identifier: ModuleIdentifier,
-        requiredMods: ModuleIdentifier[]
+        requiredMods: ModuleIdentifier[],
+        exprMetaDeclarations: Map<string, ExprMetaDeclaration>
     ) {
         this.targets = targets;
         this.identifier = identifier;
         this.requiredMods = requiredMods;
+        this.exprMetaDeclarations = exprMetaDeclarations;
 
         // TODO: What name to use here?
         // TODO: Need to introduce the concept of parent modules?

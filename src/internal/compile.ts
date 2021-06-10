@@ -33,7 +33,7 @@ async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<Com
     const t3 = Date.now();
     const evaluated = await evaluateAst(lctx, parsed, c.inputFilePath.fullPath);
     const t4 = Date.now();
-    const processed = await processDet(evaluated);
+    const processed = await processDet(evaluated, lctx);
     const t5 = Date.now();
     const output = await outputDet(lctx, processed, c.targetLanguage);
     const t6 = Date.now();

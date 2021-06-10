@@ -8,6 +8,8 @@ import { strict as assert } from "assert";
 import { NodeOutputter } from "./output/node_outputter";
 import { Expr } from "./det";
 import { OutputTarget } from "./output/output";
+import { string } from "yargs";
+import { ExprMeta, ExprMetaDeclaration, makeExprMeta } from "./expr_meta";
 
 export class LapolCompilerBuilder {
     private readonly _modules: Array<Promise<LapolModule>>;
@@ -51,7 +53,19 @@ export class LapolCompilerBuilder {
             }
         }
 
-        return new LapolCompiler(new InternalLapolContext(mods, targets));
+        const emd: Map<string, ExprMetaDeclaration[]> = new Map();
+
+        for (const m of modArray) {
+            for (const [k, v] of m.exprMetaDeclarations) {
+                if (!emd.has(k)) emd.set(k, [v]);
+                else emd.get(k)?.push(v);
+            }
+        }
+
+        const exprMetas: Map<string, ExprMeta> = new Map();
+        emd.forEach((v, k) => exprMetas.set(k, makeExprMeta(v)));
+
+        return new LapolCompiler(new InternalLapolContext(mods, targets, exprMetas));
     }
 
     private _addModuleTargetOutputters(

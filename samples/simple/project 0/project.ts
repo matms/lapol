@@ -6,6 +6,7 @@ import {
     CommandArguments as Args,
     Expr,
     ProjectMainArgs,
+    Str,
 } from "lapol/mod";
 import { mod as moduleMain } from "lapol/std/main";
 
@@ -50,6 +51,17 @@ const dunderProjMod = {
         l.exportCommand("h5", (f: Args) => new Expr("my_h5", f.ca(0)));
         l.exportCommand("h6", (f: Args) => new Expr("my_h6", f.ca(0)));
         l.exportCommand("textit", (f: Args) => new Expr("my_i", f.ca(0)));
+
+        // Indicate that my_h1 is a "block" (as understood in HTML).
+        // This prevents LaPoL's auto paragraph mechanism from adding a paragraph tag, like so:
+        // Wrong, would be done without this line: <p><h1>...</h1></p>
+        // Right: <h1>...</h1> -> no paragraph around title!
+        l.declareExprMeta("my_h1", { isBlock: true });
+        l.declareExprMeta("my_h2", { isBlock: true });
+        l.declareExprMeta("my_h3", { isBlock: true });
+        l.declareExprMeta("my_h4", { isBlock: true });
+        l.declareExprMeta("my_h5", { isBlock: true });
+        l.declareExprMeta("my_h6", { isBlock: true });
 
         l.exportExprOutputter("html", "my_h1", new GenericHtmlTagOutputter("my_h1", "h1"));
         l.exportExprOutputter("html", "my_h2", new GenericHtmlTagOutputter("my_h2", "h2"));

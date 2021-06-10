@@ -5,6 +5,7 @@ import { CommandArguments } from "../command/argument";
 import { DetNode, Expr } from "../det";
 import { NodeOutputter } from "../output/node_outputter";
 import { LapolError } from "../errors";
+import { ExprMetaDeclaration } from "../expr_meta";
 
 export class ModuleLoader {
     /* eslint-disable  @typescript-eslint/prefer-readonly */
@@ -13,6 +14,7 @@ export class ModuleLoader {
     private _targets: Map<string, ModuleTarget>;
     private _identifier: ModuleIdentifier;
     private _requiredModules: ModuleIdentifier[];
+    private _exprMetaDeclarations: Map<string, ExprMetaDeclaration>;
 
     private _finalizeActions: Array<() => void>;
 
@@ -24,6 +26,7 @@ export class ModuleLoader {
         this._finalizeActions = [];
         this._commands = new Map();
         this._targets = new Map();
+        this._exprMetaDeclarations = new Map();
     }
 
     get requiredModules(): ModuleIdentifier[] {
@@ -54,7 +57,8 @@ export class ModuleLoader {
             this._commands,
             this._targets,
             this._identifier,
-            this._requiredModules
+            this._requiredModules,
+            this._exprMetaDeclarations
         );
     }
 
@@ -143,6 +147,10 @@ export class ModuleLoader {
                 `Outputter for Expr ${tag} (targetting ${target_}) has already been set in ${this._identifier.name}.`
             );
         target.exprOutputters.set(tag, outputter);
+    }
+
+    public declareExprMeta(exprTag: string, decl: ExprMetaDeclaration): void {
+        this._exprMetaDeclarations.set(exprTag, decl);
     }
 
     /** Declare that a module is required for this module to function. Note that this does

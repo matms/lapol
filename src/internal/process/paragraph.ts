@@ -1,3 +1,4 @@
+import { InternalLapolContext } from "../context";
 import { Data, DetNode, Str, Expr } from "../det";
 import { LapolError } from "../errors";
 import { isWhitespace } from "../utils";
@@ -8,11 +9,11 @@ const PARAGRAPH_TAG = "__p";
 // TODO: Strip empty lines (whitespace only lines.)
 // TODO: Newline should become a space.
 
-export function processLinebreaks(node: DetNode): DetNode {
+export function processLinebreaks(node: DetNode, lctx: InternalLapolContext): DetNode {
     if (node instanceof Str) return node;
     if (node instanceof Data) return node;
     if (node instanceof Expr) {
-        const nNode = node.contentsMap(processLinebreaks);
+        const nNode = node.contentsMap((n) => processLinebreaks(n, lctx));
 
         if (nNode.contentsLength() <= 1) return nNode;
 
@@ -51,11 +52,11 @@ export function processLinebreaks(node: DetNode): DetNode {
     throw new LapolError("Should be unreachable");
 }
 
-export function processParagraphs(node: DetNode): DetNode {
+export function processParagraphs(node: DetNode, lctx: InternalLapolContext): DetNode {
     if (node instanceof Str) return node;
     if (node instanceof Data) return node;
     if (node instanceof Expr) {
-        const nNode = node.contentsMap(processParagraphs);
+        const nNode = node.contentsMap((n) => processParagraphs(n, lctx));
 
         const outContents: DetNode[] = [];
 
@@ -72,7 +73,7 @@ export function processParagraphs(node: DetNode): DetNode {
                     numParas++;
                     pAccum = [];
                 }
-            } else if (curr instanceof Expr && isBlock(curr)) {
+            } else if (curr instanceof Expr && isBlock(curr, lctx)) {
                 if (pAccum.length >= 1) {
                     outContents.push(new Expr(PARAGRAPH_TAG, pAccum));
                     numParas++;
@@ -128,9 +129,6 @@ function isNewline(node: DetNode): boolean {
     return node instanceof Str && node.text === "\n";
 }
 
-function isBlock(node: DetNode): boolean {
-    // TODO: Make customizable by user
-    // See https://www.w3schools.com/html/html_blocks.asp
-    // Also note https://en.wikipedia.org/wiki/Span_and_div
-    return node instanceof Expr && (node.tag === "h1" || node.tag === "h2");
+function isBlock(node: DetNode, lctx: InternalLapolContext): boolean {
+    return node instanceof Expr && lctx.exprMetasGetOrDefault(node.tag).isBlock;
 }

@@ -7,7 +7,6 @@
  * In this case, you WILL BE ABLE TO (can't yet) access these with 'core:import'
  */
 
-import { AstNodeKind } from "../internal/ast";
 import { CommandArguments as Args } from "../internal/command/argument";
 import { Command } from "../internal/command/command";
 import { CommandContext } from "../internal/command/context";
@@ -131,9 +130,9 @@ const commands = {
     __require: requireCommand,
     __using: usingCommand,
     __using_all: usingAllCommand,
-    __doc: __doc,
+    __doc: docCommand,
 };
 
-function __doc(a: Args): DetNode {
+function docCommand(a: Args): DetNode {
     return new Expr("__doc", a.ca(0));
 }
