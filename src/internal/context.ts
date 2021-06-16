@@ -25,6 +25,7 @@ export class InternalLapolContext {
         this.exprMetas = exprMetas;
     }
 
+    // TODO: Refactor? Make a generic system for declaring global information inside modules?
     public exprMetasGetOrDefault(tag: string): ExprMeta {
         const o = this.exprMetas.get(tag);
         if (o === undefined) {
