@@ -28,6 +28,8 @@ To run tests, simply run
 
 ## Profile
 
+NOTE: THIS SECTION IS OUTDATED!
+
 To profile:
 
 `node --inspect ".\build\main.js" profile ".\test_scratch\stress_test_0.lap"`
