@@ -21,6 +21,11 @@ Alternative:
 
 (include `--inspect` flag if desired)
 
+## Tests
+
+To run tests, simply run
+`npm test`
+
 ## Profile
 
 To profile:

@@ -4,12 +4,13 @@
   "description": "LaPoL is a document preparation system",
   "main": "build/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --forceExit --coverage --verbose --detectOpenHandles",
     "start": "node build/main.js"
   },
   "author": "matms",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@types/jest": "^26.0.23",
     "@types/mkdirp": "^1.0.1",
     "@types/node": "^15.0.1",
     "@types/yargs": "^17.0.0",
@@ -22,6 +23,8 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-only-warn": "^1.0.2",
     "eslint-plugin-promise": "^4.3.1",
+    "jest": "^27.0.4",
+    "ts-jest": "^27.0.3",
     "typescript": "^4.2.4"
   },
   "dependencies": {

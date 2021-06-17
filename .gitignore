@@ -12,3 +12,4 @@ samples/**/.lapol/*
 samples/**/tsconfig.json
 samples/js and ts_old
 samples/simple_old
+coverage
