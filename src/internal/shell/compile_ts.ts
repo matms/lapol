@@ -96,6 +96,7 @@ async function needCompile(modFile: LaPath): Promise<boolean> {
  */
 export async function jsModFromTs(modFile: LaPath): Promise<LaPath> {
     const tPre = Date.now();
+
     if (!(await needCompile(modFile))) {
         return compileOutFilePath(modFile);
     }
@@ -106,8 +107,6 @@ export async function jsModFromTs(modFile: LaPath): Promise<LaPath> {
     const p = modFile.parsed;
 
     try {
-        const t0 = Date.now();
-
         console.log(`<jsModFromTs> Starting to compile '${modFile.fullPath}'.`);
 
         await makeTsCfg(modFile);
@@ -119,15 +118,14 @@ export async function jsModFromTs(modFile: LaPath): Promise<LaPath> {
             shell: os_type() === "Windows_NT" ? "powershell.exe" : undefined,
         });
 
-        const t1 = Date.now();
         await writeFile(
             new LaPath(`${p.dir}${sep}.lapol${sep}build_meta${sep}${p.name}.build_src_time`),
             `${srcMTimeNs.toString()}`
         );
-        const t2 = Date.now();
 
+        const tComp = Date.now();
         console.log(
-            `<jsModFromTs> Finished compiling '${modFile.parsed.base}' after ${t2 - tPre} ms.`
+            `<jsModFromTs> Finished compiling '${modFile.parsed.base}' after ${tComp - tPre} ms.`
         );
 
         if (stdout !== "" || stderr !== "") {

@@ -1,7 +1,5 @@
 import { Command } from "../command/command";
-import { Expr } from "../det";
 import { Namespace } from "../namespace";
-import { NodeOutputter } from "../output/node_outputter";
 import { LapolRegistry } from "../registry/registry";
 import { ModuleLoader } from "./loader";
 

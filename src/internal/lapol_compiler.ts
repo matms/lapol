@@ -3,13 +3,6 @@ import { render as runRender } from "./compile";
 import { LapolModule, loadModule, ModuleDeclaration } from "./module/module";
 import { mod as coreMod } from "./../std/core";
 import { InternalLapolContext } from "./context";
-import { LapolError } from "./errors";
-import { strict as assert } from "assert";
-import { NodeOutputter } from "./output/node_outputter";
-import { Expr } from "./det";
-import { OutputTarget } from "./output/output";
-import { string } from "yargs";
-import { ExprMeta } from "./expr_meta";
 import { LapolRegistry } from "./registry/registry";
 
 export class LapolCompilerBuilder {

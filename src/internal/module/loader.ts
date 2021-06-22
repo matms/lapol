@@ -94,7 +94,15 @@ export class ModuleLoader {
             for (const prop of Object.getOwnPropertyNames(commands)) {
                 const val = commands[prop];
                 if (typeof val === "function") {
-                    this._commands.set(prop, JsFnCommand.fromJsFunction(val, prop));
+                    this._commands.set(
+                        prop,
+                        JsFnCommand.fromJsFunction(
+                            // We assume the user has passed a function with the right shape.
+                            // We cannot verify this easily, however.
+                            val as (a: CommandArguments) => DetNode | undefined,
+                            prop
+                        )
+                    );
                 } else if (Array.isArray(val)) {
                     assert(val.length === 2);
                     this._commands.set(prop, JsFnCommand.fromJsFunction(val[0], prop, val[1]));

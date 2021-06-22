@@ -1,7 +1,5 @@
-import { strict as assert } from "assert";
 import { DetNode } from "../det";
 import { LapolError } from "../errors";
-import { Environment } from "../evaluate/environment";
 import { ArgumentEvaluationStrategy, CommandArguments } from "./argument";
 import { CommandContext } from "./context";
 
@@ -37,7 +35,11 @@ export class JsFnCommand extends Command {
      * Options:
      *  none, currently.
      */
-    public static fromJsFunction(func: Function, cmdName: string, options?: any): JsFnCommand {
+    public static fromJsFunction(
+        func: (a: CommandArguments) => DetNode | undefined,
+        cmdName: string,
+        options?: Record<string, boolean>
+    ): JsFnCommand {
         if (options === undefined) options = {};
 
         // let varArgs = cfgBool(options.varArgs, false);
@@ -73,11 +75,3 @@ export class JsFnCommand extends Command {
         return this._fn(args);
     }
 }
-
-/*
-function cfgBool(cfg: any, defaultCfg: boolean): boolean {
-    if (cfg === undefined) return defaultCfg;
-    if (typeof cfg !== "boolean") throw new TypeError("Boolean configuration required.");
-    return cfg;
-}
-*/
