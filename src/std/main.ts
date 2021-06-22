@@ -9,8 +9,10 @@ function load(l: ModuleLoader): void {
     l.exportCommand("bf", bf);
     l.exportCommand("it", it);
 
-    l.declareExprMeta("title", { isBlock: true });
-    l.declareExprMeta("title", { isBlock: true });
+    l.declareExprMeta("h1", { isBlock: true });
+    l.declareExprMeta("h2", { isBlock: true });
+    l.declareExprMeta("bold", { isBlock: false });
+    l.declareExprMeta("italic", { isBlock: false });
 }
 
 function title(a: Args): DetNode {

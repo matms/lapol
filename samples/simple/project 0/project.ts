@@ -62,6 +62,7 @@ const dunderProjMod = {
         l.declareExprMeta("my_h4", { isBlock: true });
         l.declareExprMeta("my_h5", { isBlock: true });
         l.declareExprMeta("my_h6", { isBlock: true });
+        l.declareExprMeta("my_i", {}); // Note that isBlock defaults to false.
 
         l.exportExprOutputter("html", "my_h1", new GenericHtmlTagOutputter("my_h1", "h1"));
         l.exportExprOutputter("html", "my_h2", new GenericHtmlTagOutputter("my_h2", "h2"));

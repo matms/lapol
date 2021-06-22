@@ -130,5 +130,5 @@ function isNewline(node: DetNode): boolean {
 }
 
 function isBlock(node: DetNode, lctx: InternalLapolContext): boolean {
-    return node instanceof Expr && lctx.exprMetasGetOrDefault(node.tag).isBlock;
+    return node instanceof Expr && lctx.registry.exprMetas.getOrErr(node.tag).cfg.isBlock;
 }

@@ -93,7 +93,7 @@ function setupCoreModule(lctx: InternalLapolContext, env: Environment): void {
         );
     }
 
-    const mod = lctx.modules.get(STD_CORE_MOD);
+    const mod = lctx.registry.modules.get(STD_CORE_MOD);
     if (mod === undefined)
         throw new LapolError(
             `Module ${STD_CORE_MOD} was required: you need to provide it when building LapolContext.`

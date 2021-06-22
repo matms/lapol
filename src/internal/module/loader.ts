@@ -1,32 +1,32 @@
-import { LapolModule, ModuleIdentifier, ModuleTarget } from "./module";
+import { LapolModule, ModuleIdentifier } from "./module";
 import { strict as assert } from "assert";
 import { Command, JsFnCommand } from "../command/command";
 import { CommandArguments } from "../command/argument";
 import { DetNode, Expr } from "../det";
 import { NodeOutputter } from "../output/node_outputter";
 import { LapolError } from "../errors";
-import { ExprMetaDeclaration } from "../expr_meta";
+import { ExprMeta, ExprMetaCfgDeclaration } from "../expr_meta";
+import { LapolRegistry } from "../registry/registry";
 
 export class ModuleLoader {
     /* eslint-disable  @typescript-eslint/prefer-readonly */
 
+    private _registry: LapolRegistry;
+
     private _commands: Map<string, Command>;
-    private _targets: Map<string, ModuleTarget>;
     private _identifier: ModuleIdentifier;
     private _requiredModules: ModuleIdentifier[];
-    private _exprMetaDeclarations: Map<string, ExprMetaDeclaration>;
 
     private _finalizeActions: Array<() => void>;
 
     /* eslint-enable  @typescript-eslint/prefer-readonly */
 
-    private constructor(identifier: ModuleIdentifier) {
+    private constructor(identifier: ModuleIdentifier, registry: LapolRegistry) {
         this._identifier = identifier;
         this._requiredModules = [];
         this._finalizeActions = [];
         this._commands = new Map();
-        this._targets = new Map();
-        this._exprMetaDeclarations = new Map();
+        this._registry = registry;
     }
 
     get requiredModules(): ModuleIdentifier[] {
@@ -37,8 +37,8 @@ export class ModuleLoader {
      *
      * Called to make a new ModuleLoader
      */
-    public static _make(identifier: ModuleIdentifier): ModuleLoader {
-        return new ModuleLoader(identifier);
+    public static _make(identifier: ModuleIdentifier, registry: LapolRegistry): ModuleLoader {
+        return new ModuleLoader(identifier, registry);
     }
 
     /** Internal use --- Module developer MUST NOT CALL!
@@ -53,17 +53,7 @@ export class ModuleLoader {
 
         ModuleLoader.log(`_finalize: Finished loading ${this._identifier.name}`);
 
-        return new LapolModule(
-            this._commands,
-            this._targets,
-            this._identifier,
-            this._requiredModules,
-            this._exprMetaDeclarations
-        );
-    }
-
-    public declareTarget(name: string): void {
-        this._targets.set(name, { exprOutputters: new Map() });
+        return new LapolModule(this._commands, this._identifier, this._requiredModules);
     }
 
     // TODO: what should the type of 'options?' be?
@@ -137,20 +127,18 @@ export class ModuleLoader {
         tag: string,
         outputter: NodeOutputter<Expr, unknown>
     ): void {
-        const target = this._targets.get(target_);
-        if (target === undefined)
-            throw new LapolError(
-                `Target ${target_} has not been declared in ${this._identifier.name}.`
-            );
-        if (target.exprOutputters.has(tag))
-            throw new LapolError(
-                `Outputter for Expr ${tag} (targetting ${target_}) has already been set in ${this._identifier.name}.`
-            );
-        target.exprOutputters.set(tag, outputter);
+        const meta = this._registry.exprMetas.get(tag);
+        if (meta === undefined) throw new LapolError(`Expr meta for ${tag} doesn't exist.`);
+
+        meta.declareOutputter(target_, outputter);
     }
 
-    public declareExprMeta(exprTag: string, decl: ExprMetaDeclaration): void {
-        this._exprMetaDeclarations.set(exprTag, decl);
+    public declareTarget(target: string): void {
+        ModuleLoader.log(`WARNING Declared ${target}, but this is a NOOP for now`);
+    }
+
+    public declareExprMeta(exprTag: string, decl: ExprMetaCfgDeclaration): void {
+        this._registry.exprMetas.declare(exprTag, new ExprMeta(decl));
     }
 
     /** Declare that a module is required for this module to function. Note that this does

@@ -24,6 +24,11 @@ function load(l: ModuleLoader): void {
     l.exportCommands(commands);
 
     l.declareTarget("html");
+
+    l.declareExprMeta("__root", { isBlock: true });
+    l.declareExprMeta("__doc", { isBlock: true });
+    l.declareExprMeta("__p", { isBlock: true });
+
     l.exportExprOutputter("html", "__root", new HtmlRootOutputter());
     l.exportExprOutputter("html", "__doc", new GenericHtmlTagOutputter("__doc", "div"));
     l.exportExprOutputter("html", "__p", new GenericHtmlTagOutputter("__p", "p"));
@@ -45,7 +50,7 @@ class RequireCommand extends Command {
 
         const modName = modNode.text.trim();
 
-        const mod = lctx.modules.get(modName);
+        const mod = lctx.registry.modules.get(modName);
         if (mod === undefined)
             throw new LapolError(
                 `__require: Module ${modName} was required: you need to provide it when building LapolContext.`

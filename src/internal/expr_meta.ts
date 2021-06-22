@@ -1,37 +1,40 @@
+import { Expr } from "./det";
 import { LapolError } from "./errors";
+import { NodeOutputter } from "./output/node_outputter";
 
 const DEFAULTS: Map<string, boolean> = new Map();
 DEFAULTS.set("isBlock", false);
 
-/* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
-export interface ExprMetaDeclaration {
-    /** Whether this Expr is a block style expr (as understood in HTML).
-     *
-     * Block style Expr cause paragraphing to be handled differently.
-     *
-     * false by default. */
-    isBlock?: boolean;
-}
+type _AllowUndefinedProps<T> = {
+    [Propriety in keyof T]+?: T[Propriety];
+};
 
-export interface ExprMeta {
+export type ExprMetaCfgDeclaration = _AllowUndefinedProps<ExprMetaCfg>;
+
+export interface ExprMetaCfg {
+    /** Defaults to false */
     isBlock: boolean;
 }
 
-export function makeExprMeta(declarations: ExprMetaDeclaration[]): ExprMeta {
+function makeExprMetaCfg(from: ExprMetaCfgDeclaration): ExprMetaCfg {
+    // See docs for ExprMetaCfg to find the default values.
     return {
-        isBlock: mergeDeclAttribute(declarations, "isBlock"),
+        isBlock: from.isBlock ?? false,
     };
 }
 
-function mergeDeclAttribute(declarations: ExprMetaDeclaration[], v: string): boolean {
-    const _default = DEFAULTS.get(v);
-    if (_default === undefined) throw new LapolError(`Missing EXPR META default for ${v}`);
-    // Yes this isn't the safest... I know.
-    const f = (d: ExprMetaDeclaration): boolean | undefined => (d as any)[v] as boolean | undefined;
+export class ExprMeta {
+    public readonly outputters: Map<string, NodeOutputter<Expr, unknown>>;
+    public readonly cfg: ExprMetaCfg;
 
-    if (declarations.some((d) => f(d) === true) && declarations.some((d) => f(d) === false))
-        throw new LapolError(`Inconsistent ExprMetaDeclarations for attribute ${v}.`);
-    else if (declarations.some((d) => f(d) === true)) return true;
-    else if (declarations.some((d) => f(d) === false)) return false;
-    else return _default;
+    constructor(cfg: ExprMetaCfgDeclaration) {
+        this.outputters = new Map();
+        this.cfg = makeExprMetaCfg(cfg);
+    }
+
+    public declareOutputter(target: string, outputter: NodeOutputter<Expr, unknown>): void {
+        if (this.outputters.has(target))
+            throw new LapolError(`Outputter re-declaration not permitted (target = ${target})`);
+        this.outputters.set(target, outputter);
+    }
 }

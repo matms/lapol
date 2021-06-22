@@ -20,9 +20,6 @@ export async function outputDet(
     detRootNode: DetNode,
     target: string
 ): Promise<OutputData> {
-    const targetData = lctx.targets.get(target);
-    if (targetData === undefined) throw new LapolError(`Target ${target} not properly setup.`);
-
     // TODO: Allow user configuration of the string outputter.
     let strOutputter;
     switch (target) {
@@ -34,8 +31,13 @@ export async function outputDet(
             throw new LapolError(`Need to setup string outputter for ${target}. TODO`);
     }
 
-    // TODO: Can we check that "string" is the appropriate output type?
-    const exprOutputterMap = targetData.exprOutputters as Map<string, NodeOutputter<Expr, string>>;
+    // TODO: Is this approach too inefficient?
+    const exprOutputterMap = new Map();
+
+    lctx.registry.exprMetas._storage.forEach((v, k) => {
+        const outputter = v.outputters.get(target);
+        if (outputter !== undefined) exprOutputterMap.set(k, outputter);
+    });
 
     const outputter = new OutputCtx<string>(strOutputter, exprOutputterMap);
     return { str: outputter.output(detRootNode) };
