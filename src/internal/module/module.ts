@@ -16,15 +16,15 @@ export const LA_MOD_LOADER_FN_NAME = "load";
 export class LapolModule {
     readonly namespace: Namespace;
     readonly identifier: ModuleIdentifier;
-    readonly requiredMods: ModuleIdentifier[];
+    readonly loadedSubModules: string[];
 
     constructor(
         commands: Map<string, Command>,
         identifier: ModuleIdentifier,
-        requiredMods: ModuleIdentifier[]
+        loadedSubModules: string[]
     ) {
         this.identifier = identifier;
-        this.requiredMods = requiredMods;
+        this.loadedSubModules = loadedSubModules;
 
         // TODO: What name to use here?
         // TODO: Need to introduce the concept of parent modules?
@@ -35,15 +35,16 @@ export class LapolModule {
     }
 }
 
+/** Returns a list comprised of the module that has been loaded and any submodules */
 export async function loadModule(
     name: string,
     mod: ModuleDeclaration,
     registry: LapolRegistry
-): Promise<LapolModule> {
+): Promise<string[]> {
     const load = mod.loaderFn;
     const moduleLoader = ModuleLoader._make({ name: name }, registry);
 
     await load(moduleLoader);
 
-    return moduleLoader._finalize();
+    return await moduleLoader._finalize();
 }

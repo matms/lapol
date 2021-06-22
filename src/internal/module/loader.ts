@@ -1,4 +1,4 @@
-import { LapolModule, ModuleIdentifier } from "./module";
+import { LapolModule, loadModule, ModuleDeclaration, ModuleIdentifier } from "./module";
 import { strict as assert } from "assert";
 import { Command, JsFnCommand } from "../command/command";
 import { CommandArguments } from "../command/argument";
@@ -15,22 +15,18 @@ export class ModuleLoader {
 
     private _commands: Map<string, Command>;
     private _identifier: ModuleIdentifier;
-    private _requiredModules: ModuleIdentifier[];
+    private _loadedSubModules: string[];
 
-    private _finalizeActions: Array<() => void>;
+    private _finalizeActions: Array<() => Promise<void>>;
 
     /* eslint-enable  @typescript-eslint/prefer-readonly */
 
     private constructor(identifier: ModuleIdentifier, registry: LapolRegistry) {
         this._identifier = identifier;
-        this._requiredModules = [];
+        this._loadedSubModules = [];
         this._finalizeActions = [];
         this._commands = new Map();
         this._registry = registry;
-    }
-
-    get requiredModules(): ModuleIdentifier[] {
-        return this._requiredModules;
     }
 
     /** Internal use --- Module developer MUST NOT CALL!
@@ -45,15 +41,33 @@ export class ModuleLoader {
      *
      * This is called last, after the requiredModules have been loaded. Anything that
      * requires the modules to be loaded should be done here.
+     *
+     * This returns a list of modules that have been loaded as strings,
+     * and adds these modules to the LapolRegistry.
+     * Namely, these are the module itself and any submodules requested with `declareSubModule`
+     *
      */
-    public _finalize(): LapolModule {
+    public async _finalize(): Promise<string[]> {
         for (const f of this._finalizeActions) {
-            f();
+            await f();
         }
 
         ModuleLoader.log(`_finalize: Finished loading ${this._identifier.name}`);
 
-        return new LapolModule(this._commands, this._identifier, this._requiredModules);
+        const mod = new LapolModule(this._commands, this._identifier, this._loadedSubModules);
+
+        this._registry.modules.declare(mod.identifier.name, mod);
+
+        const out = [mod.identifier.name].concat(...this._loadedSubModules);
+
+        return out;
+    }
+
+    /** Returns whether a given target has been requested
+     * (see `LapolCompilerBuilder.withTargets()`).
+     */
+    public hasTarget(targetName: string): boolean {
+        return this._registry.targetNames.has(targetName);
     }
 
     // TODO: what should the type of 'options?' be?
@@ -88,7 +102,7 @@ export class ModuleLoader {
      * Note this doesn't load the command immediately, it simply enqueues the command for loading.
      */
     public exportCommands(commands: Record<string, unknown>): void {
-        this._finalizeActions.push(() => {
+        this._finalizeActions.push(async () => {
             assert(typeof commands === "object");
 
             for (const prop of Object.getOwnPropertyNames(commands)) {
@@ -153,9 +167,11 @@ export class ModuleLoader {
      * not load the module into the environment automatically. Note that this does not load
      * the module immediately (i.e. we do not await for the module to load)
      */
-    public declareRequire(moduleName: string): void {
-        throw new Error("Not implemented.");
-        // this._requiredModules.push({ name: moduleName });
+    public declareSubModule(name: string, mod: ModuleDeclaration): void {
+        this._finalizeActions.push(async () => {
+            await loadModule(name, mod, this._registry);
+            this._loadedSubModules.push(name);
+        });
     }
 
     private static log(str: string): void {

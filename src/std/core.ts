@@ -23,8 +23,6 @@ function load(l: ModuleLoader): void {
     // TODO: change deprecated fn.
     l.exportCommands(commands);
 
-    l.declareTarget("html");
-
     l.declareExprMeta("__root", { isBlock: true });
     l.declareExprMeta("__doc", { isBlock: true });
     l.declareExprMeta("__p", { isBlock: true });

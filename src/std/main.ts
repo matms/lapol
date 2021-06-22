@@ -1,5 +1,7 @@
 import { CommandArguments as Args } from "../internal/command/argument";
 import { DetNode, Expr, Str, ModuleLoader } from "../mod";
+import { mod as htmlOutputMod } from "./main_html_output";
+import { mod as latexOutputMod } from "./main_latex_output";
 
 export const mod = { loaderFn: load };
 
@@ -13,6 +15,14 @@ function load(l: ModuleLoader): void {
     l.declareExprMeta("h2", { isBlock: true });
     l.declareExprMeta("bold", { isBlock: false });
     l.declareExprMeta("italic", { isBlock: false });
+
+    if (l.hasTarget("html")) {
+        l.declareSubModule("std::main::html_output", htmlOutputMod);
+    }
+
+    if (l.hasTarget("latex")) {
+        l.declareSubModule("std::main::latex_output", latexOutputMod);
+    }
 }
 
 function title(a: Args): DetNode {

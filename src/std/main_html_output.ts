@@ -4,8 +4,6 @@ import { ModuleLoader } from "../mod";
 export const mod = { loaderFn: load };
 
 function load(l: ModuleLoader): void {
-    l.declareTarget("html");
-
     const declareDefaultHtmlOutputter = ([tag, htmlTag]: string[]): void => {
         l.exportExprOutputter("html", tag, new GenericHtmlTagOutputter(tag, htmlTag));
     };

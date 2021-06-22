@@ -6,10 +6,12 @@ import { LapolModule } from "../module/module";
 // Target first or expr first??? Or can I think outside the box here?
 
 export class LapolRegistry {
+    public readonly targetNames: Set<string>;
     public readonly exprMetas: Drawer<ExprMeta>;
     public readonly modules: Drawer<LapolModule>;
 
     constructor() {
+        this.targetNames = new Set();
         this.exprMetas = new Drawer();
         this.modules = new Drawer();
     }

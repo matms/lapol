@@ -29,7 +29,7 @@ export async function main(args: ProjectMainArgs) {
     const lc: LapolCompiler = await new LapolCompilerBuilder()
         .withModule("__proj__", dunderProjMod)
         .withModule("std::main", moduleMain)
-        .withTargets(["html"])
+        .withTargets("html")
         .build();
 
     await lc.render(file, "html");

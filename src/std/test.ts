@@ -3,9 +3,7 @@ import { DetNode, Expr, Str, ModuleLoader } from "../mod";
 export const mod = { loaderFn: load };
 
 async function load(loader: ModuleLoader) {
-    loader.declareRequire("std/main");
     loader.exportCommands(commands);
-    loader.exportAllCommandsFrom("std/main");
 }
 
 const commands = {
