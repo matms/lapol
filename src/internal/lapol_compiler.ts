@@ -4,6 +4,8 @@ import { LapolModule, loadModule, ModuleDeclaration } from "./module/module";
 import { mod as coreMod } from "./../std/core";
 import { InternalLapolContext } from "./context";
 import { LapolRegistry } from "./registry/registry";
+import { getLapolFolder } from "./global_init";
+import { copyFile } from "./utils";
 
 export class LapolCompilerBuilder {
     private readonly _thunks: Array<() => void> = [];
@@ -69,5 +71,13 @@ export class LapolCompiler {
     /** Renders a file to a given target (e.g. "html"). */
     public async render(file: LaPath, target: string): Promise<void> {
         await runRender(this._ctx, file, target);
+    }
+
+    // TODO: Make this customizable
+    public async outputDependencies(file: LaPath): Promise<void> {
+        await copyFile(
+            new LaPath(getLapolFolder().fullPath + `/../hello-css/dist/all.css`), // source
+            new LaPath(file.parsed.dir + `/out/hello-css-all.css`) // target
+        );
     }
 }

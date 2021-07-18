@@ -163,8 +163,7 @@ export class ModuleLoader {
         this._registry.exprMetas.declare(exprTag, new ExprMeta(decl));
     }
 
-    /** Declare that a module is required for this module to function. Note that this does
-     * not load the module into the environment automatically. Note that this does not load
+    /** Declare that a module is required for this module to function. Note that this does not load
      * the module immediately (i.e. we do not await for the module to load)
      */
     public declareSubModule(name: string, mod: ModuleDeclaration): void {

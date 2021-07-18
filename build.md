@@ -8,6 +8,28 @@ the `lapol-rs` folder and the `lapol-parse-rs` folder BESIDES the `lapol` folder
 
 You will want to build `lapol-rs` first, so see its `build.md` file.
 
+### Directory Structure
+
+Basically, you want the following directory structure
+(TODO: Make a shell script to automatically create this):
+
+```
+LaPoL/
+    lapol/ <- among other things, this is the folder that contains this file, `build.md`!
+    lapol-parse-rs/
+    lapol-rs/
+    hello-css/ <- Needed if you wish to use the default CSS style (Recommended)
+```
+
+To get hello-css, clone the following git repo: https://github.com/arp242/hello-css
+
+What you will want to do, is have this structure somewhere on your computer, and then you should
+probably add the built script to your PATH.
+
+Your LaPoL documents / projects can be anywhere on your computer,
+just make sure that they are in an otherwise
+empty folder (to avoid overwriting other files).
+
 ## Build LaPoL
 
 To build the typescript code, just run `tsc` in this directory. (To enter continuous build (watch)

@@ -20,11 +20,17 @@ export class GenericHtmlTagOutputter extends NodeOutputter<Expr, string> {
     nodeKind: "Expr" = "Expr";
     nodeTag: string;
     htmlTag: string;
+    attributes: Array<{ attr: string; val: string }>;
 
-    constructor(nodeTag: string, htmlTag: string) {
+    constructor(
+        nodeTag: string,
+        htmlTag: string,
+        attributes?: Array<{ attr: string; val: string }>
+    ) {
         super();
         this.nodeTag = nodeTag;
         this.htmlTag = htmlTag;
+        this.attributes = attributes ?? [];
     }
 
     public output(ctx: OutputCtx<string>, node: Expr): string {
@@ -34,7 +40,11 @@ export class GenericHtmlTagOutputter extends NodeOutputter<Expr, string> {
             .unsafeBorrowContents()
             .map((c) => ctx.output(c))
             .reduce((a, b) => a + b, "");
-        return `<${this.htmlTag}>${cs}</${this.htmlTag}>`;
+
+        // TODO: Should we escape this?
+        const attrEntries = this.attributes.map(({ attr, val }) => `${attr}="${val}"`).join(" ");
+
+        return `<${this.htmlTag} ${attrEntries}>${cs}</${this.htmlTag}>`;
     }
 }
 
@@ -48,6 +58,12 @@ export class HtmlRootOutputter extends NodeOutputter<Expr, string> {
             .map((c) => ctx.output(c))
             .reduce((a, b) => a + b, "");
         // TODO: Use template.
-        return `<html><head><meta charset="UTF-8"></head><body>${cs}</body></html>`;
+
+        // Investigate: https://github.com/arp242/hello-css
+        return (
+            `<html><head><meta charset="utf-8">` +
+            `<link rel="stylesheet" href="hello-css-all.css">` +
+            `</head><body><article class="page">${cs}</article></body></html>`
+        );
     }
 }

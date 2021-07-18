@@ -27,6 +27,10 @@ export async function writeFile(filePath: LaPath, data: string): Promise<void> {
     await fsp.writeFile(filePath.fullPath, data);
 }
 
+export async function copyFile(fileSource: LaPath, fileDest: LaPath): Promise<void> {
+    await fsp.copyFile(fileSource.fullPath, fileDest.fullPath);
+}
+
 /** Return true iff `str` is comprised solely of whitespace characters.
  *
  *  Note newline is considered whitespace.

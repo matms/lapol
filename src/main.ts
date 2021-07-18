@@ -2,6 +2,7 @@
 
 let isNodePathInit = false;
 let isLapolRsInit = false;
+let isLapolFolderInfoInit = false;
 
 // It is important to run setupNodePath _before_ importing (it messes with NODE_PATH).
 if (!isNodePathInit) {
@@ -10,6 +11,14 @@ if (!isNodePathInit) {
 }
 
 import { init as lapol_rs_init } from "lapol-rs";
+import { setLapolFolder } from "./internal/global_init";
+import { LaPath } from "./internal/la_path";
+
+if (!isLapolFolderInfoInit) {
+    // eslint-disable-next-line node/no-path-concat
+    setLapolFolder(new LaPath(`${__dirname}/../..`)); // Folder lapol
+    isLapolFolderInfoInit = true;
+}
 
 if (!isLapolRsInit) {
     lapol_rs_init(); // Sets up rust panic handler.
@@ -17,7 +26,7 @@ if (!isLapolRsInit) {
 }
 
 export function isLapolGloballyInitialized(): boolean {
-    return isNodePathInit && isLapolRsInit;
+    return isNodePathInit && isLapolRsInit && isLapolFolderInfoInit;
 }
 
 /** Setup NODE_PATH to point to the folder "build" (refer to tsconfig.json).
