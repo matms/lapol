@@ -1,0 +1,19 @@
+{
+    "editor.formatOnSave": true,
+    "prettier.tabWidth": 4,
+    "prettier.printWidth": 100,
+    "editor.wordWrapColumn": 100,
+    "editor.rulers": [
+    100, 120
+    ],
+    "cSpell.words": [
+        "Serde",
+        "jsxdev",
+        "kwas",
+        "lapol",
+        "lctx",
+        "matms",
+        "xnnnnnnnnnnnn"
+    ],
+    "eslint.lintTask.enable": true
+}

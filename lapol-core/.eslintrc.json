@@ -1,0 +1,28 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es2021": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/recommended-requiring-type-checking",
+        "eslint-config-standard-with-typescript",
+        "prettier"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": 12,
+        "project": "./tsconfig.eslint.json"
+    },
+    "plugins": [
+        "only-warn",
+        "@typescript-eslint"
+    ],
+    "rules": {
+        "@typescript-eslint/no-misused-promises": "error",
+        "@typescript-eslint/no-inferrable-types": "off"
+    },
+    "ignorePatterns": ["build/*", "md_style/*", "node_modules/*", "samples/*", "test_scratch/*"]
+}
