@@ -1,0 +1,44 @@
+/* POSTSCRIPT */
+
+/* A "postscript" is useful for adding things after the main text, such as a
+ * footnotes section, feedback section, etc.
+ *
+ * It doesn't need to be at the end of the document, and also fits well at the
+ * end of a chapter.
+ */
+.postscript {
+  margin-top: 3em;                     /* Clear a bit from regular content. */
+  border-top: 1px solid /*bordercolor*/#aaa; /* Border to separate. */
+  font-size: .9em;                     /* Slightly smaller text. */
+  position: relative;                  /* So we can place the header. */
+
+}
+.postscript + .postscript {
+  margin-top: 2em;                     /* Less margin for subsequent footnotes. */
+}
+
+.postscript > strong {
+  font-style: normal;                  /* Override the italics. */
+  position: absolute;                  /* Move to the to align with the border. */
+  top: -1em;
+  left: 1em;
+  background-color: /*bgcolor*/#fff;   /* Add background colour and padding to hide the border. */
+  padding: 0 .5em;
+}
+
+.postscript > p {
+  margin: 1em 2em                      /* Make margin same as list. */
+}
+
+/* Make the border take up the page padding if the screen is wide enough. */
+@media (min-width: /*bodywidth*/54rem) {
+  .postscript {
+    margin-left: /*padx*/-4em;           /* Put the div in the margin too, so the border is wider. */
+    width: calc(100% + /*padx*/8em);
+    padding: 0 /*padx*/4em;              /* Add page margin. */
+  }
+
+  .postscript > strong {
+    left: /*padx*/6em;
+  }
+}
