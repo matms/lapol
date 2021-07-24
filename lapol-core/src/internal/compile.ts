@@ -64,10 +64,11 @@ const COMPILE_DBG_PRINT = false;
 export async function render(
     lctx: InternalLapolContext,
     filePath: LaPath,
+    outPath: LaPath,
     target: string = "html"
 ): Promise<void> {
     const inPath = filePath;
-    const outPath = outFilePath(filePath, target);
+    // const outPath = outFilePath(filePath, target);
 
     if (COMPILE_DBG_PRINT) console.log("\n====== Starting to compile LaPoL file ======\n");
 

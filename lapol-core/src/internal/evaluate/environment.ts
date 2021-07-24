@@ -1,10 +1,10 @@
 import { Command } from "../command/command";
 import { parseIdentifier } from "../identifier";
 import { LapolModule, ModuleIdentifier } from "../module/module";
-import { Namespace, RootNamespace } from "../namespace";
+import { RootNamespace } from "../namespace";
 
 export class Environment {
-    readonly rootNamespace: Namespace;
+    readonly rootNamespace: RootNamespace;
     readonly loadedModules: ModuleIdentifier[];
 
     constructor() {
@@ -15,7 +15,7 @@ export class Environment {
     loadModule(name: string, module: LapolModule, as?: string): void {
         this.loadedModules.push(module.identifier);
         if (as === undefined) as = module.identifier.name;
-        this.rootNamespace.addChildNamespace(as, module.namespace);
+        this.rootNamespace.rootAddChildNamespace(as, module.namespace);
     }
 
     // TODO: Extract parse identifier, rename to lookup in general?

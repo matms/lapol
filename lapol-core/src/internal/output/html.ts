@@ -59,10 +59,10 @@ export class HtmlRootOutputter extends NodeOutputter<Expr, string> {
             .reduce((a, b) => a + b, "");
         // TODO: Use template.
 
-        // Investigate: https://github.com/arp242/hello-css
+        // TODO: Find deps folder relative to current compile target.
         return (
             `<html><head><meta charset="utf-8">` +
-            `<link rel="stylesheet" href="hello-css-all.css">` +
+            `<link rel="stylesheet" href="deps/hello-css-all.css">` +
             `</head><body><article class="page">${cs}</article></body></html>`
         );
     }

@@ -23,6 +23,9 @@ export class Namespace {
     }
 
     public addChildNamespace(as: string, child: Namespace): void {
+        // Root namespace is special, we cannot set any of root's children to have root as
+        // parent, since children of root may be shared amongst different compilations.
+        assert(!this.isRoot);
         assert(!this.children.has(as));
         assert(as !== SUPER_IDENTIFIER);
         assert(child.parent === undefined);
@@ -87,5 +90,11 @@ export class RootNamespace extends Namespace {
     readonly isRoot: boolean = true;
     constructor() {
         super("__root__");
+    }
+
+    public rootAddChildNamespace(as: string, child: Namespace): void {
+        assert(!this.children.has(as));
+        assert(as !== SUPER_IDENTIFIER);
+        this.children.set(as, child);
     }
 }

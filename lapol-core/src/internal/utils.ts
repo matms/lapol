@@ -28,6 +28,9 @@ export async function writeFile(filePath: LaPath, data: string): Promise<void> {
 }
 
 export async function copyFile(fileSource: LaPath, fileDest: LaPath): Promise<void> {
+    // Create the directory which will contain this file, if it doesn't already exist
+    await mkdirp(fileDest.parsed.dir);
+
     await fsp.copyFile(fileSource.fullPath, fileDest.fullPath);
 }
 
