@@ -1,5 +1,8 @@
 # Build
 
+Note: Before building, make sure the folder `lapol-parse-rs` is besides this folder (`lapol-rs`).
+For more info, see `Cargo.toml`.
+
 To build, cd to this folder and run:
 
 `wasm-pack build --target nodejs`
@@ -15,4 +18,4 @@ More info on this coming soon.
 
 ## Testing
 
-To run the testing suite, use `wasm-pack test --node`.
+To run tests, use `wasm-pack test --node`.

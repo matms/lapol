@@ -13,7 +13,7 @@ pub fn main() {
     let path = "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\parse2.lap";
 
     /*let path =
-    "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\stress_test_0.lap";*/
+        "X:\\programming\\programming\\LaPoL Project\\lapol\\test_scratch\\stress_test_0.lap";*/
 
     //loop {
     let parse_start = Instant::now();

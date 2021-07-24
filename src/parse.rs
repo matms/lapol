@@ -6,14 +6,6 @@ use std::{
 
 use wasm_bindgen::prelude::*;
 
-pub mod ast;
-mod parser;
-mod tokenizer;
-
-use parser::Parser;
-
-use crate::parse::tokenizer::Tokenizer;
-
 // This won't work in wasm!
 pub(crate) fn load_file(full_path: &str) -> Result<String, Box<dyn Error>> {
     let file = File::open(full_path)?;
@@ -33,11 +25,7 @@ pub fn parse_file(file_path: &str, file_content_buffer: &[u8]) -> JsValue {
 
     // let tok_start = Instant::now();
 
-    let tokenizer = Tokenizer::new(&file_content, None);
-
-    let mut parser = Parser::new(tokenizer);
-
-    let root_node = parser.parse().unwrap();
+    let root_node = lapol_parse_rs::parse(&file_content).unwrap();
 
     JsValue::from_serde(&root_node).unwrap()
 }
@@ -48,13 +36,7 @@ pub fn parse_file_native(file_path: &str) {
 
     let file_content = load_file(file_path).unwrap();
 
-    // let tok_start = Instant::now();
+    let root_node = lapol_parse_rs::parse(&file_content).unwrap();
 
-    let tokenizer = Tokenizer::new(&file_content, None);
-
-    let mut parser = Parser::new(tokenizer);
-
-    let _root_node = parser.parse().unwrap();
-
-    println!("root node dbg: {:#?}", _root_node);
+    // println!("root node dbg: {:#?}", root_node);
 }

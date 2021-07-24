@@ -39,6 +39,9 @@ opt-level = "s"
 # Include debuginfo (useful for profiling)
 debug = true
 
+# Might make parsing non-negligibly faster.
+lto="fat"
+
 # To have debug info we use '-g'
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ['-O4', '-g']
