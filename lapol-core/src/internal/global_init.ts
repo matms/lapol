@@ -1,7 +1,7 @@
 import { LapolError } from "./errors";
 import { LaPath } from "./la_path";
 
-let lapolFolder: LaPath | undefined = undefined;
+let lapolFolder: LaPath | undefined;
 
 export function setLapolFolder(folder: LaPath): void {
     lapolFolder = folder;

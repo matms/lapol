@@ -1,6 +1,6 @@
 import { LaPath } from "./la_path";
 import { render as runRender } from "./compile";
-import { LapolModule, loadModule, ModuleDeclaration } from "./module/module";
+import { loadModule, ModuleDeclaration } from "./module/module";
 import { mod as coreMod } from "./../std/core";
 import { InternalLapolContext } from "./context";
 import { LapolRegistry } from "./registry/registry";

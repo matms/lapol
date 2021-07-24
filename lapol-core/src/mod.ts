@@ -9,4 +9,3 @@ export { CommandArguments } from "./internal/command/argument";
 export { LapolCompilerBuilder, LapolCompiler } from "./internal/lapol_compiler";
 export { LaPath } from "./internal/la_path";
 export { ModuleDeclaration } from "./internal/module/module";
-export { ProjectMainArgs } from "./runner";
