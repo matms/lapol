@@ -20,7 +20,7 @@ is used by `lapol-rs`. `lapol-rs` calls the parser
 (using `Serde`) into JSON, which is sent over to
 `lapol`.
 
-Evaluation, Processing and Output are implemented by this repo, `lapol`, and are meant to be
+Evaluation, Processing and Output are implemented by `lapol-core`, and are meant to be
 very easily customizable by the lapol user.
 
 ## Parsing

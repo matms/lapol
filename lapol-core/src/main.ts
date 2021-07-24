@@ -45,7 +45,7 @@ export function isLapolGloballyInitialized(): boolean {
  * However, this does NOT make Typescript compile this correctly. So, for typescript, refer to:
  * 1. tsconfig.json (if you want VSCode / another editor to recognize the imports, and also if,
  *    for whatever reason, you decide to use this import syntax in core LaPoL code)
- * 2. lapol/internal/shell/compile_ts, namely, `makeTsCfg`, which is responsible for setting up the
+ * 2. [NO LONGER POSSIBLE] lapol/internal/shell/compile_ts, namely, `makeTsCfg`, which is responsible for setting up the
  *    TypeScript compilation settings for dynamically compiled LaPoL modules.
  */
 function setupNodePath(): void {

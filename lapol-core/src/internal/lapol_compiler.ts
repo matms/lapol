@@ -32,7 +32,8 @@ export class LapolCompilerBuilder {
     }
 
     public async build(): Promise<LapolCompiler> {
-        // Running the thunks right now (instead of immediately) guarantees that the modules will
+        // Running the thunks right now (instead of immediately after creating them)
+        // guarantees that the modules will
         // observe the correct value of `this._lapolRegistry.targetNames` when loading.
         //
         // This allows the user to call `withTargets` and `withModule` in any order.
