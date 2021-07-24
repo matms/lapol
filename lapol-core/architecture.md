@@ -25,15 +25,25 @@ very easily customizable by the lapol user.
 
 ## Parsing
 
+TODO
 ## Evaluation
 
+TODO
 ## Processing
 
+TODO
 ## Output
 
-## Goals
+TODO
+## Modules
 
-Performance Goals:
+A LaPoL module is fundamentally a `Javascript` module, which exports an object satisfying the interface `ModuleDeclaration`.
+
+The main component of this interface is the loader function. This is a function that receives a `ModuleLoader` object. By calling methods on this object, a module can programmatically declare itself.
+
+See the folder `src/std` for example modules. (However, don't start with `std/core`. That one is pretty complicated!)
+
+## Performance Goals
 
 -   The user should be able to edit a small file in "almost" real time.
 -   The user should be able to compile a medium sized book in less than 1 second.
