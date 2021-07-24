@@ -12,6 +12,7 @@
 
 LaPoL is a document preparation system. In other words, it is a programming environment to create documents (and more). 
 
+
 By default, LaPoL can compile to static webpages, but you can also create your own output targets (e.g., generating a PDF file through LaTeX).
 
 LaPoL allows you to define commands using `JavaScript` or `TypeScript`. These commands are what
