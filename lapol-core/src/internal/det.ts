@@ -127,6 +127,12 @@ export class Expr extends DetNode {
         return this.contentsReplace(this._contents.map(fn));
     }
 
+    public contentsFlatMap(
+        fn: (node: DetNode, index?: number, array?: DetNode[]) => DetNode[]
+    ): Expr {
+        return this.contentsReplace(this._contents.flatMap(fn));
+    }
+
     public contentsFilter(fn: (node: DetNode, index?: number, array?: DetNode[]) => boolean): Expr {
         return this.contentsReplace(this._contents.filter(fn));
     }

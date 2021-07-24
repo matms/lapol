@@ -3,11 +3,13 @@
  * This pass takes in a DET, returns a possibly modified DET.
  */
 
+import { strict as assert } from "assert";
 import { InternalLapolContext } from "../context";
-import { DetNode } from "../det";
-import { processLinebreaks, processParagraphs } from "./paragraph";
+import { DetNode, Expr } from "../det";
+import { processRemoveWhitespaceLines, processLinebreaks, processParagraphs } from "./paragraph";
 
-const PROCESSING_PASSES: Array<(node: DetNode, lctx: InternalLapolContext) => DetNode> = [
+const PROCESSING_PASSES: Array<(node: Expr, lctx: InternalLapolContext) => DetNode> = [
+    processRemoveWhitespaceLines,
     processLinebreaks,
     processParagraphs,
 ];
@@ -19,6 +21,7 @@ export async function processDet(
     let out = detRootNode;
 
     for (const pass of PROCESSING_PASSES) {
+        assert(out instanceof Expr);
         out = pass(out, lctx);
     }
 

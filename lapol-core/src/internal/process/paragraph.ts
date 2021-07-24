@@ -1,3 +1,4 @@
+import { strict as assert } from "assert";
 import { InternalLapolContext } from "../context";
 import { Data, DetNode, Str, Expr } from "../det";
 import { LapolError } from "../errors";
@@ -8,6 +9,23 @@ const PARAGRAPH_TAG = "__p";
 
 // TODO: Strip empty lines (whitespace only lines.)
 // TODO: Newline should become a space.
+
+function removeWhitespace(node: DetNode, lctx: InternalLapolContext): DetNode[] {
+    if (node instanceof Str) {
+        if (!isNewline(node) && isWhitespace(node.text)) return [];
+        return [node];
+    }
+    if (node instanceof Data) return [node];
+    if (node instanceof Expr) {
+        const nNode = node.contentsFlatMap((n) => removeWhitespace(n, lctx));
+        return [nNode];
+    }
+    throw new LapolError("Should be unreachable");
+}
+
+export function processRemoveWhitespaceLines(node: Expr, lctx: InternalLapolContext): Expr {
+    return node.contentsFlatMap((n) => removeWhitespace(n, lctx));
+}
 
 export function processLinebreaks(node: DetNode, lctx: InternalLapolContext): DetNode {
     if (node instanceof Str) return node;
