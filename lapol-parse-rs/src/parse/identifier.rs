@@ -28,8 +28,8 @@ pub(super) fn identifier<'a, E: ParseError<Span<'a>>>(
 ) -> IResult<Span<'a>, Span<'a>, E> {
     verify(
         recognize(pair(
-            alt((alpha1, tag("_"))),
-            many0(alt((alphanumeric1, tag("_")))),
+            alt((alpha1, tag("_"), tag(":"))),
+            many0(alt((alphanumeric1, tag("_"), tag(":")))),
         )),
         |s: &Span| s.is_ascii() && !is_reserved_identifier(s.borrow()),
     )(i)

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 
 /// Represents a single argument withing square braces in a command invocation
 /// For instance, if you do `@cmd[a, b, c=true]`, then each of "a", "b" and
-/// "c=1" are one argument.
+/// "c=true" are one argument.
 ///
 /// This enum has two variants. `Val` represents a single value passed in (e.g.
 /// "a"), `KeyVal` represents a keyword argument (e.g. "c=true")
