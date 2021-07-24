@@ -100,5 +100,24 @@ export class LapolCompiler {
             new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/dist/all.css`), // source
             new LaPath(this._outputFolder.fullPath + `/deps/hello-css-all.css`) // target
         );
+
+        // Fonts
+        const DEFAULT_FONTS = [
+            "libre-baskerville.woff2",
+            "libre-baskerville-bold.woff2",
+            "libre-baskerville-italic.woff2",
+        ];
+        for (const font of DEFAULT_FONTS) {
+            await copyFile(
+                new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/fonts/${font}`),
+                new LaPath(this._outputFolder.fullPath + `/deps/fonts/${font}`) // target
+            );
+        }
+
+        // Copy Font Licence Information
+        await copyFile(
+            new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/fonts/LICENSE`),
+            new LaPath(this._outputFolder.fullPath + `/deps/fonts/LICENSE`) // target
+        );
     }
 }

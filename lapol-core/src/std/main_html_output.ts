@@ -19,4 +19,7 @@ function load(l: ModuleLoader): void {
 
     declareDefaultHtmlOutputter("bold", "b");
     declareDefaultHtmlOutputter("italic", "i");
+
+    declareDefaultHtmlOutputter("bquot", "blockquote");
+    declareDefaultHtmlOutputter("marginnote", "aside");
 }

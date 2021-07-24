@@ -17,6 +17,11 @@ function load(l: ModuleLoader): void {
     l.exportCommand("bf", (a) => new Expr("bold", a.ca(0)));
     l.exportCommand("it", (a) => new Expr("italic", a.ca(0)));
 
+    // Block quote
+    l.exportCommand("bquot", (a) => new Expr("bquot", a.ca(0)));
+
+    l.exportCommand("marginnote", (a) => new Expr("marginnote", a.ca(0)));
+
     // TODO:
     //  - Tables
     //  - Code blocks w/ syntax high. (Inline & block)
@@ -34,6 +39,9 @@ function load(l: ModuleLoader): void {
 
     l.declareExprMeta("bold", {});
     l.declareExprMeta("italic", {});
+
+    l.declareExprMeta("bquot", { isBlock: true });
+    l.declareExprMeta("marginnote", {});
 
     if (l.hasTarget("html")) {
         l.declareSubModule("std::main::html_output", htmlOutputMod);
