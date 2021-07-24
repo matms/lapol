@@ -15,7 +15,7 @@ use std::borrow::{Borrow, Cow};
 
 use std::fmt::Debug;
 
-use crate::{parse::ast_meta_utils::ast_meta_from_span};
+use crate::parse::ast_meta_utils::ast_meta_from_span;
 
 use self::string::parse_string;
 

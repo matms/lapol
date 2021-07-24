@@ -9,6 +9,7 @@
   },
   "author": "matms",
   "license": "UNLICENSED",
+  "private": "true",
   "devDependencies": {
     "@types/jest": "^26.0.23",
     "@types/mkdirp": "^1.0.1",

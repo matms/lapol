@@ -76,7 +76,7 @@ export class LapolCompiler {
     // TODO: Make this customizable
     public async outputDependencies(file: LaPath): Promise<void> {
         await copyFile(
-            new LaPath(getLapolFolder().fullPath + `/../hello-css/dist/all.css`), // source
+            new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/dist/all.css`), // source
             new LaPath(file.parsed.dir + `/out/hello-css-all.css`) // target
         );
     }

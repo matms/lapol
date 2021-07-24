@@ -55,7 +55,9 @@ To build, just run `python build.py` (But make sure you are using python 3).
 
 ## Using lapol-core (LaPoL as a library)
 
-TODO
+See the `lapol-samples` repo.
+
+TODO: More info.
 
 ## Projects with lapol-project
 
