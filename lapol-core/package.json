@@ -14,7 +14,7 @@
     "@types/jest": "^26.0.23",
     "@types/mkdirp": "^1.0.1",
     "@types/node": "^15.0.1",
-    "@types/yargs": "^17.0.0",
+    "@types/he": "^1.1.1",
     "@typescript-eslint/eslint-plugin": "^4.24.0",
     "@typescript-eslint/parser": "^4.24.0",
     "eslint": "^7.26.0",
@@ -29,10 +29,8 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
-    "@types/he": "^1.1.1",
-    "he": "^1.2.0",
     "lapol-rs": "file:../lapol-rs/pkg",
-    "mkdirp": "^1.0.4",
-    "yargs": "^17.0.1"
+    "he": "^1.2.0",
+    "mkdirp": "^1.0.4"
   }
 }
