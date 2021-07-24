@@ -26,7 +26,7 @@
     "eslint-plugin-promise": "^4.3.1",
     "jest": "^27.0.4",
     "ts-jest": "^27.0.3",
-    "typescript": "^4.2.4"
+    "typescript": "^4.3.5"
   },
   "dependencies": {
     "@types/he": "^1.1.1",

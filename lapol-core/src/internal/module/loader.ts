@@ -52,7 +52,7 @@ export class ModuleLoader {
             await f();
         }
 
-        ModuleLoader.log(`_finalize: Finished loading ${this._identifier.name}`);
+        // ModuleLoader.log(`_finalize: Finished loading ${this._identifier.name}`);
 
         const mod = new LapolModule(this._commands, this._identifier, this._loadedSubModules);
 
@@ -156,7 +156,7 @@ export class ModuleLoader {
     }
 
     public declareTarget(target: string): void {
-        ModuleLoader.log(`WARNING Declared ${target}, but this is a NOOP for now`);
+        ModuleLoader.log(`WARNING Declared ${target}, but this does nothing (for now).`);
     }
 
     public declareExprMeta(exprTag: string, decl: ExprMetaCfgDeclaration): void {

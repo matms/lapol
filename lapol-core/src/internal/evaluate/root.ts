@@ -55,7 +55,7 @@ export function evaluateRoot(
     rootNode: AstRootNode,
     filePath: string
 ): Expr {
-    const t0 = Date.now();
+    // const t0 = Date.now();
 
     const env = new Environment();
     setupCoreModule(lctx, env);
@@ -70,16 +70,18 @@ export function evaluateRoot(
 
     const doc = rootNode.subNodes[docIndex];
 
-    const t1 = Date.now();
+    // const t1 = Date.now();
 
     const out = new Expr(ROOT_TAG, [evaluateNode(doc, lctx, env)]);
 
+    /*
     const t2 = Date.now();
     console.log(
         `<evaluateRoot> eval header: ${t1 - t0}, eval __doc: ${t2 - t1}, cumulative: ${
             t2 - t0
         } (millis)`
     );
+    */
 
     return out;
 }

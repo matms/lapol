@@ -47,11 +47,14 @@ export class LapolCompilerBuilder {
 
         modArrayNested.forEach((x) => x.forEach((m) => loadedModules.add(m)));
 
+        /*
         console.log(
             `[LapolCompilerBuilder] Loaded modules: ${Array.from(
                 loadedModules.values()
             ).toString()}`
         );
+        */
+        
 
         return new LapolCompiler(new InternalLapolContext(this._lapolRegistry));
     }

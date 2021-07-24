@@ -59,7 +59,7 @@ async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<Com
     };
 }
 
-const COMPILE_DBG_PRINT = true;
+const COMPILE_DBG_PRINT = false;
 
 export async function render(
     lctx: InternalLapolContext,
