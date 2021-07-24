@@ -103,14 +103,14 @@ function trimParas(contents: DetNode[]): DetNode[] {
     const trimSingleParaNode = (node: DetNode): DetNode => {
         if (node instanceof Expr && node.tag === PARAGRAPH_TAG) {
             const newCont: DetNode[] = [...node.unsafeBorrowContents()]; // Copy array.
-            while (newCont[0] instanceof Str && isWhitespace((newCont[0] as Str).text)) {
+            while (newCont[0] instanceof Str && isWhitespace(newCont[0].text)) {
                 newCont.shift();
             }
             while (
                 newCont[newCont.length - 1] instanceof Str &&
                 isWhitespace((newCont[newCont.length - 1] as Str).text)
             ) {
-                newCont.shift();
+                newCont.pop();
             }
             return node.contentsReplace(newCont);
         } else return node;
