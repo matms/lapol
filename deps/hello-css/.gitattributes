@@ -1,2 +1,0 @@
-# Mark as generated so it won't show up in diffs etc.
-/dist/* linguist-generated=true
