@@ -29,8 +29,10 @@ function load(l: ModuleLoader): void {
     //  - Block quotes & Nested Block Quotes
     //  - Lists (ordered, unordered, etc.
     //  - Horizontal Rule
-    //  - Links
+    //  - Links (Including references)
     //  - Footnotes (including hover & in-text)
+    //  - LaTeX math support
+    //  - Section Numbering
 
     l.declareExprMeta("title", { isBlock: true });
     l.declareExprMeta("sec", { isBlock: true });
