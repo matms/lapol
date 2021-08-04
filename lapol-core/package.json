@@ -29,8 +29,9 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
-    "lapol-rs": "file:../lapol-rs/pkg",
     "he": "^1.2.0",
+    "iterare": "^1.2.1",
+    "lapol-rs": "file:../lapol-rs/pkg",
     "mkdirp": "^1.0.4"
   }
 }
