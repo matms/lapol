@@ -1,5 +1,5 @@
-import { GenericHtmlTagOutputter } from "../output/html";
-import { ModuleLoader } from "../../mod";
+import { GenericHtmlTagOutputter } from "./output/html";
+import { ModuleLoader } from "../mod";
 
 export const mod = { loaderFn: load };
 
