@@ -76,6 +76,10 @@ export class LtrfNode {
     ): LtrfNode {
         return LtrfNode.make(ft(this._tag), fk(this._kv), fs(this._sub));
     }
+
+    dbgStringify(): string {
+        return JSON.stringify(this, null, "  ");
+    }
 }
 
 /** Identity funcion. Provided for user convenience, it is useful when using "lift". */

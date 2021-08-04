@@ -11,6 +11,7 @@ if (!isNodePathInit) {
 }
 
 import { init as lapol_rs_init } from "lapol-rs";
+
 import { setLapolFolder } from "./internal/global_init";
 import { LaPath } from "./internal/la_path";
 
@@ -60,3 +61,6 @@ function setupNodePath(): void {
     // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     require("module").Module._initPaths();
 }
+
+// import { debugCapture } from "./dbg";
+// debugCapture();

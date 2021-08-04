@@ -12,9 +12,9 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\build\\main.js",
+            "program": "${workspaceFolder}/build/lapol/main.js",
             "outFiles": [
-                "${workspaceFolder}/**/*.js"
+                "${workspaceFolder}/build/lapol/**/*.js"
             ],
             "preLaunchTask": "tsc: build - tsconfig.json"
         }
