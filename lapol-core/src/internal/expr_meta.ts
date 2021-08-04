@@ -1,6 +1,6 @@
 import { Expr } from "./det";
 import { LapolError } from "./errors";
-import { NodeOutputter } from "./output/output";
+import { NodeOutputter } from "./output/nodeOutputter";
 
 const DEFAULTS: Map<string, boolean> = new Map();
 DEFAULTS.set("isBlock", false);

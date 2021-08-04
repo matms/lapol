@@ -20,9 +20,9 @@ export abstract class Command {
 }
 
 export class JsFnCommand extends Command {
-    private readonly _fn: (a: CommandArguments) => DetNode;
+    private readonly _fn: (a: CommandArguments, ctx: CommandContext) => DetNode;
 
-    private constructor(name: string, fn: (a: CommandArguments) => DetNode) {
+    private constructor(name: string, fn: (a: CommandArguments, ctx: CommandContext) => DetNode) {
         super("JsFnCommand", name);
         this._fn = fn;
     }
@@ -36,7 +36,7 @@ export class JsFnCommand extends Command {
      *  none, currently.
      */
     public static fromJsFunction(
-        func: (a: CommandArguments) => DetNode | undefined,
+        func: (a: CommandArguments, ctx: CommandContext) => DetNode | undefined,
         cmdName: string,
         options?: Record<string, boolean>
     ): JsFnCommand {
@@ -45,14 +45,15 @@ export class JsFnCommand extends Command {
         // let varArgs = cfgBool(options.varArgs, false);
         // let curlyArity: number | "any" = varArgs ? "any" : func.length;
 
-        if (func.length !== 1) {
+        // TODO: Is this valid?
+        if (func.length !== 1 && func.length !== 2) {
             throw new LapolError(
-                "JsFnCommand should be formed from JS functions taking a single argument."
+                "JsFnCommand should be formed from JS functions taking one or two arguments."
             );
         }
 
-        const cmdFn = (a: CommandArguments): DetNode => {
-            const out = func(a);
+        const cmdFn = (a: CommandArguments, ctx: CommandContext): DetNode => {
+            const out = func(a, ctx);
 
             if (!(out instanceof DetNode)) {
                 throw new LapolError(
@@ -71,7 +72,7 @@ export class JsFnCommand extends Command {
     /** Execute the command `command`, given arguments `args`.
      *  Returns a `DetNode` or undefined to mean nothing.
      */
-    public call(args: CommandArguments): DetNode | undefined {
-        return this._fn(args);
+    public call(args: CommandArguments, ctx: CommandContext): DetNode | undefined {
+        return this._fn(args, ctx);
     }
 }

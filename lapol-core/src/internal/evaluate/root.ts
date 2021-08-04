@@ -1,7 +1,7 @@
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstCommandNode, AstRootNode } from "../ast";
 import { Command } from "../command/command";
-import { InternalLapolContext } from "../context";
+import { InternalFileContext, InternalLapolContext } from "../context";
 import { Expr } from "../det";
 import { LapolError } from "../errors";
 import { parseIdentifier } from "../identifier";
@@ -52,6 +52,7 @@ function checkRoot(rootNode: AstRootNode, docIndex: number): void {
 
 export function evaluateRoot(
     lctx: InternalLapolContext,
+    fctx: InternalFileContext,
     rootNode: AstRootNode,
     filePath: string
 ): Expr {
@@ -66,13 +67,13 @@ export function evaluateRoot(
         .slice(0, docIndex)
         .filter((n) => n.t === AstNodeKind.AstCommandNode) as AstCommandNode[];
 
-    header.forEach((n) => evaluateNode(n, lctx, env)); // TODO
+    header.forEach((n) => evaluateNode(n, lctx, fctx, env)); // TODO
 
     const doc = rootNode.subNodes[docIndex];
 
     // const t1 = Date.now();
 
-    const out = new Expr(ROOT_TAG, [evaluateNode(doc, lctx, env)]);
+    const out = new Expr(ROOT_TAG, [evaluateNode(doc, lctx, fctx, env)]);
 
     /*
     const t2 = Date.now();

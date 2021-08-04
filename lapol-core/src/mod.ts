@@ -6,6 +6,7 @@ export { DetNode, Str, Expr, Data } from "./internal/det";
 export { Environment } from "./internal/evaluate/environment";
 export { ModuleLoader } from "./internal/module/loader";
 export { CommandArguments } from "./internal/command/argument";
+export { CommandContext } from "./internal/command/context";
 export { LapolCompilerBuilder, LapolCompiler } from "./internal/lapol_compiler";
 export { LaPath } from "./internal/la_path";
-export { ModuleDeclaration } from "./internal/module/module";
+export { FileModuleStorage, ModuleDeclaration } from "./internal/module/module";

@@ -1,18 +1,12 @@
 /** Outputting, AKA the "Back Pass" */
 
-import { InternalLapolContext } from "../context";
+import { InternalFileContext, InternalLapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 
 // TODO: Inject
-import { DefaultHtmlStrOutputter } from "../../std/output/html";
-
-// Cf. `ModuleTarget`
-export abstract class NodeOutputter<N extends DetNode, T> {
-    abstract nodeKind: "Str" | "Expr";
-    abstract nodeTag: string | undefined;
-    public abstract output(ctx: OutputPass<T>, node: N): T;
-}
+import { DefaultHtmlStrOutputter } from "./html";
+import { NodeOutputter } from "./nodeOutputter";
 
 export interface OutputTargetCfg {
     canonicalName: string;
@@ -24,6 +18,7 @@ export type OutputType = string;
 
 export async function outputDet(
     lctx: InternalLapolContext,
+    fctx: InternalFileContext,
     detRootNode: DetNode,
     target: string
 ): Promise<OutputType> {

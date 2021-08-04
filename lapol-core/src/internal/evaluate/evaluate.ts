@@ -5,7 +5,7 @@
 
 import { strict as assert } from "assert";
 import { AstNode, AstNodeKind, AstRootNode, AstTextNode } from "../ast";
-import { InternalLapolContext } from "../context";
+import { InternalFileContext, InternalLapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "./environment";
@@ -28,22 +28,28 @@ export const SPLICE_EXPR = "splice";
  */
 export async function evaluateAst(
     lctx: InternalLapolContext,
+    fctx: InternalFileContext,
     node: AstRootNode,
     filePath: string
 ): Promise<DetNode> {
-    return evaluateRoot(lctx, node, filePath);
+    return evaluateRoot(lctx, fctx, node, filePath);
 }
 
 /** Evaluate `node` using environment `env`, returns a `DetNode`.
  *
  * Note this function dispatches to `evaluate*` (e.g. `evaluateRoot`, `evaluateCommand`, etc.).
  */
-export function evaluateNode(node: AstNode, lctx: InternalLapolContext, env: Environment): DetNode {
+export function evaluateNode(
+    node: AstNode,
+    lctx: InternalLapolContext,
+    fctx: InternalFileContext,
+    env: Environment
+): DetNode {
     switch (node.t) {
         case AstNodeKind.AstRootNode:
             throw new LapolError("evaluateRoot should be called directly.");
         case AstNodeKind.AstCommandNode:
-            return evaluateCommand(node, lctx, env);
+            return evaluateCommand(node, lctx, fctx, env);
         case AstNodeKind.AstTextNode:
             return evaluateStrNode(node, env);
         default:
@@ -59,11 +65,12 @@ function evaluateStrNode(strNode: AstTextNode, env: Environment): Str {
 export function evaluateNodeArray(
     nodeArray: AstNode[],
     lctx: InternalLapolContext,
+    fctx: InternalFileContext,
     env: Environment
 ): DetNode[] {
     const cont = [];
     for (const node of nodeArray) {
-        const n = evaluateNode(node, lctx, env);
+        const n = evaluateNode(node, lctx, fctx, env);
         if (n instanceof Expr && n.tag === SPLICE_EXPR) {
             for (const sn of n.contentsIter()) cont.push(sn);
         } else {

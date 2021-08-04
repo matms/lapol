@@ -2,13 +2,32 @@
  * However, consider it!
  */
 
-import { Expr, ModuleLoader } from "../mod";
+import { Str, Expr, ModuleLoader, FileModuleStorage } from "../mod";
 import { mod as htmlOutputMod } from "./main_html_output";
 import { mod as latexOutputMod } from "./main_latex_output";
 
 export const mod = { loaderFn: load };
 
+interface MainFileStore extends FileModuleStorage {
+    count: number;
+}
+
 function load(l: ModuleLoader): void {
+    l.requireName("std::main");
+
+    l.declareInstantiator(() => {
+        return {
+            moduleName: "std::main",
+            count: 0,
+        };
+    });
+
+    l.exportCommand("count", (_, c) => {
+        const s = c.getFileModuleStorage("std::main") as MainFileStore;
+        s.count++;
+        return new Str(s.count.toString());
+    });
+
     l.exportCommand("title", (a) => new Expr("title", a.ca(0)));
     l.exportCommand("sec", (a) => new Expr("sec", a.ca(0)));
     l.exportCommand("subsec", (a) => new Expr("subsec", a.ca(0)));

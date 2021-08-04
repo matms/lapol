@@ -1,9 +1,17 @@
-import { GenericHtmlTagOutputter } from "./output/html";
+import { GenericHtmlTagOutputter } from "../internal/output/html";
 import { ModuleLoader } from "../mod";
 
 export const mod = { loaderFn: load };
 
 function load(l: ModuleLoader): void {
+    l.requireName("std::main::html_output");
+
+    l.declareInstantiator(() => {
+        return {
+            moduleName: "std::main::html_output",
+        };
+    });
+
     const declareDefaultHtmlOutputter = (
         tag: string,
         htmlTag: string,

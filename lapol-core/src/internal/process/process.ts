@@ -4,7 +4,7 @@
  */
 
 import { strict as assert } from "assert";
-import { InternalLapolContext } from "../context";
+import { InternalFileContext, InternalLapolContext } from "../context";
 import { DetNode, Expr } from "../det";
 import { processRemoveWhitespaceLines, processLinebreaks, processParagraphs } from "./paragraph";
 
@@ -16,6 +16,7 @@ const PROCESSING_PASSES: Array<(node: Expr, lctx: InternalLapolContext) => DetNo
 
 export async function processDet(
     detRootNode: DetNode,
+    fctx: InternalFileContext,
     lctx: InternalLapolContext
 ): Promise<DetNode> {
     let out = detRootNode;

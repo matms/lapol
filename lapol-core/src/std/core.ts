@@ -15,11 +15,19 @@ import { LapolError } from "../internal/errors";
 import { parseIdentifier } from "../internal/identifier";
 import { ModuleLoader } from "../internal/module/loader";
 import { Namespace } from "../internal/namespace";
-import { GenericHtmlTagOutputter, HtmlRootOutputter } from "./output/html";
+import { GenericHtmlTagOutputter, HtmlRootOutputter } from "../internal/output/html";
 
 export const mod = { loaderFn: load };
 
 function load(l: ModuleLoader): void {
+    l.requireName("std::core");
+
+    l.declareInstantiator(() => {
+        return {
+            moduleName: "std::core",
+        };
+    });
+
     // TODO: change deprecated fn.
     l.exportCommands(commands);
 
@@ -39,8 +47,8 @@ class RequireCommand extends Command {
     }
 
     call(a: Args, ctx: CommandContext): undefined {
-        const lctx = ctx.lctx;
-        const env = ctx.currEnv;
+        const lctx = ctx._lctx;
+        const env = ctx._currEnv;
 
         const modNode = a.caOrErr(0)[0];
         if (!(modNode instanceof Str))
@@ -88,11 +96,11 @@ class UsingCommand extends Command {
         if (as === undefined) throw new LapolError(`__using: Must provide as`);
         if (typeof as !== "string") throw new LapolError(`__using: as must be identifier string.`);
 
-        const target = ctx.currNamespace.lookup(parseIdentifier(from + thing));
+        const target = ctx._currNamespace.lookup(parseIdentifier(from + thing));
 
         if (target === undefined) throw new LapolError(`__using: Could not find "from"`);
 
-        ctx.currNamespace.addUsing(as, target);
+        ctx._currNamespace.addUsing(as, target);
         return undefined;
     }
 }
@@ -113,12 +121,12 @@ class UsingAllCommand extends Command {
         if (typeof prefixIn !== "string")
             throw new LapolError(`__using_all: prefix_in must be string.`);
 
-        const target = ctx.currNamespace.lookup(parseIdentifier(from));
+        const target = ctx._currNamespace.lookup(parseIdentifier(from));
         if (!(target instanceof Namespace))
             throw new LapolError(`using_all: from must be namespace.`);
 
         for (const [k, v] of target.children) {
-            ctx.currNamespace.addUsing(prefixIn + k, v);
+            ctx._currNamespace.addUsing(prefixIn + k, v);
         }
 
         return undefined;

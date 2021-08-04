@@ -7,7 +7,7 @@ import { outputDet, OutputType } from "./output/output";
 import { processDet } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./la_path";
-import { InternalLapolContext } from "./context";
+import { InternalFileContext, InternalLapolContext } from "./context";
 
 export interface CompileInput {
     inputFilePath: LaPath;
@@ -31,11 +31,14 @@ async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<Com
     const parsed = parse_file(c.inputFilePath.fullPath, textBuf) as AstRootNode;
     assert(parsed.t === "AstRootNode");
     const t3 = Date.now();
-    const evaluated = await evaluateAst(lctx, parsed, c.inputFilePath.fullPath);
+
+    const fctx = InternalFileContext.make(lctx);
+
+    const evaluated = await evaluateAst(lctx, fctx, parsed, c.inputFilePath.fullPath);
     const t4 = Date.now();
-    const processed = await processDet(evaluated, lctx);
+    const processed = await processDet(evaluated, fctx, lctx);
     const t5 = Date.now();
-    const output = await outputDet(lctx, processed, c.targetLanguage);
+    const output = await outputDet(lctx, fctx, processed, c.targetLanguage);
     const t6 = Date.now();
     await writeFile(c.outputFilePath, output);
     const t7 = Date.now();

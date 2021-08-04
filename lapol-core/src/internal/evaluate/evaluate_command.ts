@@ -2,7 +2,8 @@ import { strict as assert } from "assert";
 import { AstCommandNode, AstNodeKind, SquareEntry } from "../ast";
 import { CmdSquareArg, EagerCommandArguments } from "../command/argument";
 import { Command } from "../command/command";
-import { InternalLapolContext } from "../context";
+import { CommandContext } from "../command/context";
+import { InternalFileContext, InternalLapolContext } from "../context";
 import { DetNode, Expr } from "../det";
 import { LapolError } from "../errors";
 import { Environment } from "./environment";
@@ -11,6 +12,7 @@ import { evaluateNodeArray, SPLICE_EXPR } from "./evaluate";
 export function evaluateCommand(
     commandNode: AstCommandNode,
     lctx: InternalLapolContext,
+    fctx: InternalFileContext,
     env: Environment
 ): DetNode {
     assert(commandNode.t === AstNodeKind.AstCommandNode);
@@ -26,13 +28,12 @@ export function evaluateCommand(
     // TODO: Allow lazy commands!
     assert(command.argumentEvaluation === "eager");
 
-    const commandArguments = evaluateEagerCommandArguments(commandNode, lctx, env);
+    const commandArguments = evaluateEagerCommandArguments(commandNode, lctx, fctx, env);
 
-    const out = command.call(commandArguments, {
-        lctx: lctx,
-        currEnv: env,
-        currNamespace: env.rootNamespace,
-    });
+    const out = command.call(
+        commandArguments,
+        new CommandContext(lctx, fctx, env, env.rootNamespace)
+    );
 
     if (out === undefined) {
         // Splicing in an empty array means adding nothing to the DET.
@@ -43,6 +44,7 @@ export function evaluateCommand(
 function evaluateEagerCommandArguments(
     commandNode: AstCommandNode,
     lctx: InternalLapolContext,
+    fctx: InternalFileContext,
     env: Environment
 ): EagerCommandArguments {
     const evalKeywordArgs: Map<string, CmdSquareArg> = new Map();
@@ -52,15 +54,15 @@ function evaluateEagerCommandArguments(
         for (const sq of commandNode.squareArgs) {
             switch (sq.t) {
                 case "Val": {
-                    evalSquareArgs.push(evaluateSquareEntry(sq.c, lctx, env));
+                    evalSquareArgs.push(evaluateSquareEntry(sq.c, lctx, fctx, env));
                     break;
                 }
                 case "KeyVal": {
                     const [key, val] = sq.c;
-                    const keyEval = evaluateSquareEntry(key, lctx, env);
+                    const keyEval = evaluateSquareEntry(key, lctx, fctx, env);
                     if (typeof keyEval !== "string")
                         throw new LapolError(`Key for Keyword argument must evaluate to string.`);
-                    evalKeywordArgs.set(keyEval, evaluateSquareEntry(val, lctx, env));
+                    evalKeywordArgs.set(keyEval, evaluateSquareEntry(val, lctx, fctx, env));
                     break;
                 }
             }
@@ -69,7 +71,7 @@ function evaluateEagerCommandArguments(
 
     const evalCurlyArgs: DetNode[][] = [];
     for (const curlyArg of commandNode.curlyArgs) {
-        evalCurlyArgs.push(evaluateNodeArray(curlyArg, lctx, env));
+        evalCurlyArgs.push(evaluateNodeArray(curlyArg, lctx, fctx, env));
     }
 
     return new EagerCommandArguments(evalKeywordArgs, evalSquareArgs, evalCurlyArgs);
@@ -78,6 +80,7 @@ function evaluateEagerCommandArguments(
 function evaluateSquareEntry(
     v: SquareEntry,
     lctx: InternalLapolContext,
+    fctx: InternalFileContext,
     env: Environment
 ): string | boolean | number | DetNode {
     switch (v.t) {
@@ -89,7 +92,7 @@ function evaluateSquareEntry(
         }
         case "AstNode": {
             assert(v.c.t === "AstCommandNode");
-            return evaluateCommand(v.c, lctx, env);
+            return evaluateCommand(v.c, lctx, fctx, env);
         }
     }
 }

@@ -1,6 +1,7 @@
-import { Expr, Str } from "../../internal/det";
-import { NodeOutputter, OutputPass } from "../../internal/output/output";
+import { Expr, Str } from "../det";
+import { OutputPass } from "./output";
 import { encode as heEncode } from "he";
+import { NodeOutputter } from "./nodeOutputter";
 
 export class DefaultHtmlStrOutputter extends NodeOutputter<Str, string> {
     nodeKind: "Str" = "Str";

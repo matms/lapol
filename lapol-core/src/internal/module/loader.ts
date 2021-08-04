@@ -1,12 +1,19 @@
-import { LapolModule, loadModule, ModuleDeclaration, ModuleIdentifier } from "./module";
+import {
+    FileModuleStorage,
+    LapolModule,
+    loadModule,
+    ModuleDeclaration,
+    ModuleIdentifier,
+} from "./module";
 import { strict as assert } from "assert";
 import { Command, JsFnCommand } from "../command/command";
 import { CommandArguments } from "../command/argument";
 import { DetNode, Expr } from "../det";
-import { NodeOutputter } from "../output/output";
 import { LapolError } from "../errors";
 import { ExprMeta, ExprMetaCfgDeclaration } from "../expr_meta";
 import { LapolRegistry } from "../registry/registry";
+import { NodeOutputter } from "../output/nodeOutputter";
+import { CommandContext } from "../command/context";
 
 export class ModuleLoader {
     /* eslint-disable  @typescript-eslint/prefer-readonly */
@@ -18,6 +25,8 @@ export class ModuleLoader {
     private _loadedSubModules: string[];
 
     private _finalizeActions: Array<() => Promise<void>>;
+
+    private _instantiator: (() => FileModuleStorage) | undefined;
 
     /* eslint-enable  @typescript-eslint/prefer-readonly */
 
@@ -54,7 +63,16 @@ export class ModuleLoader {
 
         // ModuleLoader.log(`_finalize: Finished loading ${this._identifier.name}`);
 
-        const mod = new LapolModule(this._commands, this._identifier, this._loadedSubModules);
+        if (this._instantiator === undefined) {
+            throw new LapolError("Instantiator required.");
+        }
+
+        const mod = new LapolModule(
+            this._commands,
+            this._identifier,
+            this._loadedSubModules,
+            this._instantiator
+        );
 
         this._registry.modules.declare(mod.identifier.name, mod);
 
@@ -73,14 +91,14 @@ export class ModuleLoader {
     // TODO: what should the type of 'options?' be?
     public exportCommand(
         name: string,
-        command: (a: CommandArguments) => DetNode | undefined,
+        command: (a: CommandArguments, ctx: CommandContext) => DetNode | undefined,
         options?: Record<string, boolean>
     ): void;
     public exportCommand(name: string, command: Command): void;
 
     public exportCommand(
         name: string,
-        command: Command | ((a: CommandArguments) => DetNode | undefined),
+        command: Command | ((a: CommandArguments, ctx: CommandContext) => DetNode | undefined),
         options?: Record<string, boolean>
     ): void {
         if (typeof command === "function")
@@ -171,6 +189,19 @@ export class ModuleLoader {
             await loadModule(name, mod, this._registry);
             this._loadedSubModules.push(name);
         });
+    }
+
+    public requireName(name: string): void {
+        if (name !== this._identifier.name)
+            throw new LapolError(
+                `Module name mismatch. Is ${this._identifier.name}, but required ${name}`
+            );
+    }
+
+    public declareInstantiator(instantiator: () => FileModuleStorage): void {
+        if (this._instantiator !== undefined)
+            throw new LapolError("Instantiator redefinition not allowed.");
+        this._instantiator = instantiator;
     }
 
     private static log(str: string): void {
