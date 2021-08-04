@@ -1,6 +1,6 @@
 import { Expr } from "./det";
 import { LapolError } from "./errors";
-import { NodeOutputter } from "./output/node_outputter";
+import { NodeOutputter } from "./output/output";
 
 const DEFAULTS: Map<string, boolean> = new Map();
 DEFAULTS.set("isBlock", false);
@@ -24,7 +24,7 @@ function makeExprMetaCfg(from: ExprMetaCfgDeclaration): ExprMetaCfg {
 }
 
 export class ExprMeta {
-    public readonly outputters: Map<string, NodeOutputter<Expr, unknown>>;
+    public readonly outputters: Map<string, NodeOutputter<Expr, string>>;
     public readonly cfg: ExprMetaCfg;
 
     constructor(cfg: ExprMetaCfgDeclaration) {
@@ -32,7 +32,7 @@ export class ExprMeta {
         this.cfg = makeExprMetaCfg(cfg);
     }
 
-    public declareOutputter(target: string, outputter: NodeOutputter<Expr, unknown>): void {
+    public declareOutputter(target: string, outputter: NodeOutputter<Expr, string>): void {
         if (this.outputters.has(target))
             throw new LapolError(`Outputter re-declaration not permitted (target = ${target})`);
         this.outputters.set(target, outputter);

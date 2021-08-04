@@ -3,47 +3,45 @@
 import { InternalLapolContext } from "../context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
-import { DefaultHtmlStrOutputter } from "./html";
-import { NodeOutputter } from "./node_outputter";
+
+// TODO: Inject
+import { DefaultHtmlStrOutputter } from "../../std/output/html";
 
 // Cf. `ModuleTarget`
-export interface OutputTarget {
-    exprOutputters: Map<string, NodeOutputter<Expr, unknown>>;
+export abstract class NodeOutputter<N extends DetNode, T> {
+    abstract nodeKind: "Str" | "Expr";
+    abstract nodeTag: string | undefined;
+    public abstract output(ctx: OutputPass<T>, node: N): T;
 }
 
-export interface OutputData {
-    str: string;
+export interface OutputTargetCfg {
+    canonicalName: string;
+    strOutputter: NodeOutputter<Str, OutputType>;
+    exprOutputterMap: Map<string, NodeOutputter<Expr, OutputType>>;
 }
+
+export type OutputType = string;
 
 export async function outputDet(
     lctx: InternalLapolContext,
     detRootNode: DetNode,
     target: string
-): Promise<OutputData> {
-    // TODO: Allow user configuration of the string outputter.
-    let strOutputter;
+): Promise<OutputType> {
     switch (target) {
         case "html": {
-            strOutputter = new DefaultHtmlStrOutputter();
-            break;
+            return _outputDetHelper(detRootNode, makeHtmlOutputTargetCfg(lctx));
         }
         default:
-            throw new LapolError(`Need to setup string outputter for ${target}. TODO`);
+            throw new LapolError(`Cannot currently output ${target}. TODO`);
     }
-
-    // TODO: Is this approach too inefficient?
-    const exprOutputterMap = new Map();
-
-    lctx.registry.exprMetas._storage.forEach((v, k) => {
-        const outputter = v.outputters.get(target);
-        if (outputter !== undefined) exprOutputterMap.set(k, outputter);
-    });
-
-    const outputter = new OutputCtx<string>(strOutputter, exprOutputterMap);
-    return { str: outputter.output(detRootNode) };
 }
 
-export class OutputCtx<T> {
+export function _outputDetHelper(processedRoot: DetNode, cfg: OutputTargetCfg): OutputType {
+    const outputPass = new OutputPass<string>(cfg.strOutputter, cfg.exprOutputterMap);
+    return outputPass.output(processedRoot);
+}
+
+export class OutputPass<T> {
     readonly strOutputter: NodeOutputter<Str, T>;
     readonly exprOutputterMap: Map<string, NodeOutputter<Expr, T>>; // TODO: Type.
 
@@ -72,4 +70,20 @@ export class OutputCtx<T> {
                 throw new LapolError(`DET Node of type Data cannot be outputted.`);
         }
     }
+}
+
+// TODO: Allow other targets, abstract
+function makeHtmlOutputTargetCfg(lctx: InternalLapolContext): OutputTargetCfg {
+    const exprOutputterMap: Map<string, NodeOutputter<Expr, string>> = new Map();
+
+    lctx.registry.exprMetas._storage.forEach((v, k) => {
+        const outputter = v.outputters.get("html");
+        if (outputter !== undefined) exprOutputterMap.set(k, outputter);
+    });
+
+    return {
+        canonicalName: "html",
+        strOutputter: new DefaultHtmlStrOutputter(),
+        exprOutputterMap: exprOutputterMap,
+    };
 }

@@ -1,4 +1,4 @@
-import { ModuleLoader } from "../mod";
+import { ModuleLoader } from "../../mod";
 
 export const mod = { loaderFn: load };
 

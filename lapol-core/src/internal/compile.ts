@@ -3,7 +3,7 @@ import { strict as assert } from "assert";
 import { AstRootNode } from "./ast";
 import { DetNode } from "./det";
 import { evaluateAst } from "./evaluate/evaluate";
-import { outputDet, OutputData } from "./output/output";
+import { outputDet, OutputType } from "./output/output";
 import { processDet } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./la_path";
@@ -21,7 +21,7 @@ export interface CompileOutput {
     dbgParsed: AstRootNode;
     dbgEvaluated: DetNode;
     dbgProcessed: DetNode;
-    dbgOutputted: OutputData;
+    dbgOutputted: OutputType;
 }
 
 async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<CompileOutput> {
@@ -37,7 +37,7 @@ async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<Com
     const t5 = Date.now();
     const output = await outputDet(lctx, processed, c.targetLanguage);
     const t6 = Date.now();
-    await writeFile(c.outputFilePath, output.str);
+    await writeFile(c.outputFilePath, output);
     const t7 = Date.now();
 
     const dbgTimingInfo =

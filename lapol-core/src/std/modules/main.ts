@@ -2,7 +2,7 @@
  * However, consider it!
  */
 
-import { Expr, ModuleLoader } from "../mod";
+import { Expr, ModuleLoader } from "../../mod";
 import { mod as htmlOutputMod } from "./main_html_output";
 import { mod as latexOutputMod } from "./main_latex_output";
 

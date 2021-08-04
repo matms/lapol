@@ -3,7 +3,7 @@ import { strict as assert } from "assert";
 import { Command, JsFnCommand } from "../command/command";
 import { CommandArguments } from "../command/argument";
 import { DetNode, Expr } from "../det";
-import { NodeOutputter } from "../output/node_outputter";
+import { NodeOutputter } from "../output/output";
 import { LapolError } from "../errors";
 import { ExprMeta, ExprMetaCfgDeclaration } from "../expr_meta";
 import { LapolRegistry } from "../registry/registry";
@@ -147,7 +147,7 @@ export class ModuleLoader {
     public exportExprOutputter(
         target_: string,
         tag: string,
-        outputter: NodeOutputter<Expr, unknown>
+        outputter: NodeOutputter<Expr, string>
     ): void {
         const meta = this._registry.exprMetas.get(tag);
         if (meta === undefined) throw new LapolError(`Expr meta for ${tag} doesn't exist.`);

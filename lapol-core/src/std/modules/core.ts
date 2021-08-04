@@ -7,15 +7,15 @@
  * In this case, you WILL BE ABLE TO (can't yet) access these with 'core:import'
  */
 
-import { CommandArguments as Args } from "../internal/command/argument";
-import { Command } from "../internal/command/command";
-import { CommandContext } from "../internal/command/context";
-import { DetNode, Expr, Str } from "../internal/det";
-import { LapolError } from "../internal/errors";
-import { parseIdentifier } from "../internal/identifier";
-import { ModuleLoader } from "../internal/module/loader";
-import { Namespace } from "../internal/namespace";
-import { GenericHtmlTagOutputter, HtmlRootOutputter } from "../internal/output/html";
+import { CommandArguments as Args } from "../../internal/command/argument";
+import { Command } from "../../internal/command/command";
+import { CommandContext } from "../../internal/command/context";
+import { DetNode, Expr, Str } from "../../internal/det";
+import { LapolError } from "../../internal/errors";
+import { parseIdentifier } from "../../internal/identifier";
+import { ModuleLoader } from "../../internal/module/loader";
+import { Namespace } from "../../internal/namespace";
+import { GenericHtmlTagOutputter, HtmlRootOutputter } from "../output/html";
 
 export const mod = { loaderFn: load };
 
