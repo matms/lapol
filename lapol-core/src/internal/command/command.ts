@@ -1,5 +1,5 @@
-import { DetNode } from "../det";
 import { LapolError } from "../errors";
+import { isLtrfObj, LtrfObj } from "../ltrf/ltrf";
 import { ArgumentEvaluationStrategy, CommandArguments } from "./argument";
 import { CommandContext } from "./context";
 
@@ -16,13 +16,16 @@ export abstract class Command {
         this._name = name;
     }
 
-    public abstract call(args: CommandArguments, ctx: CommandContext): DetNode | undefined;
+    public abstract call(args: CommandArguments, ctx: CommandContext): readonly LtrfObj[];
 }
 
 export class JsFnCommand extends Command {
-    private readonly _fn: (a: CommandArguments, ctx: CommandContext) => DetNode;
+    private readonly _fn: (a: CommandArguments, ctx: CommandContext) => readonly LtrfObj[];
 
-    private constructor(name: string, fn: (a: CommandArguments, ctx: CommandContext) => DetNode) {
+    private constructor(
+        name: string,
+        fn: (a: CommandArguments, ctx: CommandContext) => readonly LtrfObj[]
+    ) {
         super("JsFnCommand", name);
         this._fn = fn;
     }
@@ -36,7 +39,7 @@ export class JsFnCommand extends Command {
      *  none, currently.
      */
     public static fromJsFunction(
-        func: (a: CommandArguments, ctx: CommandContext) => DetNode | undefined,
+        func: (a: CommandArguments, ctx: CommandContext) => unknown,
         cmdName: string,
         options?: Record<string, boolean>
     ): JsFnCommand {
@@ -52,18 +55,19 @@ export class JsFnCommand extends Command {
             );
         }
 
-        const cmdFn = (a: CommandArguments, ctx: CommandContext): DetNode => {
+        const cmdFn = (a: CommandArguments, ctx: CommandContext): readonly LtrfObj[] => {
             const out = func(a, ctx);
 
-            if (!(out instanceof DetNode)) {
+            // TODO: Is this check a performance nuisance?
+            if (!(out instanceof Array) || !out.every((v) => isLtrfObj(v))) {
                 throw new LapolError(
                     "Function defining Lapol Command returned object that appears not to be " +
-                        "of type DetNode" +
+                        "a LtrfObj Array" +
                         `Command name: ${cmdName}`
                 );
             }
 
-            return out;
+            return out as readonly LtrfObj[];
         };
 
         return new JsFnCommand(cmdName, cmdFn);
@@ -72,7 +76,13 @@ export class JsFnCommand extends Command {
     /** Execute the command `command`, given arguments `args`.
      *  Returns a `DetNode` or undefined to mean nothing.
      */
-    public call(args: CommandArguments, ctx: CommandContext): DetNode | undefined {
-        return this._fn(args, ctx);
+    public call(args: CommandArguments, ctx: CommandContext): readonly LtrfObj[] {
+        // TODO: Throw if function returns undefined or single node, warn user that it is flattened
+        // so they have to return a (readonly) array.
+        const o: readonly LtrfObj[] = this._fn(args, ctx);
+        if (!(o instanceof Array))
+            throw new LapolError("Commands should return an array. This array will be flattened!");
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return o;
     }
 }

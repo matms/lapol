@@ -1,4 +1,5 @@
 import { Command } from "../command/command";
+import { LapolError } from "../errors";
 import { parseIdentifier } from "../identifier";
 import { LapolModule, ModuleIdentifier } from "../module/module";
 import { RootNamespace } from "../namespace";
@@ -12,14 +13,16 @@ export class Environment {
         this.rootNamespace = new RootNamespace();
     }
 
+    /** MUTATES this environment to contain the new module. */
     loadModule(name: string, module: LapolModule, as?: string): void {
         this.loadedModules.push(module.identifier);
         if (as === undefined) as = module.identifier.name;
         this.rootNamespace.rootAddChildNamespace(as, module.namespace);
     }
 
-    // TODO: Extract parse identifier, rename to lookup in general?
-    lookupCommand(commandName: string): Command | undefined {
-        return this.rootNamespace.lookupItem(parseIdentifier(commandName));
+    lookupCommand(commandName: string): Command {
+        const o = this.rootNamespace.lookupItem(parseIdentifier(commandName));
+        if (o === undefined) throw new LapolError(`Command ${commandName} not in Environment.`);
+        return o;
     }
 }

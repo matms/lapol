@@ -1,20 +1,20 @@
-import { DetNode } from "../det";
 import { LapolError } from "../errors";
+import { LtrfObj } from "../ltrf/ltrf";
 
 export type ArgumentEvaluationStrategy = "eager" | "lazy";
 
-export type CmdSquareArg = number | string | boolean | DetNode;
-export type CmdCurlyArg = DetNode[];
+export type CmdSquareArg = number | string | boolean | LtrfObj;
+export type CmdCurlyArg = readonly LtrfObj[];
 
 export abstract class CommandArguments {
     abstract readonly evaluation: ArgumentEvaluationStrategy;
 
     /** (Get) array of Curly Arguments */
-    public abstract cas(): CmdCurlyArg[];
+    public abstract cas(): readonly CmdCurlyArg[];
     /** (Get) array of Square Arguments */
-    public abstract sas(): CmdSquareArg[];
+    public abstract sas(): readonly CmdSquareArg[];
     /** (Get) map of KeyWord Arguments */
-    public abstract kwas(): Map<string, CmdSquareArg>;
+    public abstract kwas(): ReadonlyMap<string, CmdSquareArg>;
 
     /** (Get) Curly Argument by index */
     public abstract ca(idx: number, _default?: undefined): CmdCurlyArg | undefined;
@@ -61,14 +61,14 @@ export abstract class CommandArguments {
 
 export class EagerCommandArguments extends CommandArguments {
     readonly evaluation: ArgumentEvaluationStrategy = "eager";
-    readonly _curlyArgs: CmdCurlyArg[];
-    readonly _squareArgs: CmdSquareArg[];
-    readonly _keywordArgs: Map<string, CmdSquareArg>;
+    readonly _curlyArgs: readonly CmdCurlyArg[];
+    readonly _squareArgs: readonly CmdSquareArg[];
+    readonly _keywordArgs: ReadonlyMap<string, CmdSquareArg>;
 
     constructor(
-        keywordArgs: Map<string, CmdSquareArg>,
-        squareArgs: CmdSquareArg[],
-        curlyArgs: CmdCurlyArg[]
+        keywordArgs: ReadonlyMap<string, CmdSquareArg>,
+        squareArgs: readonly CmdSquareArg[],
+        curlyArgs: readonly CmdCurlyArg[]
     ) {
         super();
         this._keywordArgs = keywordArgs;
@@ -103,15 +103,15 @@ export class EagerCommandArguments extends CommandArguments {
         return arg;
     }
 
-    public cas(): CmdCurlyArg[] {
+    public cas(): readonly CmdCurlyArg[] {
         return this._curlyArgs;
     }
 
-    public sas(): CmdSquareArg[] {
+    public sas(): readonly CmdSquareArg[] {
         return this._squareArgs;
     }
 
-    public kwas(): Map<string, CmdSquareArg> {
+    public kwas(): ReadonlyMap<string, CmdSquareArg> {
         return this._keywordArgs;
     }
 }

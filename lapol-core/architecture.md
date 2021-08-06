@@ -7,9 +7,9 @@ This file gives a high level overview of LaPoL's architecture.
 The compilation of a file is split into the follwing steps:
 
 -   Parsing --- Takes in a file, outputs an AST.
--   Evaluation (AKA "Front pass") --- Takes in an AST, outputs a DET (Document Expression Tree)
--   Processing (AKA "Middle pass") --- Modifies a DET
--   Output (AKA "Back pass") --- Takes in a DET, outputs the chosen target format (e.g. HTML).
+-   Evaluation (AKA "Front pass") --- Takes in an AST, outputs a ~~DET (Document Expression Tree)~~ LTRF Tree (LaPoL Text Representation Format)
+-   Processing (AKA "Middle pass") --- Modifies a ~~DET~~ LTRF (immutably)
+-   Output (AKA "Back pass") --- Takes in a ~~ DET~~ LTRF, outputs the chosen target format (e.g. HTML).
 
 The user is able to customize all the three passes, but is limited in their ability to customize
 the parsing step.
@@ -26,15 +26,19 @@ very easily customizable by the lapol user.
 ## Parsing
 
 TODO
+
 ## Evaluation
 
 TODO
+
 ## Processing
 
 TODO
+
 ## Output
 
 TODO
+
 ## Modules
 
 A LaPoL module is fundamentally a `Javascript` module, which exports an object satisfying the interface `ModuleDeclaration`.

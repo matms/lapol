@@ -87,6 +87,10 @@ export function id<T>(o: T): T {
     return o;
 }
 
+export function isLtrfObj(l: unknown): l is LtrfObj {
+    return typeof l === "string" || l instanceof LtrfNode;
+}
+
 export function isLtrfStr(l: LtrfObj): l is LtrfStr {
     return typeof l === "string";
 }

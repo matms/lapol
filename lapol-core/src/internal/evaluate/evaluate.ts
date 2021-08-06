@@ -1,81 +1,172 @@
-/** Evaluation, AKA the "Front Pass"
- *
- * This pass takes in the AST (Abstract Syntax Tree), and outputs a DET (Document Expression Tree)
- */
+/** NEW EVALUATOR MODULE */
 
-import { strict as assert } from "assert";
-import { AstNode, AstNodeKind, AstRootNode, AstTextNode } from "../ast";
+import {
+    AstCommandNode,
+    AstNode,
+    AstNodeKind,
+    AstRootNode,
+    AstTextNode,
+    SquareArg,
+    SquareEntry,
+} from "../ast";
 import { InternalFileContext, InternalLapolContext } from "../context";
-import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
+import { LtrfNode, LtrfObj } from "../ltrf/ltrf";
 import { Environment } from "./environment";
-import { evaluateCommand } from "./evaluate_command";
-import { evaluateRoot } from "./root";
+import { strict as assert } from "assert";
+import { EagerCommandArguments } from "../command/argument";
+import { CommandContext } from "../command/context";
+import { makeEnvironmentWithStdCoreSetup } from "./setup";
+import { warnUserOfIssuesWithRootNode } from "./root";
 
-// TODO: better solution for passthrough argument lctx?
-// Consider: Making evaluator class, storing lctx in environment.
+/* eslint-disable @typescript-eslint/array-type */
 
-/** An Expr(tag = SPLICE_EXPR) node will be spliced into the surrounding node. That is, the subnodes
- * of this node will become part of the surrounding node's subnodes.
- */
-export const SPLICE_EXPR = "splice";
+const ROOT_TAG = "__root";
 
-/** Evaluate the Abstract Syntax Tree. Returns a DetNode.
- *
- * Parameter `node` should be the root of the AST.
- *
- * TODO: Should this be async? It seems unnecessary!
- */
-export async function evaluateAst(
+export function evaluateAstRoot(
     lctx: InternalLapolContext,
     fctx: InternalFileContext,
-    node: AstRootNode,
-    filePath: string
-): Promise<DetNode> {
-    return evaluateRoot(lctx, fctx, node, filePath);
+    astRoot: AstRootNode
+): LtrfObj {
+    const env = makeEnvironmentWithStdCoreSetup(lctx);
+    const o = evaluateRootNode(lctx, fctx, env, astRoot);
+
+    // TODO: Should I keep this restriction?
+    if (o.length !== 1) throw new LapolError("RootNode must return a single LtrfObj");
+    return o[0];
 }
 
-/** Evaluate `node` using environment `env`, returns a `DetNode`.
- *
- * Note this function dispatches to `evaluate*` (e.g. `evaluateRoot`, `evaluateCommand`, etc.).
- */
-export function evaluateNode(
-    node: AstNode,
+export function _evaluateNode(
     lctx: InternalLapolContext,
     fctx: InternalFileContext,
-    env: Environment
-): DetNode {
+    env: Environment,
+    node: AstNode
+): readonly LtrfObj[] {
     switch (node.t) {
-        case AstNodeKind.AstRootNode:
-            throw new LapolError("evaluateRoot should be called directly.");
-        case AstNodeKind.AstCommandNode:
-            return evaluateCommand(node, lctx, fctx, env);
         case AstNodeKind.AstTextNode:
-            return evaluateStrNode(node, env);
+            return evaluateTextNode(lctx, fctx, env, node);
+        case AstNodeKind.AstCommandNode:
+            return evaluateCommandNode(lctx, fctx, env, node);
+        case AstNodeKind.AstRootNode:
+            // return evaluateRootNode(lctx, fctx, env, node);
+            throw new LapolError("Nested root currently unsupported.");
         default:
-            throw new LapolError("Ast Node Kind Unknown or cannot be directly evaluated.");
+            throw new LapolError("Unsupported AST Node kind.");
     }
 }
 
-function evaluateStrNode(strNode: AstTextNode, env: Environment): Str {
-    assert(strNode.t === AstNodeKind.AstTextNode);
-    return new Str(strNode.content);
+function evaluateTextNode(
+    _lctx: InternalLapolContext,
+    _fctx: InternalFileContext,
+    _env: Environment,
+    node: AstTextNode
+): readonly LtrfObj[] {
+    return [node.content];
 }
 
-export function evaluateNodeArray(
-    nodeArray: AstNode[],
+function evaluateCommandNode(
     lctx: InternalLapolContext,
     fctx: InternalFileContext,
-    env: Environment
-): DetNode[] {
-    const cont = [];
-    for (const node of nodeArray) {
-        const n = evaluateNode(node, lctx, fctx, env);
-        if (n instanceof Expr && n.tag === SPLICE_EXPR) {
-            for (const sn of n.contentsIter()) cont.push(sn);
-        } else {
-            cont.push(n);
+    env: Environment,
+    node: AstCommandNode
+): readonly LtrfObj[] {
+    const commandName = node.commandName;
+    const command = env.lookupCommand(commandName);
+
+    if (command.argumentEvaluation !== "eager")
+        throw new LapolError("Currently, only eager argument evaluation is supported.");
+
+    const { v, kv } = evaluateCommandNodeSquareArgs(lctx, fctx, env, node.squareArgs ?? []);
+    const c = evaluateCommandNodeCurlyArgs(lctx, fctx, env, node.curlyArgs);
+    const commandArguments = new EagerCommandArguments(kv, v, c);
+
+    return command.call(commandArguments, new CommandContext(lctx, fctx, env, env.rootNamespace));
+}
+
+function evaluateCommandNodeSquareArgs(
+    lctx: InternalLapolContext,
+    fctx: InternalFileContext,
+    env: Environment,
+    squareArgs: SquareArg[]
+): {
+    v: Array<number | boolean | LtrfObj>;
+    kv: ReadonlyMap<string, number | boolean | LtrfObj>;
+} {
+    const evaluatedSquareArgsVal: Array<number | boolean | LtrfObj> = [];
+    const evaluatedSquareArgsKeyVal: Map<string, number | boolean | LtrfObj> = new Map();
+
+    squareArgs.forEach((squareArgument) => {
+        switch (squareArgument.t) {
+            case "Val":
+                evaluatedSquareArgsVal.push(evaluateSquareEntry(lctx, fctx, env, squareArgument.c));
+                break;
+            case "KeyVal":
+                {
+                    const [key, val] = squareArgument.c;
+                    const evalKey = evaluateSquareEntry(lctx, fctx, env, key);
+                    const evalVal = evaluateSquareEntry(lctx, fctx, env, val);
+
+                    if (typeof evalKey !== "string")
+                        throw new LapolError(`Key for Keyword argument must evaluate to string.`);
+
+                    evaluatedSquareArgsKeyVal.set(evalKey, evalVal);
+                }
+                break;
+            default:
+                throw new LapolError("Unsupported squareArgument type.");
+        }
+    });
+
+    return { v: evaluatedSquareArgsVal, kv: evaluatedSquareArgsKeyVal };
+}
+
+function evaluateCommandNodeCurlyArgs(
+    lctx: InternalLapolContext,
+    fctx: InternalFileContext,
+    env: Environment,
+    curlyArgs: ReadonlyArray<ReadonlyArray<AstNode>>
+): ReadonlyArray<ReadonlyArray<LtrfObj>> {
+    return curlyArgs.map((singleCurlyArg) =>
+        singleCurlyArg.flatMap((subNode) => _evaluateNode(lctx, fctx, env, subNode))
+    );
+}
+
+function evaluateSquareEntry(
+    lctx: InternalLapolContext,
+    fctx: InternalFileContext,
+    env: Environment,
+    v: SquareEntry
+): boolean | number | LtrfObj {
+    switch (v.t) {
+        case "Bool":
+        case "Ident":
+        case "Num":
+        case "QuotedStr": {
+            // Note strings are `LtrfObj`s.
+            return v.c;
+        }
+        case "AstNode": {
+            assert(v.c.t === "AstCommandNode");
+            const o = evaluateCommandNode(lctx, fctx, env, v.c);
+            if (o.length !== 1)
+                // TODO: Fix this arbitrary restriction.
+                throw new LapolError(
+                    "evaluateSquareEntry: Square Entries currently only support a single sub node"
+                );
+            return o[0];
         }
     }
-    return cont;
+}
+
+function evaluateRootNode(
+    lctx: InternalLapolContext,
+    fctx: InternalFileContext,
+    env: Environment,
+    node: AstRootNode
+): readonly LtrfObj[] {
+    warnUserOfIssuesWithRootNode(node);
+
+    const evalRoot = node.subNodes.flatMap((n) => _evaluateNode(lctx, fctx, env, n));
+
+    return [LtrfNode.make(ROOT_TAG, {}, evalRoot)];
 }
