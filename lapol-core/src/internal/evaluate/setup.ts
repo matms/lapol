@@ -1,5 +1,5 @@
 import { Command } from "../command/command";
-import { InternalLapolContext } from "../context";
+import { InternalLapolContext } from "../context/context";
 import { LapolError } from "../errors";
 import { parseIdentifier } from "../identifier";
 import { Environment } from "./environment";

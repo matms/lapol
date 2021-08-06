@@ -1,4 +1,4 @@
-import { InternalFileContext, InternalLapolContext } from "../context";
+import { InternalFileContext, InternalLapolContext } from "../context/context";
 import { LapolError } from "../errors";
 import { Environment } from "../evaluate/environment";
 import { FileModuleStorage } from "../module/module";

@@ -9,7 +9,7 @@ import {
     SquareArg,
     SquareEntry,
 } from "../ast";
-import { InternalFileContext, InternalLapolContext } from "../context";
+import { InternalFileContext, InternalLapolContext } from "../context/context";
 import { LapolError } from "../errors";
 import { LtrfNode, LtrfObj } from "../ltrf/ltrf";
 import { Environment } from "./environment";

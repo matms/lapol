@@ -1,5 +1,5 @@
-import { FileModuleStorage } from "./module/module";
-import { LapolRegistry } from "./registry/registry";
+import { FileModuleStorage } from "../module/module";
+import { LapolRegistry } from "../registry/registry";
 
 /** @internal If you are a LaPoL user (i.e., you aren't writing core LaPoL code), do NOT use this.
  *

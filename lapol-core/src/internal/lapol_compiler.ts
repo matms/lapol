@@ -2,7 +2,7 @@ import { LaPath } from "./la_path";
 import { render as runRender } from "./compile";
 import { loadModule, ModuleDeclaration } from "./module/module";
 import { mod as coreMod } from "../std/core";
-import { InternalLapolContext } from "./context";
+import { InternalLapolContext } from "./context/context";
 import { LapolRegistry } from "./registry/registry";
 import { getLapolFolder } from "./global_init";
 import { copyFile } from "./utils";

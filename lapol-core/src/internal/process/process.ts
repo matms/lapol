@@ -4,7 +4,7 @@
  */
 
 import { strict as assert } from "assert";
-import { InternalFileContext, InternalLapolContext } from "../context";
+import { InternalFileContext, InternalLapolContext } from "../context/context";
 import { DetNode, Expr } from "../det";
 import { processRemoveWhitespaceLines, processLinebreaks, processParagraphs } from "./paragraph";
 

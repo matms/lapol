@@ -7,7 +7,7 @@ import { outputDet, OutputType } from "./output/output";
 import { processDet } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./la_path";
-import { InternalFileContext, InternalLapolContext } from "./context";
+import { InternalFileContext, InternalLapolContext } from "./context/context";
 import { LtrfObj } from "./ltrf/ltrf";
 
 export interface CompileInput {

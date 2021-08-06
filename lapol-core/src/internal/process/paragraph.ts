@@ -1,5 +1,5 @@
 import { strict as assert } from "assert";
-import { InternalLapolContext } from "../context";
+import { InternalLapolContext } from "../context/context";
 import { Data, DetNode, Str, Expr } from "../det";
 import { LapolError } from "../errors";
 import { isWhitespace } from "../utils";

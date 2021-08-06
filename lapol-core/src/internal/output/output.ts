@@ -1,6 +1,6 @@
 /** Outputting, AKA the "Back Pass" */
 
-import { InternalFileContext, InternalLapolContext } from "../context";
+import { InternalFileContext, InternalLapolContext } from "../context/context";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 
