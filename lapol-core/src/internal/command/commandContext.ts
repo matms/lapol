@@ -11,7 +11,7 @@ export class CommandContext {
     /** Private-ish: You _probably_ shouldn't use this directly. */
     _fctx: FileContext;
     /** Private-ish: You _probably_ shouldn't use this directly. */
-    _currEnv: Environment;
+    _env: Environment;
     /** Private-ish: You _probably_ shouldn't use this directly. */
     _currNamespace: Namespace;
 
@@ -24,7 +24,7 @@ export class CommandContext {
     ) {
         this._lctx = lctx;
         this._fctx = fctx;
-        this._currEnv = currEnv;
+        this._env = currEnv;
         this._currNamespace = currNamespace;
     }
 

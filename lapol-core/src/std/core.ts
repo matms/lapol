@@ -10,7 +10,7 @@
 import { isLtrfStr, LtrfNode, LtrfObj } from "../internal/ltrf/ltrf";
 import { CommandArguments as Args } from "../internal/command/argument";
 import { Command } from "../internal/command/command";
-import { CommandContext } from "../internal/command/context";
+import { CommandContext } from "../internal/command/commandContext";
 import { LapolError } from "../internal/errors";
 import { parseIdentifier } from "../internal/identifier";
 import { ModuleLoader } from "../internal/module/loader";
@@ -48,7 +48,7 @@ class RequireCommand extends Command {
 
     call(a: Args, ctx: CommandContext): readonly LtrfObj[] {
         const lctx = ctx._lctx;
-        const env = ctx._currEnv;
+        const env = ctx._env;
 
         const modNode = a.caOrErr(0)[0];
         if (!isLtrfStr(modNode))

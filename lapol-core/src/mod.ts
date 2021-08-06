@@ -14,7 +14,7 @@ export {
 export { Environment } from "./internal/evaluate/environment";
 export { ModuleLoader } from "./internal/module/loader";
 export { CommandArguments } from "./internal/command/argument";
-export { CommandContext } from "./internal/command/context";
+export { CommandContext } from "./internal/command/commandContext";
 export { LapolCompilerBuilder, LapolCompiler } from "./internal/lapol_compiler";
 export { LaPath } from "./internal/la_path";
 export { FileModuleStorage, ModuleDeclaration } from "./internal/module/module";

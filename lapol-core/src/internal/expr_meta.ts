@@ -1,3 +1,5 @@
+/** DEPRECATED */
+
 import { Expr } from "./det";
 import { LapolError } from "./errors";
 import { NodeOutputter } from "./output/nodeOutputter";

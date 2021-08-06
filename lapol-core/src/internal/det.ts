@@ -1,3 +1,5 @@
+/** DEPRECATED */
+
 // TODO: Will we allow mutation of Str, Expr and Data?
 
 /** DET = Document Expression Tree

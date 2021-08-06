@@ -1,7 +1,7 @@
 import { LapolError } from "../errors";
 import { isLtrfObj, LtrfObj } from "../ltrf/ltrf";
 import { ArgumentEvaluationStrategy, CommandArguments } from "./argument";
-import { CommandContext } from "./context";
+import { CommandContext } from "./commandContext";
 
 type CommandKind = "JsFnCommand" | "Other";
 

@@ -16,7 +16,7 @@ import { LtrfNode, LtrfObj } from "../ltrf/ltrf";
 import { Environment } from "./environment";
 import { strict as assert } from "assert";
 import { EagerCommandArguments } from "../command/argument";
-import { CommandContext } from "../command/context";
+import { CommandContext } from "../command/commandContext";
 import { makeEnvironmentWithStdCoreSetup } from "./setup";
 import { warnUserOfIssuesWithRootNode } from "./root";
 

@@ -13,7 +13,7 @@ import { LapolError } from "../errors";
 import { ExprMeta, ExprMetaCfgDeclaration } from "../expr_meta";
 import { LapolRegistry } from "../registry/registry";
 import { NodeOutputter } from "../output/nodeOutputter";
-import { CommandContext } from "../command/context";
+import { CommandContext } from "../command/commandContext";
 import { LtrfObj } from "../ltrf/ltrf";
 
 export class ModuleLoader {
