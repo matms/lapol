@@ -2,7 +2,7 @@ import { LaPath } from "./la_path";
 import { render as runRender } from "./compile";
 import { loadModule, ModuleDeclaration } from "./module/module";
 import { mod as coreMod } from "../std/core";
-import { InternalLapolContext } from "./context/context";
+import { LapolContext } from "./context/lapolContext";
 import { LapolRegistry } from "./registry/registry";
 import { getLapolFolder } from "./global_init";
 import { copyFile } from "./utils";
@@ -67,19 +67,19 @@ export class LapolCompilerBuilder {
         );
         */
 
-        return new LapolCompiler(new InternalLapolContext(this._lapolRegistry), this._outputFolder);
+        return new LapolCompiler(new LapolContext(this._lapolRegistry), this._outputFolder);
     }
 }
 
 export class LapolCompiler {
-    private readonly _ctx: InternalLapolContext;
+    private readonly _ctx: LapolContext;
     private readonly _outputFolder: LaPath;
 
     /** @internal Use LapolCompilerBuilder instead.
      *
      * DO NOT CALL THIS CONSTRUCTOR (except from LapolContextBuilder).
      */
-    public constructor(internalCtx: InternalLapolContext, outputFolder: LaPath) {
+    public constructor(internalCtx: LapolContext, outputFolder: LaPath) {
         this._ctx = internalCtx;
         this._outputFolder = outputFolder;
     }

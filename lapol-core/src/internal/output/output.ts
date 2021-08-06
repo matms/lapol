@@ -1,6 +1,7 @@
 /** Outputting, AKA the "Back Pass" */
 
-import { InternalFileContext, InternalLapolContext } from "../context/context";
+import { FileContext } from "../context/fileContext";
+import { LapolContext } from "../context/lapolContext";
 import { DetNode, Expr, Str } from "../det";
 import { LapolError } from "../errors";
 
@@ -17,8 +18,8 @@ export interface OutputTargetCfg {
 export type OutputType = string;
 
 export async function outputDet(
-    lctx: InternalLapolContext,
-    fctx: InternalFileContext,
+    lctx: LapolContext,
+    fctx: FileContext,
     detRootNode: DetNode,
     target: string
 ): Promise<OutputType> {
@@ -68,7 +69,7 @@ export class OutputPass<T> {
 }
 
 // TODO: Allow other targets, abstract
-function makeHtmlOutputTargetCfg(lctx: InternalLapolContext): OutputTargetCfg {
+function makeHtmlOutputTargetCfg(lctx: LapolContext): OutputTargetCfg {
     const exprOutputterMap: Map<string, NodeOutputter<Expr, string>> = new Map();
 
     lctx.registry.exprMetas._storage.forEach((v, k) => {

@@ -59,7 +59,7 @@ class RequireCommand extends Command {
         const mod = lctx.registry.modules.get(modName);
         if (mod === undefined)
             throw new LapolError(
-                `__require: Module ${modName} was required: you need to provide it when building LapolContext.`
+                `__require: Module ${modName} was required: you need to provide it when building LapolCompiler.`
             );
 
         env.loadModule(mod);

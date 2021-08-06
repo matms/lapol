@@ -1,4 +1,5 @@
-import { InternalFileContext, InternalLapolContext } from "../context/context";
+import { FileContext } from "../context/fileContext";
+import { LapolContext } from "../context/lapolContext";
 import { LapolError } from "../errors";
 import { Environment } from "../evaluate/environment";
 import { FileModuleStorage } from "../module/module";
@@ -6,9 +7,9 @@ import { Namespace } from "../namespace";
 
 export class CommandContext {
     /** Private-ish: You _probably_ shouldn't use this directly. */
-    _lctx: InternalLapolContext;
+    _lctx: LapolContext;
     /** Private-ish: You _probably_ shouldn't use this directly. */
-    _fctx: InternalFileContext;
+    _fctx: FileContext;
     /** Private-ish: You _probably_ shouldn't use this directly. */
     _currEnv: Environment;
     /** Private-ish: You _probably_ shouldn't use this directly. */
@@ -16,8 +17,8 @@ export class CommandContext {
 
     /** @internal Do not make this yourself, if you are a Lapol user! */
     public constructor(
-        lctx: InternalLapolContext,
-        fctx: InternalFileContext,
+        lctx: LapolContext,
+        fctx: FileContext,
         currEnv: Environment,
         currNamespace: Namespace
     ) {

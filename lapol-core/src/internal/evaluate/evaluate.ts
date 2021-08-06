@@ -9,7 +9,8 @@ import {
     SquareArg,
     SquareEntry,
 } from "../ast";
-import { InternalFileContext, InternalLapolContext } from "../context/context";
+import { FileContext } from "../context/fileContext";
+import { LapolContext } from "../context/lapolContext";
 import { LapolError } from "../errors";
 import { LtrfNode, LtrfObj } from "../ltrf/ltrf";
 import { Environment } from "./environment";
@@ -24,8 +25,8 @@ import { warnUserOfIssuesWithRootNode } from "./root";
 const ROOT_TAG = "__root";
 
 export function evaluateAstRoot(
-    lctx: InternalLapolContext,
-    fctx: InternalFileContext,
+    lctx: LapolContext,
+    fctx: FileContext,
     astRoot: AstRootNode
 ): LtrfObj {
     const env = makeEnvironmentWithStdCoreSetup(lctx);
@@ -37,8 +38,8 @@ export function evaluateAstRoot(
 }
 
 export function _evaluateNode(
-    lctx: InternalLapolContext,
-    fctx: InternalFileContext,
+    lctx: LapolContext,
+    fctx: FileContext,
     env: Environment,
     node: AstNode
 ): readonly LtrfObj[] {
@@ -56,8 +57,8 @@ export function _evaluateNode(
 }
 
 function evaluateTextNode(
-    _lctx: InternalLapolContext,
-    _fctx: InternalFileContext,
+    _lctx: LapolContext,
+    _fctx: FileContext,
     _env: Environment,
     node: AstTextNode
 ): readonly LtrfObj[] {
@@ -65,8 +66,8 @@ function evaluateTextNode(
 }
 
 function evaluateCommandNode(
-    lctx: InternalLapolContext,
-    fctx: InternalFileContext,
+    lctx: LapolContext,
+    fctx: FileContext,
     env: Environment,
     node: AstCommandNode
 ): readonly LtrfObj[] {
@@ -84,8 +85,8 @@ function evaluateCommandNode(
 }
 
 function evaluateCommandNodeSquareArgs(
-    lctx: InternalLapolContext,
-    fctx: InternalFileContext,
+    lctx: LapolContext,
+    fctx: FileContext,
     env: Environment,
     squareArgs: SquareArg[]
 ): {
@@ -121,8 +122,8 @@ function evaluateCommandNodeSquareArgs(
 }
 
 function evaluateCommandNodeCurlyArgs(
-    lctx: InternalLapolContext,
-    fctx: InternalFileContext,
+    lctx: LapolContext,
+    fctx: FileContext,
     env: Environment,
     curlyArgs: ReadonlyArray<ReadonlyArray<AstNode>>
 ): ReadonlyArray<ReadonlyArray<LtrfObj>> {
@@ -132,8 +133,8 @@ function evaluateCommandNodeCurlyArgs(
 }
 
 function evaluateSquareEntry(
-    lctx: InternalLapolContext,
-    fctx: InternalFileContext,
+    lctx: LapolContext,
+    fctx: FileContext,
     env: Environment,
     v: SquareEntry
 ): boolean | number | LtrfObj {
@@ -159,8 +160,8 @@ function evaluateSquareEntry(
 }
 
 function evaluateRootNode(
-    lctx: InternalLapolContext,
-    fctx: InternalFileContext,
+    lctx: LapolContext,
+    fctx: FileContext,
     env: Environment,
     node: AstRootNode
 ): readonly LtrfObj[] {

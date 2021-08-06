@@ -4,11 +4,12 @@
  */
 
 import { strict as assert } from "assert";
-import { InternalFileContext, InternalLapolContext } from "../context/context";
+import { FileContext } from "../context/fileContext";
+import { LapolContext } from "../context/lapolContext";
 import { DetNode, Expr } from "../det";
 import { processRemoveWhitespaceLines, processLinebreaks, processParagraphs } from "./paragraph";
 
-const PROCESSING_PASSES: Array<(node: Expr, lctx: InternalLapolContext) => DetNode> = [
+const PROCESSING_PASSES: Array<(node: Expr, lctx: LapolContext) => DetNode> = [
     processRemoveWhitespaceLines,
     processLinebreaks,
     processParagraphs,
@@ -16,8 +17,8 @@ const PROCESSING_PASSES: Array<(node: Expr, lctx: InternalLapolContext) => DetNo
 
 export async function processDet(
     detRootNode: DetNode,
-    fctx: InternalFileContext,
-    lctx: InternalLapolContext
+    fctx: FileContext,
+    lctx: LapolContext
 ): Promise<DetNode> {
     let out = detRootNode;
 

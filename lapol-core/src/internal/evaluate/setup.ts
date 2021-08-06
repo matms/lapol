@@ -1,5 +1,5 @@
 import { Command } from "../command/command";
-import { InternalLapolContext } from "../context/context";
+import { LapolContext } from "../context/lapolContext";
 import { LapolError } from "../errors";
 import { parseIdentifier } from "../identifier";
 import { Environment } from "./environment";
@@ -9,7 +9,7 @@ const DEFAULT_USE_FROM_CORE = ["__doc", "__require", "__using", "__using_all"];
 
 /** Given a properly-initialized lctx, sets up an environment with "std::core".
  * Also automatically "uses" the core commands. */
-export function makeEnvironmentWithStdCoreSetup(lctx: InternalLapolContext): Environment {
+export function makeEnvironmentWithStdCoreSetup(lctx: LapolContext): Environment {
     const env = new Environment();
 
     function addUsingFromCoreHelper(cmd: string): void {

@@ -7,7 +7,8 @@ import { outputDet, OutputType } from "./output/output";
 import { processDet } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./la_path";
-import { InternalFileContext, InternalLapolContext } from "./context/context";
+import { FileContext } from "./context/fileContext";
+import { LapolContext } from "./context/lapolContext";
 import { LtrfObj } from "./ltrf/ltrf";
 
 export interface CompileInput {
@@ -25,7 +26,7 @@ export interface CompileOutput {
     dbgOutputted: OutputType;
 }
 
-async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<CompileOutput> {
+async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutput> {
     const t1 = Date.now();
     const textBuf = await readFileBuffer(c.inputFilePath);
     const t2 = Date.now();
@@ -33,7 +34,7 @@ async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<Com
     assert(parsed.t === "AstRootNode");
     const t3 = Date.now();
 
-    const fctx = InternalFileContext.make(lctx);
+    const fctx = FileContext.make(lctx);
 
     const evaluated = evaluateAstRoot(lctx, fctx, parsed);
 
@@ -67,7 +68,7 @@ async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<Com
 const COMPILE_DBG_PRINT = false;
 
 export async function render(
-    lctx: InternalLapolContext,
+    lctx: LapolContext,
     filePath: LaPath,
     outPath: LaPath,
     target: string = "html"

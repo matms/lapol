@@ -1,5 +1,5 @@
 import { strict as assert } from "assert";
-import { InternalLapolContext } from "../context/context";
+import { LapolContext } from "../context/lapolContext";
 import { Data, DetNode, Str, Expr } from "../det";
 import { LapolError } from "../errors";
 import { isWhitespace } from "../utils";
@@ -10,7 +10,7 @@ const PARAGRAPH_TAG = "__p";
 // TODO: Strip empty lines (whitespace only lines.)
 // TODO: Newline should become a space.
 
-function removeWhitespace(node: DetNode, lctx: InternalLapolContext): DetNode[] {
+function removeWhitespace(node: DetNode, lctx: LapolContext): DetNode[] {
     if (node instanceof Str) {
         if (!isNewline(node) && isWhitespace(node.text)) return [];
         return [node];
@@ -23,11 +23,11 @@ function removeWhitespace(node: DetNode, lctx: InternalLapolContext): DetNode[] 
     throw new LapolError("Should be unreachable");
 }
 
-export function processRemoveWhitespaceLines(node: Expr, lctx: InternalLapolContext): Expr {
+export function processRemoveWhitespaceLines(node: Expr, lctx: LapolContext): Expr {
     return node.contentsFlatMap((n) => removeWhitespace(n, lctx));
 }
 
-export function processLinebreaks(node: DetNode, lctx: InternalLapolContext): DetNode {
+export function processLinebreaks(node: DetNode, lctx: LapolContext): DetNode {
     if (node instanceof Str) return node;
     if (node instanceof Data) return node;
     if (node instanceof Expr) {
@@ -70,7 +70,7 @@ export function processLinebreaks(node: DetNode, lctx: InternalLapolContext): De
     throw new LapolError("Should be unreachable");
 }
 
-export function processParagraphs(node: DetNode, lctx: InternalLapolContext): DetNode {
+export function processParagraphs(node: DetNode, lctx: LapolContext): DetNode {
     if (node instanceof Str) return node;
     if (node instanceof Data) return node;
     if (node instanceof Expr) {
@@ -147,6 +147,6 @@ function isNewline(node: DetNode): boolean {
     return node instanceof Str && node.text === "\n";
 }
 
-function isBlock(node: DetNode, lctx: InternalLapolContext): boolean {
+function isBlock(node: DetNode, lctx: LapolContext): boolean {
     return node instanceof Expr && lctx.registry.exprMetas.getOrErr(node.tag).cfg.isBlock;
 }

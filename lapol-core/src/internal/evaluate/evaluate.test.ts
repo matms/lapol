@@ -1,15 +1,16 @@
 import { AstTextNode } from "../ast";
-import { InternalFileContext, InternalLapolContext } from "../context";
 import { LapolRegistry } from "../registry/registry";
+import { LapolContext } from "../context/lapolContext";
 import { Environment } from "./environment";
 import * as evaluate from "./evaluate";
+import { FileContext } from "../context/fileContext";
 
 const MOCK_META = { startCol: -1, startLine: -1, startOffset: -1 };
 
 describe("_evaluateNode", () => {
     it("Evaluates text nodes", () => {
-        const lctx = new InternalLapolContext(new LapolRegistry());
-        const fctx = new InternalFileContext(new Map());
+        const lctx = new LapolContext(new LapolRegistry());
+        const fctx = new FileContext(new Map());
         const env = new Environment();
 
         const node: AstTextNode = {
