@@ -9,7 +9,7 @@ describe("LtrfStr", () => {
 
     it("can be immutably changed", () => {
         const s: LtrfObj = "abc";
-        const stringChanger = ltrf.lift((s) => s + "def", ltrf.id);
+        const stringChanger = ltrf.ltrfObjLift((s) => s + "def", ltrf.id);
         const s2 = stringChanger(s);
         const s3 = stringChanger(s2);
         expect(s).toEqual("abc");
@@ -47,7 +47,7 @@ describe("Ltrf Complex Operations", () => {
         const z = LtrfNode.make("c", {}, [alpha]);
         const root = LtrfNode.make("root", {}, [x, "y", z]);
 
-        const uppercase = ltrf.lift(
+        const uppercase = ltrf.ltrfObjLift(
             (s) => s.toUpperCase(),
             (o) => o.mapSub((ns) => ns.map(uppercase))
         );

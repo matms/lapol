@@ -27,6 +27,10 @@ export class CommandContext {
         this._currNamespace = currNamespace;
     }
 
+    /** WARNING: In general, you should NOT access the File Module Storage for other modules,
+     * only for your own! However, this capability is still provided for the rare cases where
+     * you may want to do that.
+     */
     public getFileModuleStorage(modName: string): FileModuleStorage {
         const out = this._fctx.moduleStorage.get(modName);
         if (out === undefined) throw new LapolError(`FileModuleStorage for ${modName} not found.`);

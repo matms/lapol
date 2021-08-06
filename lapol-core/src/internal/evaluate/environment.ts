@@ -14,7 +14,7 @@ export class Environment {
     }
 
     /** MUTATES this environment to contain the new module. */
-    loadModule(name: string, module: LapolModule, as?: string): void {
+    loadModule(module: LapolModule, as?: string): void {
         this.loadedModules.push(module.identifier);
         if (as === undefined) as = module.identifier.name;
         this.rootNamespace.rootAddChildNamespace(as, module.namespace);

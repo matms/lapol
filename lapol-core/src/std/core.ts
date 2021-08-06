@@ -62,7 +62,7 @@ class RequireCommand extends Command {
                 `__require: Module ${modName} was required: you need to provide it when building LapolContext.`
             );
 
-        env.loadModule(modName, mod);
+        env.loadModule(mod);
 
         return [];
     }

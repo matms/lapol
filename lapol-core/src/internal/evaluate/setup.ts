@@ -24,7 +24,7 @@ export function makeEnvironmentWithStdCoreSetup(lctx: InternalLapolContext): Env
         throw new LapolError(
             `Module ${STD_CORE_MOD} was required: you need to provide it when building LapolContext.`
         );
-    env.loadModule(STD_CORE_MOD, mod);
+    env.loadModule(mod);
 
     DEFAULT_USE_FROM_CORE.forEach(addUsingFromCoreHelper);
 
