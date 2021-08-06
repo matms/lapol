@@ -12,8 +12,8 @@ if (!isNodePathInit) {
 
 import { init as lapol_rs_init } from "lapol-rs";
 
-import { setLapolFolder } from "./internal/global_init";
-import { LaPath } from "./internal/la_path";
+import { setLapolFolder } from "./internal/globalInit";
+import { LaPath } from "./internal/laPath";
 
 if (!isLapolFolderInfoInit) {
     // eslint-disable-next-line node/no-path-concat

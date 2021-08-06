@@ -1,6 +1,6 @@
 import { promises as fsp } from "fs";
 import mkdirp from "mkdirp";
-import { LaPath } from "./la_path";
+import { LaPath } from "./laPath";
 
 /** WARNING: Promises are truthy, I think. MAKE SURE TO AWAIT THIS! */
 export async function canAccess(filePath: LaPath): Promise<boolean> {

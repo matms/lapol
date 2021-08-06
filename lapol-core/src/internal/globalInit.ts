@@ -1,5 +1,5 @@
 import { LapolError } from "./errors";
-import { LaPath } from "./la_path";
+import { LaPath } from "./laPath";
 
 let lapolFolder: LaPath | undefined;
 

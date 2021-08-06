@@ -1,10 +1,10 @@
-import { LaPath } from "./la_path";
+import { LaPath } from "./laPath";
 import { render as runRender } from "./compile";
 import { loadModule, ModuleDeclaration } from "./module/module";
 import { mod as coreMod } from "../std/core";
 import { LapolContext } from "./context/lapolContext";
 import { LapolRegistry } from "./registry/registry";
-import { getLapolFolder } from "./global_init";
+import { getLapolFolder } from "./globalInit";
 import { copyFile } from "./utils";
 import { LapolError } from "./errors";
 

@@ -6,7 +6,7 @@ import { evaluateAstRoot } from "./evaluate/evaluate";
 import { outputDet, OutputType } from "./output/output";
 import { processDet } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
-import { LaPath } from "./la_path";
+import { LaPath } from "./laPath";
 import { FileContext } from "./context/fileContext";
 import { LapolContext } from "./context/lapolContext";
 import { LtrfObj } from "./ltrf/ltrf";
