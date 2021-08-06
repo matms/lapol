@@ -1,7 +1,8 @@
-import { Command, Environment } from "src/mod";
+import { Command } from "../command/command";
 import { InternalLapolContext } from "../context";
 import { LapolError } from "../errors";
 import { parseIdentifier } from "../identifier";
+import { Environment } from "./environment";
 
 const STD_CORE_MOD = "std::core";
 const DEFAULT_USE_FROM_CORE = ["__doc", "__require", "__using", "__using_all"];

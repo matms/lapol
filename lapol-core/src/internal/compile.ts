@@ -2,12 +2,13 @@ import { parse_file } from "lapol-rs";
 import { strict as assert } from "assert";
 import { AstRootNode } from "./ast";
 import { DetNode } from "./det";
-import { evaluateAst } from "./evaluate/evaluate";
+import { evaluateAstRoot } from "./evaluate/evaluate";
 import { outputDet, OutputType } from "./output/output";
 import { processDet } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./la_path";
 import { InternalFileContext, InternalLapolContext } from "./context";
+import { LtrfObj } from "./ltrf/ltrf";
 
 export interface CompileInput {
     inputFilePath: LaPath;
@@ -19,8 +20,8 @@ export interface CompileOutput {
     dbgTimingInfo: string;
     dbgInputText: Buffer;
     dbgParsed: AstRootNode;
-    dbgEvaluated: DetNode;
-    dbgProcessed: DetNode;
+    dbgEvaluated: LtrfObj;
+    dbgProcessed: LtrfObj;
     dbgOutputted: OutputType;
 }
 
@@ -34,13 +35,14 @@ async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<Com
 
     const fctx = InternalFileContext.make(lctx);
 
-    const evaluated = await evaluateAst(lctx, fctx, parsed, c.inputFilePath.fullPath);
+    const evaluated = evaluateAstRoot(lctx, fctx, parsed);
+
     const t4 = Date.now();
-    const processed = await processDet(evaluated, fctx, lctx);
+    // const processed = await processDet(evaluated, fctx, lctx);
     const t5 = Date.now();
-    const output = await outputDet(lctx, fctx, processed, c.targetLanguage);
+    // const output = await outputDet(lctx, fctx, processed, c.targetLanguage);
     const t6 = Date.now();
-    await writeFile(c.outputFilePath, output);
+    // await writeFile(c.outputFilePath, output);
     const t7 = Date.now();
 
     const dbgTimingInfo =
@@ -57,8 +59,8 @@ async function compile(lctx: InternalLapolContext, c: CompileInput): Promise<Com
         dbgInputText: textBuf,
         dbgParsed: parsed,
         dbgEvaluated: evaluated,
-        dbgProcessed: processed,
-        dbgOutputted: output,
+        dbgProcessed: "TODO",
+        dbgOutputted: "TODO",
     };
 }
 

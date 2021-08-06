@@ -2,7 +2,7 @@
  * However, consider it!
  */
 
-import { Str, Expr, ModuleLoader, FileModuleStorage } from "../mod";
+import { ModuleLoader, FileModuleStorage, CommandArguments, LtrfNode } from "../mod";
 import { mod as htmlOutputMod } from "./main_html_output";
 import { mod as latexOutputMod } from "./main_latex_output";
 
@@ -25,21 +25,26 @@ function load(l: ModuleLoader): void {
     l.exportCommand("count", (_, c) => {
         const s = c.getFileModuleStorage("std::main") as MainFileStore;
         s.count++;
-        return new Str(s.count.toString());
+        return [s.count.toString()];
     });
 
-    l.exportCommand("title", (a) => new Expr("title", a.ca(0)));
-    l.exportCommand("sec", (a) => new Expr("sec", a.ca(0)));
-    l.exportCommand("subsec", (a) => new Expr("subsec", a.ca(0)));
-    l.exportCommand("subsubsec", (a) => new Expr("subsubsec", a.ca(0)));
+    const wrapInCmd = (name: string) => (a: CommandArguments) =>
+        [LtrfNode.make(name, {}, a.caOrErr(0))];
+    const wrapInBlockCmd = (name: string) => (a: CommandArguments) =>
+        [LtrfNode.make(name, { isBlock: true }, a.caOrErr(0))];
 
-    l.exportCommand("bf", (a) => new Expr("bold", a.ca(0)));
-    l.exportCommand("it", (a) => new Expr("italic", a.ca(0)));
+    l.exportCommand("title", wrapInBlockCmd("title"));
+    l.exportCommand("sec", wrapInBlockCmd("sec"));
+    l.exportCommand("subsec", wrapInBlockCmd("subsec"));
+    l.exportCommand("subsubsec", wrapInBlockCmd("subsubsec"));
+
+    l.exportCommand("bf", wrapInCmd("bold"));
+    l.exportCommand("it", wrapInCmd("italic"));
 
     // Block quote
-    l.exportCommand("bquot", (a) => new Expr("bquot", a.ca(0)));
+    l.exportCommand("bquot", wrapInBlockCmd("bquot"));
 
-    l.exportCommand("marginnote", (a) => new Expr("marginnote", a.ca(0)));
+    l.exportCommand("marginnote", wrapInCmd("marginnote"));
 
     // TODO:
     //  - Tables
@@ -53,17 +58,7 @@ function load(l: ModuleLoader): void {
     //  - LaTeX math support
     //  - Section Numbering
 
-    l.declareExprMeta("title", { isBlock: true });
-    l.declareExprMeta("sec", { isBlock: true });
-    l.declareExprMeta("subsec", { isBlock: true });
-    l.declareExprMeta("subsubsec", { isBlock: true });
-
-    l.declareExprMeta("bold", {});
-    l.declareExprMeta("italic", {});
-
-    l.declareExprMeta("bquot", { isBlock: true });
-    l.declareExprMeta("marginnote", {});
-
+    /*
     if (l.hasTarget("html")) {
         l.declareSubModule("std::main::html_output", htmlOutputMod);
     }
@@ -71,4 +66,5 @@ function load(l: ModuleLoader): void {
     if (l.hasTarget("latex")) {
         l.declareSubModule("std::main::latex_output", latexOutputMod);
     }
+    */
 }

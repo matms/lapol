@@ -10,12 +10,12 @@ export type LtrfStr = string;
  */
 export class LtrfNode {
     private readonly _tag: string;
-    private readonly _kv: Readonly<Record<string, LtrfObj>>;
+    private readonly _kv: Readonly<Record<string, unknown>>;
     private readonly _sub: readonly LtrfObj[];
 
     private constructor(
         tag: string,
-        kv: Readonly<Record<string, LtrfObj>>,
+        kv: Readonly<Record<string, unknown>>,
         sub: readonly LtrfObj[]
     ) {
         this._tag = tag;
@@ -25,7 +25,7 @@ export class LtrfNode {
 
     static make(
         tag: string,
-        kv: Readonly<Record<string, LtrfObj>>,
+        kv: Readonly<Record<string, unknown>>,
         sub: readonly LtrfObj[]
     ): LtrfNode {
         return new LtrfNode(tag, kv, sub);
@@ -35,7 +35,7 @@ export class LtrfNode {
         return this._tag;
     }
 
-    get kv(): Readonly<Record<string, LtrfObj>> {
+    get kv(): Readonly<Record<string, unknown>> {
         return this._kv;
     }
 
@@ -51,12 +51,12 @@ export class LtrfNode {
         return LtrfNode.make(f(this._tag), this._kv, this._sub);
     }
 
-    updateKv(newKv: Readonly<Record<string, LtrfObj>>): LtrfNode {
+    updateKv(newKv: Readonly<Record<string, unknown>>): LtrfNode {
         return LtrfNode.make(this._tag, newKv, this._sub);
     }
 
     mapKv(
-        f: (old: Readonly<Record<string, LtrfObj>>) => Readonly<Record<string, LtrfObj>>
+        f: (old: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>
     ): LtrfNode {
         return LtrfNode.make(this._tag, f(this._kv), this._sub);
     }
@@ -71,7 +71,7 @@ export class LtrfNode {
 
     update(
         ft: (old: string) => string,
-        fk: (old: Readonly<Record<string, LtrfObj>>) => Readonly<Record<string, LtrfObj>>,
+        fk: (old: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>,
         fs: (old: readonly LtrfObj[]) => readonly LtrfObj[]
     ): LtrfNode {
         return LtrfNode.make(ft(this._tag), fk(this._kv), fs(this._sub));
@@ -99,7 +99,12 @@ export function isLtrfNode(l: LtrfObj): l is LtrfNode {
     return l instanceof LtrfNode;
 }
 
-export function lift(
+/** Takes in two functions, one taking in an LtrfString and returning an LtrfObj,
+ * another taking in an LtrfNode and returning an LtrfObj.
+ *
+ * Returns a function taking in an LtrfObj and dispatching to the correct function.
+ */
+export function ltrfObjLift(
     fs: (s: LtrfStr) => LtrfObj,
     fn: (n: LtrfNode) => LtrfObj
 ): (o: LtrfObj) => LtrfObj {

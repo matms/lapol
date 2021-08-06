@@ -14,6 +14,7 @@ import { ExprMeta, ExprMetaCfgDeclaration } from "../expr_meta";
 import { LapolRegistry } from "../registry/registry";
 import { NodeOutputter } from "../output/nodeOutputter";
 import { CommandContext } from "../command/context";
+import { LtrfObj } from "../ltrf/ltrf";
 
 export class ModuleLoader {
     /* eslint-disable  @typescript-eslint/prefer-readonly */
@@ -91,14 +92,14 @@ export class ModuleLoader {
     // TODO: what should the type of 'options?' be?
     public exportCommand(
         name: string,
-        command: (a: CommandArguments, ctx: CommandContext) => DetNode | undefined,
+        command: (a: CommandArguments, ctx: CommandContext) => readonly LtrfObj[],
         options?: Record<string, boolean>
     ): void;
     public exportCommand(name: string, command: Command): void;
 
     public exportCommand(
         name: string,
-        command: Command | ((a: CommandArguments, ctx: CommandContext) => DetNode | undefined),
+        command: Command | ((a: CommandArguments, ctx: CommandContext) => readonly LtrfObj[]),
         options?: Record<string, boolean>
     ): void {
         if (typeof command === "function")

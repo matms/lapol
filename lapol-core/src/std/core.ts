@@ -7,10 +7,10 @@
  * In this case, you WILL BE ABLE TO (can't yet) access these with 'core:import'
  */
 
+import { isLtrfStr, LtrfNode, LtrfObj } from "../internal/ltrf/ltrf";
 import { CommandArguments as Args } from "../internal/command/argument";
 import { Command } from "../internal/command/command";
 import { CommandContext } from "../internal/command/context";
-import { DetNode, Expr, Str } from "../internal/det";
 import { LapolError } from "../internal/errors";
 import { parseIdentifier } from "../internal/identifier";
 import { ModuleLoader } from "../internal/module/loader";
@@ -46,15 +46,15 @@ class RequireCommand extends Command {
         super("Other", "quick_import");
     }
 
-    call(a: Args, ctx: CommandContext): undefined {
+    call(a: Args, ctx: CommandContext): readonly LtrfObj[] {
         const lctx = ctx._lctx;
         const env = ctx._currEnv;
 
         const modNode = a.caOrErr(0)[0];
-        if (!(modNode instanceof Str))
+        if (!isLtrfStr(modNode))
             throw new LapolError("__require: Must pass in a single module name string");
 
-        const modName = modNode.text.trim();
+        const modName = modNode.trim();
 
         const mod = lctx.registry.modules.get(modName);
         if (mod === undefined)
@@ -64,7 +64,7 @@ class RequireCommand extends Command {
 
         env.loadModule(modName, mod);
 
-        return undefined;
+        return [];
     }
 }
 
@@ -73,7 +73,7 @@ class UsingCommand extends Command {
         super("Other", "__using");
     }
 
-    call(a: Args, ctx: CommandContext): undefined {
+    call(a: Args, ctx: CommandContext): readonly LtrfObj[] {
         const thing = a.sa(0);
         if (thing === undefined)
             throw new LapolError(`__using: Must provide thing to use (as 0th square argument)`);
@@ -101,7 +101,8 @@ class UsingCommand extends Command {
         if (target === undefined) throw new LapolError(`__using: Could not find "from"`);
 
         ctx._currNamespace.addUsing(as, target);
-        return undefined;
+
+        return [];
     }
 }
 
@@ -110,7 +111,7 @@ class UsingAllCommand extends Command {
         super("Other", "__using_all");
     }
 
-    call(a: Args, ctx: CommandContext): undefined {
+    call(a: Args, ctx: CommandContext): readonly LtrfObj[] {
         const from = a.kwa("from");
         if (from === undefined)
             throw new LapolError(`__using_all: Must provide thing to use (as 0th square argument)`);
@@ -129,7 +130,7 @@ class UsingAllCommand extends Command {
             ctx._currNamespace.addUsing(prefixIn + k, v);
         }
 
-        return undefined;
+        return [];
     }
 }
 
@@ -144,6 +145,6 @@ const commands = {
     __doc: docCommand,
 };
 
-function docCommand(a: Args): DetNode {
-    return new Expr("__doc", a.ca(0));
+function docCommand(a: Args): readonly LtrfObj[] {
+    return [LtrfNode.make("__doc", {}, a.caOrErr(0))];
 }
