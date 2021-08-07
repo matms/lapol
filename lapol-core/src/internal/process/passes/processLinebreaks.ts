@@ -4,11 +4,11 @@ import { ProcessingCtx } from "../common";
 export const BREAK_MARKER_TAG = "__para_br_marker";
 
 export function processLinebreaks(_c: ProcessingCtx, root: LtrfNode): LtrfNode {
-    return remLinebreaks(root);
+    return processLinebreaksHelper(root);
 }
 
-function remLinebreaks(n: LtrfNode): LtrfNode {
-    const n2 = n.mapElems(ltrfObjLift((s) => s, remLinebreaks));
+function processLinebreaksHelper(n: LtrfNode): LtrfNode {
+    const n2 = n.mapElems(ltrfObjLift((s) => s, processLinebreaksHelper));
     if (n2.elems.length <= 1) return n2;
 
     /** New elements helper */
