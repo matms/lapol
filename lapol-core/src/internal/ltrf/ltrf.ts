@@ -11,24 +11,24 @@ export type LtrfStr = string;
 export class LtrfNode {
     private readonly _tag: string;
     private readonly _kv: Readonly<Record<string, unknown>>;
-    private readonly _sub: readonly LtrfObj[];
+    private readonly _elems: readonly LtrfObj[];
 
     private constructor(
         tag: string,
         kv: Readonly<Record<string, unknown>>,
-        sub: readonly LtrfObj[]
+        elems: readonly LtrfObj[]
     ) {
         this._tag = tag;
         this._kv = kv;
-        this._sub = sub;
+        this._elems = elems;
     }
 
     static make(
         tag: string,
         kv: Readonly<Record<string, unknown>>,
-        sub: readonly LtrfObj[]
+        cont: readonly LtrfObj[]
     ): LtrfNode {
-        return new LtrfNode(tag, kv, sub);
+        return new LtrfNode(tag, kv, cont);
     }
 
     get tag(): string {
@@ -39,34 +39,34 @@ export class LtrfNode {
         return this._kv;
     }
 
-    get sub(): readonly LtrfObj[] {
-        return this._sub;
+    get elems(): readonly LtrfObj[] {
+        return this._elems;
     }
 
     withTag(newTag: string): LtrfNode {
-        return LtrfNode.make(newTag, this._kv, this._sub);
+        return LtrfNode.make(newTag, this._kv, this._elems);
     }
 
     updateTag(f: (old: string) => string): LtrfNode {
-        return LtrfNode.make(f(this._tag), this._kv, this._sub);
+        return LtrfNode.make(f(this._tag), this._kv, this._elems);
     }
 
     withKv(newKv: Readonly<Record<string, unknown>>): LtrfNode {
-        return LtrfNode.make(this._tag, newKv, this._sub);
+        return LtrfNode.make(this._tag, newKv, this._elems);
     }
 
     updateKv(
         f: (old: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>
     ): LtrfNode {
-        return LtrfNode.make(this._tag, f(this._kv), this._sub);
+        return LtrfNode.make(this._tag, f(this._kv), this._elems);
     }
 
-    withSub(newSub: readonly LtrfObj[]): LtrfNode {
-        return LtrfNode.make(this._tag, this._kv, newSub);
+    withElems(newElems: readonly LtrfObj[]): LtrfNode {
+        return LtrfNode.make(this._tag, this._kv, newElems);
     }
 
-    updateSub(f: (old: readonly LtrfObj[]) => readonly LtrfObj[]): LtrfNode {
-        return LtrfNode.make(this._tag, this._kv, f(this._sub));
+    updateElems(f: (old: readonly LtrfObj[]) => readonly LtrfObj[]): LtrfNode {
+        return LtrfNode.make(this._tag, this._kv, f(this._elems));
     }
 
     update(
@@ -74,7 +74,7 @@ export class LtrfNode {
         fk: (old: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>,
         fs: (old: readonly LtrfObj[]) => readonly LtrfObj[]
     ): LtrfNode {
-        return LtrfNode.make(ft(this._tag), fk(this._kv), fs(this._sub));
+        return LtrfNode.make(ft(this._tag), fk(this._kv), fs(this._elems));
     }
 
     dbgStringify(): string {

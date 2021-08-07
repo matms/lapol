@@ -44,7 +44,7 @@ export function process(lctx: LapolContext, fctx: FileContext, ltrfRootNode: Ltr
 function processRoot(c: ProcessingCtx, root: LtrfNode): LtrfNode {
     if (root.tag !== "__root") throw new LapolError("Expected __root node.");
 
-    return root.updateSub((sub) => {
+    return root.updateElems((sub) => {
         // Check for potential mistakes
         sub.forEach((n) => {
             if (isLtrfStr(n) && !isWhitespace(n))
