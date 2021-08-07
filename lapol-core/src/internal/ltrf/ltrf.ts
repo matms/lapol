@@ -69,6 +69,16 @@ export class LtrfNode {
         return LtrfNode.make(this._tag, this._kv, f(this._elems));
     }
 
+    mapElems(f: (el: LtrfObj, index: number, array: readonly LtrfObj[]) => LtrfObj): LtrfNode {
+        return this.updateElems((elems) => elems.map(f));
+    }
+
+    flatMapElems(
+        f: (el: LtrfObj, index: number, array: readonly LtrfObj[]) => readonly LtrfObj[]
+    ): LtrfNode {
+        return this.updateElems((elems) => elems.flatMap(f));
+    }
+
     update(
         ft: (old: string) => string,
         fk: (old: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>,

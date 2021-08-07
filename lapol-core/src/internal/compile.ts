@@ -1,10 +1,9 @@
 import { parse_file } from "lapol-rs";
 import { strict as assert } from "assert";
 import { AstRootNode } from "./ast";
-import { DetNode } from "./det";
 import { evaluateAstRoot } from "./evaluate/evaluate";
 import { outputDet, OutputType } from "./output/output";
-import { process, processDet } from "./process/process";
+import { process } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./laPath";
 import { FileContext } from "./context/fileContext";
