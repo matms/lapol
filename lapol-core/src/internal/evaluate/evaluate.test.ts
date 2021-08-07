@@ -26,4 +26,4 @@ describe("_evaluateNode", () => {
     });
 });
 
-// TODO: Test commands... How?
+// TODO: Test commands

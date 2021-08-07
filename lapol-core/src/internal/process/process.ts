@@ -13,24 +13,13 @@ import { processParagraphs } from "./passes/processParagraphs";
 import { processRoot } from "./passes/processRoot";
 import { processRemoveWhitespaceLines } from "./passes/remWhitespaceLines";
 
+// TODO: How to allow the user to configure extra processing passes?
 const PROCESSING_PASSES: RootProcessingFunction[] = [
     processRoot,
     processRemoveWhitespaceLines,
     processLinebreaks,
     processParagraphs,
 ];
-
-// TODO: linebreak and paragraph processing!
-
-/*
-
-const PROCESSING_PASSES: Array<(node: Expr, lctx: LapolContext) => DetNode> = [
-    processRemoveWhitespaceLines,
-    processLinebreaks,
-    processParagraphs,
-];
-
-*/
 
 export function process(lctx: LapolContext, fctx: FileContext, ltrfRootNode: LtrfNode): LtrfNode {
     let out = ltrfRootNode;

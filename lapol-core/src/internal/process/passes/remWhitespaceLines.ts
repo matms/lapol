@@ -1,5 +1,5 @@
 import { LapolError } from "../../errors";
-import { isLtrfNode, isLtrfStr, LtrfNode, LtrfObj } from "../../ltrf/ltrf";
+import { isLtrfNode, isLtrfStr, LtrfNode } from "../../ltrf/ltrf";
 import { isWhitespace } from "../../utils";
 import { ProcessingCtx } from "../common";
 
