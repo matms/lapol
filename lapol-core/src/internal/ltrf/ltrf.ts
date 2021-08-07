@@ -43,29 +43,29 @@ export class LtrfNode {
         return this._sub;
     }
 
-    updateTag(newTag: string): LtrfNode {
+    withTag(newTag: string): LtrfNode {
         return LtrfNode.make(newTag, this._kv, this._sub);
     }
 
-    mapTag(f: (old: string) => string): LtrfNode {
+    updateTag(f: (old: string) => string): LtrfNode {
         return LtrfNode.make(f(this._tag), this._kv, this._sub);
     }
 
-    updateKv(newKv: Readonly<Record<string, unknown>>): LtrfNode {
+    withKv(newKv: Readonly<Record<string, unknown>>): LtrfNode {
         return LtrfNode.make(this._tag, newKv, this._sub);
     }
 
-    mapKv(
+    updateKv(
         f: (old: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>
     ): LtrfNode {
         return LtrfNode.make(this._tag, f(this._kv), this._sub);
     }
 
-    updateSub(newSub: readonly LtrfObj[]): LtrfNode {
+    withSub(newSub: readonly LtrfObj[]): LtrfNode {
         return LtrfNode.make(this._tag, this._kv, newSub);
     }
 
-    mapSub(f: (old: readonly LtrfObj[]) => readonly LtrfObj[]): LtrfNode {
+    updateSub(f: (old: readonly LtrfObj[]) => readonly LtrfObj[]): LtrfNode {
         return LtrfNode.make(this._tag, this._kv, f(this._sub));
     }
 

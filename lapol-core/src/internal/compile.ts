@@ -4,12 +4,12 @@ import { AstRootNode } from "./ast";
 import { DetNode } from "./det";
 import { evaluateAstRoot } from "./evaluate/evaluate";
 import { outputDet, OutputType } from "./output/output";
-import { processDet } from "./process/process";
+import { process, processDet } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./laPath";
 import { FileContext } from "./context/fileContext";
 import { LapolContext } from "./context/lapolContext";
-import { LtrfObj } from "./ltrf/ltrf";
+import { isLtrfNode, LtrfObj } from "./ltrf/ltrf";
 
 export interface CompileInput {
     inputFilePath: LaPath;
@@ -38,8 +38,10 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
 
     const evaluated = evaluateAstRoot(lctx, fctx, parsed);
 
+    assert(isLtrfNode(evaluated));
+
     const t4 = Date.now();
-    // const processed = await processDet(evaluated, fctx, lctx);
+    const processed = process(lctx, fctx, evaluated);
     const t5 = Date.now();
     // const output = await outputDet(lctx, fctx, processed, c.targetLanguage);
     const t6 = Date.now();
@@ -60,7 +62,7 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
         dbgInputText: textBuf,
         dbgParsed: parsed,
         dbgEvaluated: evaluated,
-        dbgProcessed: "TODO",
+        dbgProcessed: processed,
         dbgOutputted: "TODO",
     };
 }

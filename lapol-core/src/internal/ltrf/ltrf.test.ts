@@ -32,7 +32,7 @@ describe("LtrfNode", () => {
         expect(n.kv).toEqual({ a: "b", x: "y" });
         expect(n.sub).toEqual(["d", "e"]);
 
-        const n2 = n.mapKv((kv) => ({ ...kv, x: "z", c: "d" })).mapSub((s) => [...s, "!"]);
+        const n2 = n.updateKv((kv) => ({ ...kv, x: "z", c: "d" })).updateSub((s) => [...s, "!"]);
 
         expect(n2.tag).toEqual("sample");
         expect(n2.kv).toEqual({ a: "b", x: "z", c: "d" });
@@ -49,7 +49,7 @@ describe("Ltrf Complex Operations", () => {
 
         const uppercase = ltrf.ltrfObjLift(
             (s) => s.toUpperCase(),
-            (o) => o.mapSub((ns) => ns.map(uppercase))
+            (o) => o.updateSub((ns) => ns.map(uppercase))
         );
 
         expect(uppercase(root)).toEqual({
