@@ -8,10 +8,17 @@ import { FileContext } from "../context/fileContext";
 import { LapolContext } from "../context/lapolContext";
 import { isLtrfNode, LtrfNode } from "../ltrf/ltrf";
 import { RootProcessingFunction } from "./common";
+import { processLinebreaks } from "./passes/processLinebreaks";
 import { processRoot } from "./passes/processRoot";
 import { processRemoveWhitespaceLines } from "./passes/remWhitespaceLines";
 
-const PROCESSING_PASSES: RootProcessingFunction[] = [processRoot, processRemoveWhitespaceLines];
+const PROCESSING_PASSES: RootProcessingFunction[] = [
+    processRoot,
+    processRemoveWhitespaceLines,
+    processLinebreaks,
+];
+
+// TODO: linebreak and paragraph processing!
 
 /*
 

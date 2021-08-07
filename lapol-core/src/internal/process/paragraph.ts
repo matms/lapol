@@ -42,22 +42,24 @@ export function processLinebreaks(node: DetNode, lctx: LapolContext): DetNode {
         for (let i = 0; i < nNode.contentsLength(); i++) {
             const curr = nNode.unsafeBorrowContents()[i];
             if (!isNewline(curr)) contHelper.push(curr);
-            else if (isNewline(nNode.unsafeBorrowContents()[i + 1])) {
-                if (
-                    contHelper[contHelper.length - 1] !== LINEBREAK_INDICATOR &&
-                    contHelper[contHelper.length - 1] !== undefined
-                    // ^ No break at beginning of contents.
-                ) {
-                    contHelper.push(LINEBREAK_INDICATOR);
+            else {
+                if (isNewline(nNode.unsafeBorrowContents()[i + 1])) {
+                    if (
+                        contHelper[contHelper.length - 1] !== LINEBREAK_INDICATOR &&
+                        contHelper[contHelper.length - 1] !== undefined
+                        // ^ No break at beginning of contents.
+                    ) {
+                        contHelper.push(LINEBREAK_INDICATOR);
+                    }
+                    // Note that if those conditions hold, a space need not be emitted (either we
+                    // already have a line break, or we are at the start.
+                    // TODO: Is this right (check "we are at the start").
+                } else {
+                    // Newline not followed by newline should become space.
+                    contHelper.push(new Str(" "));
+                    // If a newline isn't treated as a new paragraph, it should be
+                    // treated as a whitespace.
                 }
-                // Note that if those conditions hold, a space need not be emitted (either we
-                // already have a line break, or we are at the start.
-                // TODO: Is this right (check "we are at the start").
-            } else {
-                // Newline not followed by newline should become space.
-                contHelper.push(new Str(" "));
-                // If a newline isn't treated as a new paragraph, it should be
-                // treated as a whitespace.
             }
         }
 
