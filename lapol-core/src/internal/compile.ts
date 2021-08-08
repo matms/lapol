@@ -1,7 +1,7 @@
 import { parse_file } from "lapol-rs";
 import { strict as assert } from "assert";
 import { AstRootNode } from "./ast";
-import { evaluateAstRoot } from "./evaluate/evaluate";
+import { evaluatePass } from "./evaluate/evaluate";
 import { outputDet, OutputType } from "./output/output";
 import { processPass } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
@@ -35,7 +35,7 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
 
     const fctx = FileContext.make(lctx);
 
-    const evaluated = evaluateAstRoot(lctx, fctx, parsed);
+    const evaluated = evaluatePass(lctx, fctx, parsed);
 
     assert(isLtrfNode(evaluated));
 

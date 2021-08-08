@@ -24,11 +24,7 @@ import { warnUserOfIssuesWithRootNode } from "./root";
 
 const ROOT_TAG = "__root";
 
-export function evaluateAstRoot(
-    lctx: LapolContext,
-    fctx: FileContext,
-    astRoot: AstRootNode
-): LtrfObj {
+export function evaluatePass(lctx: LapolContext, fctx: FileContext, astRoot: AstRootNode): LtrfObj {
     const env = makeEnvironmentWithStdCoreSetup(lctx);
     const o = evaluateRootNode(lctx, fctx, env, astRoot);
 
