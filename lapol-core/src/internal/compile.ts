@@ -3,7 +3,7 @@ import { strict as assert } from "assert";
 import { AstRootNode } from "./ast";
 import { evaluateAstRoot } from "./evaluate/evaluate";
 import { outputDet, OutputType } from "./output/output";
-import { process } from "./process/process";
+import { processPass } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./laPath";
 import { FileContext } from "./context/fileContext";
@@ -40,7 +40,7 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
     assert(isLtrfNode(evaluated));
 
     const t4 = Date.now();
-    const processed = process(lctx, fctx, evaluated);
+    const processed = processPass(lctx, fctx, evaluated);
     const t5 = Date.now();
     // const output = await outputDet(lctx, fctx, processed, c.targetLanguage);
     const t6 = Date.now();

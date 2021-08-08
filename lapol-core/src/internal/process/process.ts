@@ -21,7 +21,11 @@ const PROCESSING_PASSES: RootProcessingFunction[] = [
     processParagraphs,
 ];
 
-export function process(lctx: LapolContext, fctx: FileContext, ltrfRootNode: LtrfNode): LtrfNode {
+export function processPass(
+    lctx: LapolContext,
+    fctx: FileContext,
+    ltrfRootNode: LtrfNode
+): LtrfNode {
     let out = ltrfRootNode;
 
     for (const pass of PROCESSING_PASSES) {
