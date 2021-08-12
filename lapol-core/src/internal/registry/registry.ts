@@ -26,6 +26,12 @@ class Drawer<T> {
         this._storage = new Map();
     }
 
+    public forEach(
+        f: (value: NonUndefined<T>, key: string, map: ReadonlyMap<string, NonUndefined<T>>) => void
+    ): void {
+        this._storage.forEach(f);
+    }
+
     public has(name: string): boolean {
         return this._storage.has(name);
     }

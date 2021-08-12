@@ -58,7 +58,6 @@ function load(l: ModuleLoader): void {
     //  - LaTeX math support
     //  - Section Numbering
 
-    /*
     if (l.hasTarget("html")) {
         l.declareSubModule("std::main::html_output", htmlOutputMod);
     }
@@ -66,5 +65,4 @@ function load(l: ModuleLoader): void {
     if (l.hasTarget("latex")) {
         l.declareSubModule("std::main::latex_output", latexOutputMod);
     }
-    */
 }

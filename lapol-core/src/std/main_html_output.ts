@@ -1,5 +1,6 @@
 import { GenericHtmlTagOutputter } from "../internal/output/html";
 import { ModuleLoader } from "../mod";
+import { makeHtmlTagOutputter } from "./output/htmlTagOutputter";
 
 export const mod = { loaderFn: load };
 
@@ -12,22 +13,20 @@ function load(l: ModuleLoader): void {
         };
     });
 
-    const declareDefaultHtmlOutputter = (
-        tag: string,
-        htmlTag: string,
-        attrs?: Array<{ attr: string; val: string }>
-    ): void => {
-        l.exportExprOutputter("html", tag, new GenericHtmlTagOutputter(tag, htmlTag, attrs));
-    };
+    l.declareTarget("html");
 
-    declareDefaultHtmlOutputter("title", "h1", [{ attr: "class", val: "title" }]);
-    declareDefaultHtmlOutputter("sec", "h2");
-    declareDefaultHtmlOutputter("subsec", "h3");
-    declareDefaultHtmlOutputter("subsubsec", "h4");
+    l.exportLtrfNodeOutputter(
+        "html",
+        "title",
+        makeHtmlTagOutputter("h1", [{ attr: "class", val: "title" }])
+    );
+    l.exportLtrfNodeOutputter("html", "sec", makeHtmlTagOutputter("h2"));
+    l.exportLtrfNodeOutputter("html", "subsec", makeHtmlTagOutputter("h3"));
+    l.exportLtrfNodeOutputter("html", "subsubsec", makeHtmlTagOutputter("h4"));
 
-    declareDefaultHtmlOutputter("bold", "b");
-    declareDefaultHtmlOutputter("italic", "i");
+    l.exportLtrfNodeOutputter("html", "bold", makeHtmlTagOutputter("b"));
+    l.exportLtrfNodeOutputter("html", "italic", makeHtmlTagOutputter("i"));
 
-    declareDefaultHtmlOutputter("bquot", "blockquote");
-    declareDefaultHtmlOutputter("marginnote", "aside");
+    l.exportLtrfNodeOutputter("html", "bquot", makeHtmlTagOutputter("blockquote"));
+    l.exportLtrfNodeOutputter("html", "marginnote", makeHtmlTagOutputter("aside"));
 }

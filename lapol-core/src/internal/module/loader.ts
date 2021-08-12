@@ -15,6 +15,7 @@ import { LapolRegistry } from "../registry/registry";
 import { NodeOutputter } from "../output/nodeOutputter";
 import { CommandContext } from "../command/commandContext";
 import { LtrfObj } from "../ltrf/ltrf";
+import { LtrfNodeOutputter } from "../out/common";
 
 export class ModuleLoader {
     /* eslint-disable  @typescript-eslint/prefer-readonly */
@@ -29,6 +30,8 @@ export class ModuleLoader {
 
     private _instantiator: (() => FileModuleStorage) | undefined;
 
+    private _nodeOutputtersByTargetAndTag: Map<string, Map<string, LtrfNodeOutputter>>;
+
     /* eslint-enable  @typescript-eslint/prefer-readonly */
 
     private constructor(identifier: ModuleIdentifier, registry: LapolRegistry) {
@@ -37,6 +40,7 @@ export class ModuleLoader {
         this._finalizeActions = [];
         this._commands = new Map();
         this._registry = registry;
+        this._nodeOutputtersByTargetAndTag = new Map();
     }
 
     /** Internal use --- Module developer MUST NOT CALL!
@@ -72,7 +76,8 @@ export class ModuleLoader {
             this._commands,
             this._identifier,
             this._loadedSubModules,
-            this._instantiator
+            this._instantiator,
+            this._nodeOutputtersByTargetAndTag
         );
 
         this._registry.modules.declare(mod.identifier.name, mod);
@@ -163,23 +168,22 @@ export class ModuleLoader {
         */
     }
 
-    public exportExprOutputter(
-        target_: string,
+    public exportLtrfNodeOutputter(
+        targetLanguage: string,
         tag: string,
-        outputter: NodeOutputter<Expr, string>
+        outputter: LtrfNodeOutputter
     ): void {
-        const meta = this._registry.exprMetas.get(tag);
-        if (meta === undefined) throw new LapolError(`Expr meta for ${tag} doesn't exist.`);
-
-        meta.declareOutputter(target_, outputter);
+        const a = this._nodeOutputtersByTargetAndTag.get(targetLanguage);
+        if (a === undefined)
+            throw new LapolError(
+                `Target ${targetLanguage} not declared for module ${this._identifier.name}`
+            );
+        a.set(tag, outputter);
     }
 
     public declareTarget(target: string): void {
-        ModuleLoader.log(`WARNING Declared ${target}, but this does nothing (for now).`);
-    }
-
-    public declareExprMeta(exprTag: string, decl: ExprMetaCfgDeclaration): void {
-        this._registry.exprMetas.declare(exprTag, new ExprMeta(decl));
+        if (!this._nodeOutputtersByTargetAndTag.has(target))
+            this._nodeOutputtersByTargetAndTag.set(target, new Map());
     }
 
     /** Declare that a module is required for this module to function. Note that this does not load

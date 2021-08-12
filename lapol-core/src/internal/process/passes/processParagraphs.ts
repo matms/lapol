@@ -4,7 +4,7 @@ import { isWhitespace } from "../../utils";
 import { ProcessingCtx } from "../common";
 import { BREAK_MARKER_TAG } from "./processLinebreaks";
 
-export const PARAGRAPH_TAG = "p";
+export const PARAGRAPH_TAG = "__p";
 
 export function processParagraphs(_c: ProcessingCtx, root: LtrfNode): LtrfNode {
     return processParagraphsHelper(root);

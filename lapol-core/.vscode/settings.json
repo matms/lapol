@@ -16,6 +16,7 @@
         "lapol",
         "lctx",
         "matms",
+        "trgt",
         "xnnnnnnnnnnnn"
     ],
     "eslint.lintTask.enable": true

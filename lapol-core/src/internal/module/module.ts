@@ -1,5 +1,7 @@
 import { Command } from "../command/command";
+import { LapolError } from "../errors";
 import { Namespace } from "../namespace";
+import { LtrfNodeOutputter } from "../out/common";
 import { LapolRegistry } from "../registry/registry";
 import { ModuleLoader } from "./loader";
 
@@ -26,11 +28,14 @@ export class LapolModule {
 
     readonly instantiate: () => FileModuleStorage;
 
+    private readonly _nodeOutputtersByTargetAndTag: Map<string, Map<string, LtrfNodeOutputter>>;
+
     constructor(
         commands: Map<string, Command>,
         identifier: ModuleIdentifier,
         loadedSubModules: string[],
-        instantiate: () => FileModuleStorage
+        instantiate: () => FileModuleStorage,
+        nodeOutputtersByTagAndTarget: Map<string, Map<string, LtrfNodeOutputter>>
     ) {
         this.identifier = identifier;
         this.loadedSubModules = loadedSubModules;
@@ -43,6 +48,17 @@ export class LapolModule {
         }
 
         this.instantiate = instantiate;
+        this._nodeOutputtersByTargetAndTag = nodeOutputtersByTagAndTarget;
+    }
+
+    public getLtrfNodeOutputter(
+        targetLanguage: string,
+        tag: string
+    ): LtrfNodeOutputter | undefined {
+        const a = this._nodeOutputtersByTargetAndTag.get(targetLanguage);
+        if (a === undefined) return undefined;
+        const b = a.get(tag);
+        return b;
     }
 }
 

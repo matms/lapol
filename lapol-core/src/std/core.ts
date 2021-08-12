@@ -16,6 +16,9 @@ import { parseIdentifier } from "../internal/identifier";
 import { ModuleLoader } from "../internal/module/loader";
 import { Namespace } from "../internal/namespace";
 import { GenericHtmlTagOutputter, HtmlRootOutputter } from "../internal/output/html";
+import { composeOutput, outputLtrfObj } from "../internal/out/out";
+import { LtrfNodeOutputter, OutputCtx } from "../internal/out/common";
+import { makeHtmlRootOutputter, makeHtmlTagOutputter } from "./output/htmlTagOutputter";
 
 export const mod = { loaderFn: load };
 
@@ -31,13 +34,11 @@ function load(l: ModuleLoader): void {
     // TODO: change deprecated fn.
     l.exportCommands(commands);
 
-    l.declareExprMeta("__root", { isBlock: true });
-    l.declareExprMeta("__doc", { isBlock: true });
-    l.declareExprMeta("__p", { isBlock: true });
+    l.declareTarget("html");
 
-    l.exportExprOutputter("html", "__root", new HtmlRootOutputter());
-    l.exportExprOutputter("html", "__doc", new GenericHtmlTagOutputter("__doc", "div"));
-    l.exportExprOutputter("html", "__p", new GenericHtmlTagOutputter("__p", "p"));
+    l.exportLtrfNodeOutputter("html", "__root", makeHtmlRootOutputter());
+    l.exportLtrfNodeOutputter("html", "__doc", makeHtmlTagOutputter("div"));
+    l.exportLtrfNodeOutputter("html", "__p", makeHtmlTagOutputter("p"));
 }
 
 /** The first argument is the file to load, the second is the module name. */

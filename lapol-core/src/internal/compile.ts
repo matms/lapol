@@ -2,13 +2,15 @@ import { parse_file } from "lapol-rs";
 import { strict as assert } from "assert";
 import { AstRootNode } from "./ast";
 import { evaluatePass } from "./evaluate/evaluate";
-import { outputDet, OutputType } from "./output/output";
 import { processPass } from "./process/process";
 import { outFilePath, readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./laPath";
 import { FileContext } from "./context/fileContext";
 import { LapolContext } from "./context/lapolContext";
 import { isLtrfNode, LtrfObj } from "./ltrf/ltrf";
+import { outputPass } from "./out/out";
+import { Output } from "./out/common";
+import { makeOutputDispatcher } from "./out/dispatcher";
 
 export interface CompileInput {
     inputFilePath: LaPath;
@@ -22,7 +24,7 @@ export interface CompileOutput {
     dbgParsed: AstRootNode;
     dbgEvaluated: LtrfObj;
     dbgProcessed: LtrfObj;
-    dbgOutputted: OutputType;
+    dbgOutputted: Output;
 }
 
 async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutput> {
@@ -42,9 +44,10 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
     const t4 = Date.now();
     const processed = processPass(lctx, fctx, evaluated);
     const t5 = Date.now();
-    // const output = await outputDet(lctx, fctx, processed, c.targetLanguage);
+    const outputDispatcher = makeOutputDispatcher(lctx, c.targetLanguage);
+    const output = outputPass(lctx, fctx, c.targetLanguage, outputDispatcher, processed);
     const t6 = Date.now();
-    // await writeFile(c.outputFilePath, output);
+    await writeFile(c.outputFilePath, output.code);
     const t7 = Date.now();
 
     const dbgTimingInfo =
@@ -62,7 +65,7 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
         dbgParsed: parsed,
         dbgEvaluated: evaluated,
         dbgProcessed: processed,
-        dbgOutputted: "TODO",
+        dbgOutputted: output,
     };
 }
 
