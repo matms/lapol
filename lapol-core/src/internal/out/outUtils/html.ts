@@ -1,5 +1,5 @@
 import { LtrfStr } from "../../ltrf/ltrf";
-import { Output, OutputCtx } from "../common";
+import { Output } from "../common";
 
 import { encode as heEncode } from "he";
 

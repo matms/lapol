@@ -23,7 +23,7 @@ export class ModuleLoader {
     private _identifier: ModuleIdentifier;
     private _loadedSubModules: string[];
 
-    private _finalizeActions: Array<() => Promise<void>>;
+    private _finalizeActions: Array<() => void>;
 
     private _instantiator: (() => FileModuleStorage) | undefined;
 
@@ -58,9 +58,9 @@ export class ModuleLoader {
      * Namely, these are the module itself and any submodules requested with `declareSubModule`
      *
      */
-    public async _finalize(): Promise<string[]> {
+    public _finalize(): string[] {
         for (const f of this._finalizeActions) {
-            await f();
+            f();
         }
 
         // ModuleLoader.log(`_finalize: Finished loading ${this._identifier.name}`);
@@ -123,7 +123,7 @@ export class ModuleLoader {
      * Note this doesn't load the command immediately, it simply enqueues the command for loading.
      */
     public exportCommands(commands: Record<string, unknown>): void {
-        this._finalizeActions.push(async () => {
+        this._finalizeActions.push(() => {
             assert(typeof commands === "object");
 
             for (const prop of Object.getOwnPropertyNames(commands)) {

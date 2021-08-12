@@ -1,5 +1,4 @@
 import { Command } from "../command/command";
-import { LapolError } from "../errors";
 import { Namespace } from "../namespace";
 import { LtrfNodeOutputter } from "../out/common";
 import { LapolRegistry } from "../registry/registry";
@@ -73,5 +72,5 @@ export async function loadModule(
 
     await load(moduleLoader);
 
-    return await moduleLoader._finalize();
+    return moduleLoader._finalize();
 }

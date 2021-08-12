@@ -3,7 +3,7 @@ import { strict as assert } from "assert";
 import { AstRootNode } from "./ast";
 import { evaluatePass } from "./evaluate/evaluate";
 import { processPass } from "./process/process";
-import { outFilePath, readFileBuffer, writeFile } from "./utils";
+import { readFileBuffer, writeFile } from "./utils";
 import { LaPath } from "./laPath";
 import { FileContext } from "./context/fileContext";
 import { LapolContext } from "./context/lapolContext";
@@ -78,7 +78,6 @@ export async function render(
     target: string = "html"
 ): Promise<void> {
     const inPath = filePath;
-    // const outPath = outFilePath(filePath, target);
 
     if (COMPILE_DBG_PRINT) console.log("\n====== Starting to compile LaPoL file ======\n");
 
