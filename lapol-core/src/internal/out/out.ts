@@ -4,8 +4,8 @@ import { LapolError } from "../errors";
 import { isLtrfNode, isLtrfStr, LtrfNode, LtrfObj } from "../ltrf/ltrf";
 import { Output, OutputCtx, OutputDispatcher } from "./common";
 
-export function composeOutput(...os: Output[]): Output {
-    return { code: os.map((o) => o.code).join("") };
+export function composeOutputs(...out: readonly Output[]): Output {
+    return out.reduce((p, c) => p.compose(c));
 }
 
 export function outputPass(
