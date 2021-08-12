@@ -1,4 +1,3 @@
-import { GenericHtmlTagOutputter } from "../internal/output/html";
 import { ModuleLoader } from "../mod";
 import { makeHtmlTagOutputter } from "./output/htmlTagOutputter";
 

@@ -15,9 +15,6 @@ import { LapolError } from "../internal/errors";
 import { parseIdentifier } from "../internal/identifier";
 import { ModuleLoader } from "../internal/module/loader";
 import { Namespace } from "../internal/namespace";
-import { GenericHtmlTagOutputter, HtmlRootOutputter } from "../internal/output/html";
-import { composeOutput, outputLtrfObj } from "../internal/out/out";
-import { LtrfNodeOutputter, OutputCtx } from "../internal/out/common";
 import { makeHtmlRootOutputter, makeHtmlTagOutputter } from "./output/htmlTagOutputter";
 
 export const mod = { loaderFn: load };

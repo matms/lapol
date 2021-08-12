@@ -8,11 +8,8 @@ import {
 import { strict as assert } from "assert";
 import { Command, JsFnCommand } from "../command/command";
 import { CommandArguments } from "../command/argument";
-import { DetNode, Expr } from "../det";
 import { LapolError } from "../errors";
-import { ExprMeta, ExprMetaCfgDeclaration } from "../expr_meta";
 import { LapolRegistry } from "../registry/registry";
-import { NodeOutputter } from "../output/nodeOutputter";
 import { CommandContext } from "../command/commandContext";
 import { LtrfObj } from "../ltrf/ltrf";
 import { LtrfNodeOutputter } from "../out/common";
@@ -137,7 +134,7 @@ export class ModuleLoader {
                         JsFnCommand.fromJsFunction(
                             // We assume the user has passed a function with the right shape.
                             // We cannot verify this easily, however.
-                            val as (a: CommandArguments) => DetNode | undefined,
+                            val as (a: CommandArguments, ctx: CommandContext) => unknown,
                             prop
                         )
                     );

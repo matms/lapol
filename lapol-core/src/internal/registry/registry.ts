@@ -1,5 +1,4 @@
 import { LapolError } from "../errors";
-import { ExprMeta } from "../expr_meta";
 import { LapolModule } from "../module/module";
 
 // TODO: Can I use this for outputters? How to handle different targets?
@@ -7,12 +6,10 @@ import { LapolModule } from "../module/module";
 
 export class LapolRegistry {
     public readonly targetNames: Set<string>;
-    public readonly exprMetas: Drawer<ExprMeta>;
     public readonly modules: Drawer<LapolModule>;
 
     constructor() {
         this.targetNames = new Set();
-        this.exprMetas = new Drawer();
         this.modules = new Drawer();
     }
 }
