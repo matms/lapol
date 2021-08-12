@@ -1,17 +1,17 @@
 import { LtrfNode } from "../../internal/ltrf/ltrf";
-import { LtrfNodeOutputter, Output, OutputCtx } from "../../internal/out/common";
-import { composeOutputs, outputLtrfObj } from "../../internal/out/out";
+import { LtrfNodeOutputter, OutputCtx } from "../../internal/out/common";
+import { composeOutput, outputLtrfObj } from "../../internal/out/out";
 
 export function makeHtmlRootOutputter(): LtrfNodeOutputter {
     return (n: LtrfNode, ctx: OutputCtx) => {
-        const cs = composeOutputs(...n.elems.map((v) => outputLtrfObj(ctx, v)));
+        const cs = composeOutput(...n.elems.map((v) => outputLtrfObj(ctx, v)));
 
-        return cs.mapCode(
-            (inner) =>
-                `<html><head><meta charset="utf-8">` +
-                `<link rel="stylesheet" href="deps/hello-css-all.css">` +
-                `</head><body><article class="page">${inner}</article></body></html>`
-        );
+        const code =
+            `<html><head><meta charset="utf-8">` +
+            `<link rel="stylesheet" href="deps/hello-css-all.css">` +
+            `</head><body><article class="page">${cs.code}</article></body></html>`;
+
+        return { code };
     };
 }
 
@@ -25,10 +25,10 @@ export function makeHtmlTagOutputter(
     const attrEntries = attributes.map(({ attr, val }) => `${attr}="${val}"`).join(" ");
 
     return (n: LtrfNode, ctx: OutputCtx) => {
-        if (n.elems.length === 0) return Output.makeCode(`<${htmlTag} ${attrEntries}/>`);
+        if (n.elems.length === 0) return { code: `<${htmlTag} ${attrEntries}/>` };
 
-        const cs = composeOutputs(...n.elems.map((v) => outputLtrfObj(ctx, v)));
+        const cs = composeOutput(...n.elems.map((v) => outputLtrfObj(ctx, v)));
 
-        return cs.mapCode((inner) => `<${htmlTag} ${attrEntries}>${inner}</${htmlTag}>`);
+        return { code: `<${htmlTag} ${attrEntries}>${cs.code}</${htmlTag}>` };
     };
 }

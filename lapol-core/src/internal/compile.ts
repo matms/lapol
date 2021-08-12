@@ -47,7 +47,7 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
     const outputDispatcher = makeOutputDispatcher(lctx, c.targetLanguage);
     const output = outputPass(lctx, fctx, c.targetLanguage, outputDispatcher, processed);
     const t6 = Date.now();
-    await writeFile(c.outputFilePath, output._getCode());
+    await writeFile(c.outputFilePath, output.code);
     const t7 = Date.now();
 
     const dbgTimingInfo =
