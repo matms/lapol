@@ -1,6 +1,7 @@
 import { FileContext } from "../context/fileContext";
 import { LapolContext } from "../context/lapolContext";
 import { LtrfNode, LtrfStr } from "../ltrf/ltrf";
+import { OutputRequirementReceiver } from "./outRequirements/outRequirements";
 
 export type LtrfStrOutputter = (obj: LtrfStr, ctx: OutputCtx) => Output;
 export type LtrfNodeOutputter = (obj: LtrfNode, ctx: OutputCtx) => Output;
@@ -15,6 +16,7 @@ export interface OutputCtx {
     fctx: FileContext;
     target: string;
     dispatcher: OutputDispatcher;
+    reqReceiver: OutputRequirementReceiver;
 }
 
 export interface OutputDispatcher {

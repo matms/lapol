@@ -11,6 +11,7 @@ import { isLtrfNode, LtrfObj } from "./ltrf/ltrf";
 import { outputPass } from "./out/out";
 import { Output } from "./out/common";
 import { makeOutputDispatcher } from "./out/dispatcher";
+import { OutputRequirementReceiver } from "./out/outRequirements/outRequirements";
 
 export interface CompileInput {
     inputFilePath: LaPath;
@@ -44,8 +45,20 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
     const t4 = Date.now();
     const processed = processPass(lctx, fctx, evaluated);
     const t5 = Date.now();
+
     const outputDispatcher = makeOutputDispatcher(lctx, c.targetLanguage);
-    const output = outputPass(lctx, fctx, c.targetLanguage, outputDispatcher, processed);
+    const outputRequirementReceiver = OutputRequirementReceiver.make();
+    const output = outputPass(
+        lctx,
+        fctx,
+        c.targetLanguage,
+        outputDispatcher,
+        outputRequirementReceiver,
+        processed
+    );
+
+    // TODO outputRequirementReceiver.files => output!
+
     const t6 = Date.now();
     await writeFile(c.outputFilePath, output.code);
     const t7 = Date.now();
