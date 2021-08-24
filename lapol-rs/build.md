@@ -1,4 +1,6 @@
-# Build
+# Build (Lapol-rs Only)
+
+Note: You probably want to build LaPoL as a whole. See the parent folder `Readme.md`!
 
 Note: Before building, make sure the folder `lapol-parse-rs` is besides this folder (`lapol-rs`).
 For more info, see `Cargo.toml`.

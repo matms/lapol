@@ -10,8 +10,7 @@
 
 ## What Is LaPoL
 
-LaPoL is a document preparation system. In other words, it is a programming environment to create documents (and more). 
-
+LaPoL is a document preparation system. In other words, it is a programming environment to create documents (and more).
 
 By default, LaPoL can compile to static webpages, but you can also create your own output targets (e.g., generating a PDF file through LaTeX).
 
@@ -41,10 +40,12 @@ TODO include example of a lapol-made webpage.
 
 LaPoL is currently in _very early_ development. It may not be adequate if stability is necessary.
 
-Also, **LaPoL's execution model is fundamentally based on arbitrary code execution**. Currently, LaPoL does not sandbox execution. In the future, I plan to support running LaPoL on the browser and thus use the browser's sandbox. But for now, do **NOT** run untrustworthy documents or projects, and do **NOT** use untrustworthy modules.
+Also, **LaPoL's execution model is fundamentally based on arbitrary code execution**. Currently, LaPoL does not sandbox execution. In the future, I plan to support running LaPoL in a sandbox. But for now, do **NOT** run / compile untrustworthy documents or projects, and do **NOT** use untrustworthy modules.
+
 ## Building
 
 To build you will need:
+
 - Python3
 - Rust toolchain
 - Rust `wasm-pack`.
@@ -62,7 +63,7 @@ TODO: More info.
 
 ## Projects with lapol-project
 
-TODO
+`lapol-project` is not yet available. TODO.
 
 ## Credits & Thanks
 
