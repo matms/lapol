@@ -1,6 +1,8 @@
 import { LapolError } from "../../errors";
 import { LaPath } from "../../laPath";
 
+import * as path from "path";
+
 export class OutputRequirementReceiver {
     readonly files: Map<string, LaPath>;
 
@@ -12,16 +14,16 @@ export class OutputRequirementReceiver {
         return new OutputRequirementReceiver();
     }
 
-    /** TODO: How should 'as' be interpreted? */
     public requireFile(input: LaPath, as: string): void {
-        const c = this.files.get(as);
+        const targetPath = path.normalize(as);
+        const c = this.files.get(targetPath);
         if (c !== undefined && c.fullPath !== input.fullPath) {
             throw new LapolError(
                 `OutputRequirementReceiver.requireFile: Inconsistency - required` +
-                    `${input.fullPath} as ${as}, but ${as} already bound to ${c.fullPath}.`
+                    `${input.fullPath} as ${targetPath}, but ${targetPath} already bound to ${c.fullPath}.`
             );
         } else {
-            this.files.set(as, input);
+            this.files.set(targetPath, input);
         }
     }
 }

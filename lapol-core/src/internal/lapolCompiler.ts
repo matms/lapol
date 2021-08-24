@@ -4,8 +4,6 @@ import { loadModule, ModuleDeclaration } from "./module/module";
 import { mod as coreMod } from "../std/core";
 import { LapolContext } from "./context/lapolContext";
 import { LapolRegistry } from "./registry/registry";
-import { getLapolFolder } from "./globalInit";
-import { copyFile } from "./utils";
 import { LapolError } from "./errors";
 
 export class LapolCompilerBuilder {
@@ -86,38 +84,6 @@ export class LapolCompiler {
 
     /** Renders a file to a given target (e.g. "html"). */
     public async render(file: LaPath, outRelativePath: string, target: string): Promise<void> {
-        await runRender(
-            this._ctx,
-            file,
-            new LaPath(this._outputFolder.fullPath + this._outputFolder.sep + outRelativePath),
-            target
-        );
-    }
-
-    // TODO: Make this customizable
-    public async outputDependencies(): Promise<void> {
-        await copyFile(
-            new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/dist/all.css`), // source
-            new LaPath(this._outputFolder.fullPath + `/deps/hello-css-all.css`) // target
-        );
-
-        // Fonts
-        const DEFAULT_FONTS = [
-            "libre-baskerville.woff2",
-            "libre-baskerville-bold.woff2",
-            "libre-baskerville-italic.woff2",
-        ];
-        for (const font of DEFAULT_FONTS) {
-            await copyFile(
-                new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/fonts/${font}`),
-                new LaPath(this._outputFolder.fullPath + `/deps/fonts/${font}`) // target
-            );
-        }
-
-        // Copy Font Licence Information
-        await copyFile(
-            new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/fonts/LICENSE`),
-            new LaPath(this._outputFolder.fullPath + `/deps/fonts/LICENSE`) // target
-        );
+        await runRender(this._ctx, file, this._outputFolder, outRelativePath, target);
     }
 }
