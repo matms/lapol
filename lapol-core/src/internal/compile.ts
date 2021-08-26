@@ -13,6 +13,7 @@ import { Output } from "./out/common";
 import { makeOutputDispatcher } from "./out/dispatcher";
 import { OutputRequirementReceiver } from "./out/outRequirements/outRequirements";
 
+const COMPILE_DBG_PRINT = true;
 export interface CompileInput {
     inputFilePath: LaPath;
     outputFolder: LaPath;
@@ -63,16 +64,46 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
     await writeFile(c.outputFilePath, output.code);
     const t7 = Date.now();
 
-    const copyPromises = [];
+    const copyPromises: Array<Promise<void>> = [];
     for (const [tgtDepFileRelPath, srcDepFile] of outputRequirementReceiver.files) {
-        // TODO: Optimize - only copy if necessary, not if already there.
-        copyPromises.push(
-            copyFile(
-                srcDepFile, // source
-                new LaPath(c.outputFolder.fullPath + c.outputFolder.sep + tgtDepFileRelPath) // target
-            )
-        );
+        const f = async (): Promise<void> => {
+            // Checking if the copy was actually needed would be nice, but this is really tricky to
+            // synchronize correctly within NodeJs, unless we abandon asynchronous copies.
+            // So for now, we'll just always copy.
+            try {
+                await copyFile(
+                    srcDepFile, // source
+                    new LaPath(c.outputFolder.fullPath + c.outputFolder.sep + tgtDepFileRelPath) // target
+                );
+            } catch (e) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                if (e.code === "EBUSY") {
+                    if (COMPILE_DBG_PRINT) {
+                        // Either you'd copy over the same file that is already being copied over,
+                        // in which case there is no issue, OR you'd copy over a different file,
+                        // which would cause issues with the first copy _anyways_, so you'd have a
+                        // bigger problem than this EBUSY. In general, as long as you never write
+                        // _distinct_ contents to the same file, you're good.
+                        //
+                        // Unfortunately, avoiding this EBUSY is not trivial at all. The simplest
+                        // solution is to do all copies sequentially, which is not great for
+                        // performance :(.
+                        console.log(`EBUSY Error when copying (this is probably NOT an issue).`);
+                        console.log(e);
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        };
+
+        copyPromises.push(f());
     }
+    /*
+    for (const p of copyPromises) {
+        await p;
+    }
+    */
     await Promise.all(copyPromises);
     const t8 = Date.now();
 
@@ -95,8 +126,6 @@ async function compile(lctx: LapolContext, c: CompileInput): Promise<CompileOutp
         dbgOutputted: output,
     };
 }
-
-const COMPILE_DBG_PRINT = false;
 
 export async function render(
     lctx: LapolContext,
