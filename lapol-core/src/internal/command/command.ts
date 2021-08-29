@@ -49,9 +49,9 @@ export class JsFnCommand extends Command {
         // let curlyArity: number | "any" = varArgs ? "any" : func.length;
 
         // TODO: Is this valid?
-        if (func.length !== 1 && func.length !== 2) {
+        if (func.length !== 0 && func.length !== 1 && func.length !== 2) {
             throw new LapolError(
-                "JsFnCommand should be formed from JS functions taking one or two arguments."
+                "JsFnCommand should be formed from JS functions taking zero, one, or two arguments."
             );
         }
 
