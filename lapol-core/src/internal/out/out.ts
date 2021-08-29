@@ -17,7 +17,7 @@ export function outputPass(
     reqReceiver: OutputRequirementReceiver,
     rootNode: LtrfNode
 ): Output {
-    return outputLtrfObj({ lctx, fctx, target, dispatcher, reqReceiver }, rootNode);
+    return outputLtrfObj(new OutputCtx(lctx, fctx, target, dispatcher, reqReceiver), rootNode);
 }
 
 export function outputLtrfObj(ctx: OutputCtx, obj: LtrfObj): Output {
