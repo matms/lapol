@@ -15,7 +15,9 @@ import { LapolError } from "../internal/errors";
 import { parseIdentifier } from "../internal/identifier";
 import { ModuleLoader } from "../internal/module/loader";
 import { Namespace } from "../internal/namespace";
-import { makeHtmlRootOutputter, makeHtmlTagOutputter } from "./output/htmlTagOutputter";
+
+import { mod as htmlOutputMod } from "./core_html_output";
+import { mod as latexOutputMod } from "./core_latex_output";
 
 export const mod = { loaderFn: load };
 
@@ -31,11 +33,13 @@ function load(l: ModuleLoader): void {
     // TODO: change deprecated fn.
     l.exportCommands(commands);
 
-    l.declareTarget("html");
+    if (l.hasTarget("html")) {
+        l.declareSubModule("std::core::html_output", htmlOutputMod);
+    }
 
-    l.exportLtrfNodeOutputter("html", "__root", makeHtmlRootOutputter());
-    l.exportLtrfNodeOutputter("html", "__doc", makeHtmlTagOutputter("div"));
-    l.exportLtrfNodeOutputter("html", "__p", makeHtmlTagOutputter("p"));
+    if (l.hasTarget("latex")) {
+        l.declareSubModule("std::core::latex_output", latexOutputMod);
+    }
 }
 
 /** The first argument is the file to load, the second is the module name. */
