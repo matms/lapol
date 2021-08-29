@@ -2,15 +2,12 @@
  * However, consider it!
  */
 
-import { ModuleLoader, FileModuleStorage, CommandArguments, LtrfNode } from "../mod";
+import { ModuleLoader, CommandArguments, LtrfNode } from "../mod";
+import { MainFileStore } from "./main_common";
 import { mod as htmlOutputMod } from "./main_html_output";
 import { mod as latexOutputMod } from "./main_latex_output";
 
 export const mod = { loaderFn: load };
-
-interface MainFileStore extends FileModuleStorage {
-    count: number;
-}
 
 function load(l: ModuleLoader): void {
     l.requireName("std::main");
@@ -19,6 +16,8 @@ function load(l: ModuleLoader): void {
         return {
             moduleName: "std::main",
             count: 0,
+            title: [],
+            author: [],
         };
     });
 
@@ -28,12 +27,25 @@ function load(l: ModuleLoader): void {
         return [s.count.toString()];
     });
 
+    l.exportCommand("title", (a, c) => {
+        const s = c.getFileModuleStorage("std::main") as MainFileStore;
+        s.title = a.caOrErr(0);
+        return [];
+    });
+
+    l.exportCommand("author", (a, c) => {
+        const s = c.getFileModuleStorage("std::main") as MainFileStore;
+        s.author = a.caOrErr(0);
+        return [];
+    });
+
     const wrapInCmd = (name: string) => (a: CommandArguments) =>
         [LtrfNode.make(name, {}, a.caOrErr(0))];
     const wrapInBlockCmd = (name: string) => (a: CommandArguments) =>
         [LtrfNode.make(name, { isBlock: true }, a.caOrErr(0))];
 
-    l.exportCommand("title", wrapInBlockCmd("title"));
+    l.exportCommand("maketitle", () => [LtrfNode.make("maketitle", { isBlock: true }, [])]);
+
     l.exportCommand("sec", wrapInBlockCmd("sec"));
     l.exportCommand("subsec", wrapInBlockCmd("subsec"));
     l.exportCommand("subsubsec", wrapInBlockCmd("subsubsec"));

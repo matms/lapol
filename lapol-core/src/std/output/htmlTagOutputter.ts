@@ -12,6 +12,11 @@ export function makeHtmlRootOutputter(): LtrfNodeOutputter {
             `./deps/hello-css-all.css`
         );
 
+        ctx.reqReceiver.requireFile(
+            new LaPath(getLapolFolder().fullPath + `/../deps-lapol-default/lapol-default.css`),
+            `./deps/lapol-default.css`
+        );
+
         const DEFAULT_FONTS = [
             "libre-baskerville.woff2",
             "libre-baskerville-bold.woff2",
@@ -36,6 +41,7 @@ export function makeHtmlRootOutputter(): LtrfNodeOutputter {
         const code =
             `<html><head><meta charset="utf-8">` +
             `<link rel="stylesheet" href="deps/hello-css-all.css">` +
+            `<link rel="stylesheet" href="deps/lapol-default.css">` +
             `</head><body><article class="page">${cs.code}</article></body></html>`;
 
         return { code };
