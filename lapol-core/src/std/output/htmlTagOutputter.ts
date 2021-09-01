@@ -4,37 +4,34 @@ import { LtrfNodeOutputter, OutputCtx } from "../../internal/out/common";
 import { composeOutput, outputLtrfObj } from "../../internal/out/out";
 import { LaPath } from "../../mod";
 
+const DEFAULT_DEPS = [
+    [`deps/hello-css/dist/all.css`, `./deps/hello-css-all.css`],
+    [`deps-lapol/lapol-default.css`, `./deps/lapol-default.css`],
+    [`deps/hello-css/fonts/LICENSE`, `./deps/fonts/LICENSE`],
+];
+
+const DEFAULT_FONTS = [
+    "libre-baskerville.woff2",
+    "libre-baskerville-bold.woff2",
+    "libre-baskerville-italic.woff2",
+];
+
 export function makeHtmlRootOutputter(): LtrfNodeOutputter {
     return (n: LtrfNode, ctx: OutputCtx) => {
-        // TODO: This feels out of place.
-        ctx.reqReceiver.requireFile(
-            new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/dist/all.css`),
-            `./deps/hello-css-all.css`
-        );
+        const lapolFolder = getLapolFolder();
 
-        ctx.reqReceiver.requireFile(
-            new LaPath(getLapolFolder().fullPath + `/../deps-lapol-default/lapol-default.css`),
-            `./deps/lapol-default.css`
-        );
-
-        const DEFAULT_FONTS = [
-            "libre-baskerville.woff2",
-            "libre-baskerville-bold.woff2",
-            "libre-baskerville-italic.woff2",
-        ];
-
-        for (const font of DEFAULT_FONTS) {
+        for (const [src, tgt] of DEFAULT_DEPS) {
             ctx.reqReceiver.requireFile(
-                new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/fonts/${font}`),
-                `./deps/fonts/${font}` // target
+                new LaPath(lapolFolder.fullPath + lapolFolder.sep + src),
+                tgt
             );
         }
-
-        ctx.reqReceiver.requireFile(
-            new LaPath(getLapolFolder().fullPath + `/../deps/hello-css/fonts/LICENSE`),
-            `./deps/fonts/LICENSE` // target
-        );
-        // ===================================
+        for (const font of DEFAULT_FONTS) {
+            ctx.reqReceiver.requireFile(
+                new LaPath(lapolFolder.fullPath + lapolFolder.sep + `deps/hello-css/fonts/${font}`),
+                `./deps/fonts/${font}`
+            );
+        }
 
         const cs = composeOutput(...n.elems.map((v) => outputLtrfObj(ctx, v)));
 

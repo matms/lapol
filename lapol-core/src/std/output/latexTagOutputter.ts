@@ -5,21 +5,20 @@ import { LtrfNodeOutputter, OutputCtx } from "../../internal/out/common";
 import { composeOutput, outputLtrfObj } from "../../internal/out/out";
 import { MainFileStore } from "../main_common";
 
+const DEFAULT_DEPS = [
+    [`deps-lapol/lapol_default_article.cls`, `./deps/lapol_default_article.cls`],
+    [`deps-lapol/lapol_default.sty`, `./deps/lapol_default.sty`],
+];
+
 export function makeLatexRootOutputter(): LtrfNodeOutputter {
     return (n: LtrfNode, ctx: OutputCtx) => {
-        // TODO: This feels out of place.
-        ctx.reqReceiver.requireFile(
-            new LaPath(
-                getLapolFolder().fullPath + `/../deps-lapol-default/lapol_default_article.cls`
-            ),
-            `./deps/lapol_default_article.cls`
-        );
-
-        ctx.reqReceiver.requireFile(
-            new LaPath(getLapolFolder().fullPath + `/../deps-lapol-default/lapol_default.sty`),
-            `./deps/lapol_default.sty`
-        );
-        // ===================================
+        const lapolFolder = getLapolFolder();
+        for (const [src, tgt] of DEFAULT_DEPS) {
+            ctx.reqReceiver.requireFile(
+                new LaPath(lapolFolder.fullPath + lapolFolder.sep + src),
+                tgt
+            );
+        }
 
         const cs = composeOutput(...n.elems.map((v) => outputLtrfObj(ctx, v)));
 

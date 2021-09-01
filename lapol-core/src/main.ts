@@ -17,7 +17,7 @@ import { LaPath } from "./internal/laPath";
 
 if (!isLapolFolderInfoInit) {
     // eslint-disable-next-line node/no-path-concat
-    setLapolFolder(new LaPath(`${__dirname}/../..`)); // Folder lapol
+    setLapolFolder(new LaPath(`${__dirname}/../../..`)); // Folder lapol (Not lapol-core!)
     isLapolFolderInfoInit = true;
 }
 
