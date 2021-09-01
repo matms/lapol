@@ -1,4 +1,5 @@
 import { ModuleLoader } from "../mod";
+import { LatexStringOutputter } from "./output/latexStringOutputter";
 import {
     makeLatexBlockOutputter,
     makeLatexNoCurlyCommandOutputter,
@@ -17,6 +18,8 @@ function load(l: ModuleLoader): void {
     });
 
     l.declareTarget("latex");
+
+    l.exportStringOutputterProvider("latex", new LatexStringOutputter());
 
     l.exportLtrfNodeOutputter("latex", "maketitle", makeLatexNoCurlyCommandOutputter("maketitle"));
 

@@ -1,14 +1,14 @@
-import * as latex from "./latex";
+import { LatexStringOutputter } from "./latexStringOutputter";
 
 describe("latexOutStr", () => {
     it("Leaves most text unchanged", () => {
         const s = "Hello, world!\nHello, LaTeX!";
-        const o = latex.latexOutStr(s);
+        const o = new LatexStringOutputter().default(s);
         expect(o.code).toEqual(s);
     });
     it("Escapes characters with special meaning in LaTeX", () => {
         const s = "& % $ # _ { } ~ ^ \\";
-        const o = latex.latexOutStr(s);
+        const o = new LatexStringOutputter().default(s);
         expect(o.code).toEqual(
             String.raw`\& \% \$ \# \_ \{ \} \textasciitilde{} \textasciicircum{} \textbackslash{}`
         );
@@ -18,12 +18,12 @@ describe("latexOutStr", () => {
 describe("latexOutStrWithoutEscape", () => {
     it("Leaves most text unchanged", () => {
         const s = "Hello, world!\nHello, LaTeX!";
-        const o = latex.latexOutStrWithoutEscape(s);
+        const o = new LatexStringOutputter().withoutEscape(s);
         expect(o.code).toEqual(s);
     });
     it("Also leaves escape characters unchanged", () => {
         const s = "& % $ # _ { } ~ ^ \\";
-        const o = latex.latexOutStrWithoutEscape(s);
+        const o = new LatexStringOutputter().withoutEscape(s);
         expect(o.code).toEqual(s);
     });
 });

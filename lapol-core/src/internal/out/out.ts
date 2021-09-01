@@ -22,7 +22,7 @@ export function outputPass(
 
 export function outputLtrfObj(ctx: OutputCtx, obj: LtrfObj): Output {
     if (isLtrfStr(obj)) {
-        return ctx.dispatcher.getLtrfStrOutputter(obj)(obj, ctx);
+        return ctx.dispatcher.getDefaultLtrfStrOutputter(obj)(obj, ctx);
     }
     if (isLtrfNode(obj)) {
         return ctx.dispatcher.getLtrfNodeOutputter(obj)(obj, ctx);

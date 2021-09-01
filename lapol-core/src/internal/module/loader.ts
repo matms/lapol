@@ -12,7 +12,7 @@ import { LapolError } from "../errors";
 import { LapolRegistry } from "../registry/registry";
 import { CommandContext } from "../command/commandContext";
 import { LtrfObj } from "../ltrf/ltrf";
-import { LtrfNodeOutputter } from "../out/common";
+import { LtrfNodeOutputter, StringOutputterProvider } from "../out/common";
 
 export class ModuleLoader {
     /* eslint-disable  @typescript-eslint/prefer-readonly */
@@ -28,6 +28,7 @@ export class ModuleLoader {
     private _instantiator: (() => FileModuleStorage) | undefined;
 
     private _nodeOutputtersByTargetAndTag: Map<string, Map<string, LtrfNodeOutputter>>;
+    private _stringOutputterProvidersByTarget: Map<string, StringOutputterProvider>;
 
     /* eslint-enable  @typescript-eslint/prefer-readonly */
 
@@ -38,6 +39,7 @@ export class ModuleLoader {
         this._commands = new Map();
         this._registry = registry;
         this._nodeOutputtersByTargetAndTag = new Map();
+        this._stringOutputterProvidersByTarget = new Map();
     }
 
     /** Internal use --- Module developer MUST NOT CALL!
@@ -74,7 +76,8 @@ export class ModuleLoader {
             this._identifier,
             this._loadedSubModules,
             this._instantiator,
-            this._nodeOutputtersByTargetAndTag
+            this._nodeOutputtersByTargetAndTag,
+            this._stringOutputterProvidersByTarget
         );
 
         this._registry.modules.declare(mod.identifier.name, mod);
@@ -176,6 +179,10 @@ export class ModuleLoader {
                 `Target ${targetLanguage} not declared for module ${this._identifier.name}`
             );
         a.set(tag, outputter);
+    }
+
+    public exportStringOutputterProvider(targetLanguage: string, o: StringOutputterProvider): void {
+        this._stringOutputterProvidersByTarget.set(targetLanguage, o);
     }
 
     public declareTarget(target: string): void {

@@ -18,3 +18,4 @@ export { CommandContext } from "./internal/command/commandContext";
 export { LapolCompilerBuilder, LapolCompiler } from "./internal/lapolCompiler";
 export { LaPath } from "./internal/laPath";
 export { FileModuleStorage, ModuleDeclaration } from "./internal/module/module";
+export { Output, StringOutputterProvider } from "./internal/out/common";

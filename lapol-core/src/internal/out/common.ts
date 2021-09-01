@@ -13,6 +13,11 @@ export interface Output {
     readonly code: string;
 }
 
+export interface StringOutputterProvider {
+    default: LtrfStrOutputter;
+    withoutEscape: LtrfStrOutputter;
+}
+
 export class OutputCtx {
     private readonly _lctx: LapolContext;
     private readonly _fctx: FileContext;
@@ -66,6 +71,7 @@ export class OutputCtx {
 }
 
 export interface OutputDispatcher {
-    getLtrfStrOutputter: (str: LtrfStr) => LtrfStrOutputter;
+    getDefaultLtrfStrOutputter: (str: LtrfStr) => LtrfStrOutputter;
+    getWithoutEscapeLtrfStrOutputter: (str: LtrfStr) => LtrfStrOutputter;
     getLtrfNodeOutputter: (node: LtrfNode) => LtrfNodeOutputter;
 }

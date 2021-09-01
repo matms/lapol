@@ -1,6 +1,6 @@
 import { Command } from "../command/command";
 import { Namespace } from "../namespace";
-import { LtrfNodeOutputter } from "../out/common";
+import { LtrfNodeOutputter, StringOutputterProvider } from "../out/common";
 import { LapolRegistry } from "../registry/registry";
 import { ModuleLoader } from "./loader";
 
@@ -28,13 +28,15 @@ export class LapolModule {
     readonly instantiate: () => FileModuleStorage;
 
     private readonly _nodeOutputtersByTargetAndTag: Map<string, Map<string, LtrfNodeOutputter>>;
+    private readonly _stringOutputterProvidersByTarget: Map<string, StringOutputterProvider>;
 
     constructor(
         commands: Map<string, Command>,
         identifier: ModuleIdentifier,
         loadedSubModules: string[],
         instantiate: () => FileModuleStorage,
-        nodeOutputtersByTagAndTarget: Map<string, Map<string, LtrfNodeOutputter>>
+        nodeOutputtersByTagAndTarget: Map<string, Map<string, LtrfNodeOutputter>>,
+        stringOutputterProvidersByTarget: Map<string, StringOutputterProvider>
     ) {
         this.identifier = identifier;
         this.loadedSubModules = loadedSubModules;
@@ -48,6 +50,7 @@ export class LapolModule {
 
         this.instantiate = instantiate;
         this._nodeOutputtersByTargetAndTag = nodeOutputtersByTagAndTarget;
+        this._stringOutputterProvidersByTarget = stringOutputterProvidersByTarget;
     }
 
     public getLtrfNodeOutputter(
@@ -58,6 +61,10 @@ export class LapolModule {
         if (a === undefined) return undefined;
         const b = a.get(tag);
         return b;
+    }
+
+    public getStringOutputterProvider(targetLanguage: string): StringOutputterProvider | undefined {
+        return this._stringOutputterProvidersByTarget.get(targetLanguage);
     }
 }
 

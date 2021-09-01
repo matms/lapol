@@ -2,6 +2,7 @@ import { composeOutput, outputLtrfObj } from "../internal/out/out"; // TODO: Imp
 
 import { ModuleLoader } from "../mod";
 import { MainFileStore } from "./main_common";
+import { HtmlStringOutputter } from "./output/htmlStringOutputter";
 import { makeHtmlTagOutputter } from "./output/htmlTagOutputter";
 
 export const mod = { loaderFn: load };
@@ -16,6 +17,8 @@ function load(l: ModuleLoader): void {
     });
 
     l.declareTarget("html");
+
+    l.exportStringOutputterProvider("html", new HtmlStringOutputter());
 
     l.exportLtrfNodeOutputter("html", "maketitle", (obj, ctx) => {
         const s = ctx.getFileModuleStorage("std::main") as MainFileStore;
