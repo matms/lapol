@@ -1,4 +1,5 @@
 import { ModuleLoader } from "../internal/module/loader";
+import { makeLatexParaOutputter, makeLatexRootOutputter } from "./output/latexTagOutputter";
 
 export const mod = { loaderFn: load };
 
@@ -13,11 +14,7 @@ function load(l: ModuleLoader): void {
 
     l.declareTarget("latex");
 
-    /*
-    l.exportLtrfNodeOutputter("html", "__root", makeHtmlRootOutputter());
-    l.exportLtrfNodeOutputter("html", "__doc", makeHtmlTagOutputter("div"));
-    l.exportLtrfNodeOutputter("html", "__p", makeHtmlTagOutputter("p"));
-    */
-
-    throw new Error("LaTeX Output not yet supported.");
+    l.exportLtrfNodeOutputter("latex", "__root", makeLatexRootOutputter());
+    l.exportLtrfNodeOutputter("latex", "__doc", makeLatexParaOutputter()); // TODO?
+    l.exportLtrfNodeOutputter("latex", "__p", makeLatexParaOutputter());
 }

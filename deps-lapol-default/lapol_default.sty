@@ -1,0 +1,94 @@
+%
+% LaPoL's default Article PACKAGE Version 0.0.1
+%
+% Load AFTER lapol_default_article.cls
+
+%
+% Custom commands
+%
+
+%<--------------------------80 characters-------------------------------------->
+%<------------------------------------------120 characters------------------------------------------------------------->
+
+%\usepackage{silence}
+%Disable all warnings issued by latex starting with "You have..."
+%\WarningFilter{latex}{You have requested package}
+%\WarningFilter{latex}{You have requested document class}
+
+% Provide PACKAGE course_notes_a_pck
+\ProvidesPackage{lapol_default_article_pck}[lapol_default_article_pck]
+
+% course_notes_a.cls presumably goes here
+
+% ==============================================================================
+
+% ---------------
+% Custom commands
+% ---------------
+
+\newcommand{\lapoldefaultaside}[1]{\reversemarginpar\marginnote{#1}}
+
+% We use newcommand* for commands with "short" arguments
+% (i.e. without paragraph breaks)
+
+% \linkfn creates a href link and also adds
+% the URL to the footnotes.
+\newcommand*{\linkfn}[2][link]{\href{#2}{#1}\footnote{\url{#2}}}
+
+% Number sets
+\providecommand {\C}{\mathbb{C}}
+\providecommand {\R}{\mathbb{R}}
+\providecommand {\Z}{\mathbb{Z}}
+\providecommand {\N}{\mathbb{N}}
+\providecommand {\Q}{\mathbb{Q}}
+
+% Paragraph organization commands
+% I will use these so I can change formatting later if needed.
+\newcommand{\sep}{\medskip}
+\newcommand{\bsep}{\bigskip}
+
+% Augmented matrices 
+% (https://tex.stackexchange.com/questions/2233/whats-the-best-way-make-an-augmented-coefficient-matrix)
+\newenvironment{apmatrix}[1]{%
+	\left(\begin{array}{@{}*{#1}{c}|c@{}}
+	}{%
+	\end{array}\right)
+}
+\newenvironment{abmatrix}[1]{%
+	\left[\begin{array}{@{}*{#1}{c}|c@{}}
+	}{%
+	\end{array}\right]
+}
+
+% Quick boldface in math for columns
+\newcommand{\col}[1]{\mathbf{#1}}
+
+
+% From 
+% https://tex.stackexchange.com/questions/159669/how-to-print-a-warning-sign-triangle-with-exclamation-point
+\newcommand{\warn}{\makebox[1.4em][c]{%
+		\makebox[0pt][c]{\raisebox{.08em}{\small\bfseries!}}%
+		\makebox[0pt][c]{\color{red}\Large$\bigtriangleup$}}}%
+
+% See also (for red background warning sign) 
+% https://tex.stackexchange.com/questions/483162/color-background-for-warning-symbol
+
+% Margin warn
+% IMPORTANT: Don't add just after title/heading (e.g. paragraph). Add inside of the sentences! (After at least one word of test)
+% But, be careful that it doesn't gobble up any space character accidentally!
+\newcommand{\@lmwarn}{{\reversemarginpar\marginnote{\warn}}}
+
+\newcommand{\@rmwarn}{\marginnote{\warn}}
+
+% Margin warn. Use this instead of \@lmwarn and \@rmwarn. The margin in which
+% the warning shows up should be a decision to do with the text layout, NOT
+% a decision to do with the writing.
+\newcommand{\mwarn}{\@lmwarn}
+
+% -------------------
+% Custom Environments
+% -------------------
+
+
+
+% ---------------

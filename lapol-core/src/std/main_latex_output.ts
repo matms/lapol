@@ -1,4 +1,9 @@
 import { ModuleLoader } from "../mod";
+import {
+    makeLatexBlockOutputter,
+    makeLatexNoCurlyCommandOutputter,
+    makeLatexSingleCurlyCommandOutputter,
+} from "./output/latexTagOutputter";
 
 export const mod = { loaderFn: load };
 
@@ -13,9 +18,27 @@ function load(l: ModuleLoader): void {
 
     l.declareTarget("latex");
 
-    l.exportLtrfNodeOutputter("latex", "maketitle", (obj, ctx) => {
-        return { code: `\\maketitle\n` };
-    });
+    l.exportLtrfNodeOutputter("latex", "maketitle", makeLatexNoCurlyCommandOutputter("maketitle"));
 
-    throw new Error("LaTeX Output not yet supported.");
+    l.exportLtrfNodeOutputter("latex", "sec", makeLatexSingleCurlyCommandOutputter("section"));
+    l.exportLtrfNodeOutputter(
+        "latex",
+        "subsec",
+        makeLatexSingleCurlyCommandOutputter("subsection")
+    );
+    l.exportLtrfNodeOutputter(
+        "latex",
+        "subsubsec",
+        makeLatexSingleCurlyCommandOutputter("subsubsection")
+    );
+
+    l.exportLtrfNodeOutputter("latex", "bold", makeLatexSingleCurlyCommandOutputter("textbf"));
+    l.exportLtrfNodeOutputter("latex", "italic", makeLatexSingleCurlyCommandOutputter("textit"));
+
+    l.exportLtrfNodeOutputter("latex", "bquot", makeLatexBlockOutputter("lapoldefaultblockquote"));
+    l.exportLtrfNodeOutputter(
+        "latex",
+        "marginnote",
+        makeLatexSingleCurlyCommandOutputter("lapoldefaultaside")
+    );
 }
