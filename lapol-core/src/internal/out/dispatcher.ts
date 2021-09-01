@@ -3,6 +3,7 @@ import { LapolError } from "../errors";
 import { LtrfNode } from "../ltrf/ltrf";
 import { LtrfNodeOutputter, LtrfStrOutputter, OutputDispatcher } from "./common";
 import { htmlOutStr } from "./outUtils/html";
+import { latexOutStr } from "./outUtils/latex";
 
 class DefaultOutputDispatcher implements OutputDispatcher {
     targetLanguage: string;
@@ -17,7 +18,14 @@ class DefaultOutputDispatcher implements OutputDispatcher {
     }
 
     public getLtrfStrOutputter(_str: string): LtrfStrOutputter {
-        return htmlOutStr;
+        // TODO: Allow user customization
+        if (this.targetLanguage === "html") return htmlOutStr;
+        // TODO: ESCAPE
+        else if (this.targetLanguage === "latex") return latexOutStr;
+        else
+            throw new LapolError(
+                `No LtrfStrOutputter configured for language ${this.targetLanguage}`
+            );
     }
 
     public getLtrfNodeOutputter(node: LtrfNode): LtrfNodeOutputter {
