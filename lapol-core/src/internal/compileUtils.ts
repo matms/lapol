@@ -1,4 +1,4 @@
-import { parse_file } from "../../../lapol-rs/pkg/lapol_rs";
+import { parse_file } from "lapol-rs";
 import { AstRootNode } from "./ast";
 import { LaPath } from "./laPath";
 import { strict as assert } from "assert";

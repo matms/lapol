@@ -33,14 +33,14 @@ async function main() {
     .build();
 
   await Promise.all(
-    filesToCompile.map(({ s, t }) => lc.render(s, t + ".html", "html"))
+    filesToCompile.map(({ s, t }) => lc.compile(s, t + ".html", "html"))
   );
 
   const t1 = Date.now();
   console.log(`<<< Finished rendering HTML after ${t1 - t0} ms. >>>`);
 
   await Promise.all(
-    filesToCompile.map(({ s, t }) => lc.render(s, t + ".tex", "latex"))
+    filesToCompile.map(({ s, t }) => lc.compile(s, t + ".tex", "latex"))
   );
 
   const t2 = Date.now();
