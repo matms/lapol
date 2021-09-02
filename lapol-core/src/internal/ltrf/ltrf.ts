@@ -97,6 +97,11 @@ export function id<T>(o: T): T {
     return o;
 }
 
+/** Identity funcion. Provided for user convenience, it is useful when using "lift". */
+export function flatMapId<T>(o: T): readonly T[] {
+    return [o];
+}
+
 export function isLtrfObj(l: unknown): l is LtrfObj {
     return typeof l === "string" || l instanceof LtrfNode;
 }
@@ -118,6 +123,21 @@ export function ltrfObjLift(
     fs: (s: LtrfStr) => LtrfObj,
     fn: (n: LtrfNode) => LtrfObj
 ): (o: LtrfObj) => LtrfObj {
+    return (o) => {
+        if (isLtrfStr(o)) return fs(o);
+        else return fn(o);
+    };
+}
+
+/** Takes in two functions, one taking in an LtrfString and returning an LtrfObj,
+ * another taking in an LtrfNode and returning an LtrfObj.
+ *
+ * Returns a function taking in an LtrfObj and dispatching to the correct function.
+ */
+export function ltrfObjLiftArr(
+    fs: (s: LtrfStr) => readonly LtrfObj[],
+    fn: (n: LtrfNode) => readonly LtrfObj[]
+): (o: LtrfObj) => readonly LtrfObj[] {
     return (o) => {
         if (isLtrfStr(o)) return fs(o);
         else return fn(o);

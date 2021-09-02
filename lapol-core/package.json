@@ -4,17 +4,19 @@
   "description": "LaPoL is a document preparation system",
   "main": "build/main.js",
   "scripts": {
+    "lint": "eslint \"./src/**/**.ts\"",
+    "build": "tsc",
     "test": "jest --forceExit --coverage --verbose --detectOpenHandles",
-    "start": "node build/main.js"
+    "start": "tsc && node build/main.js"
   },
   "author": "matms",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": "true",
   "devDependencies": {
+    "@types/he": "^1.1.1",
     "@types/jest": "^26.0.23",
     "@types/mkdirp": "^1.0.1",
     "@types/node": "^15.0.1",
-    "@types/he": "^1.1.1",
     "@typescript-eslint/eslint-plugin": "^4.24.0",
     "@typescript-eslint/parser": "^4.24.0",
     "eslint": "^7.26.0",
@@ -23,8 +25,10 @@
     "eslint-plugin-import": "^2.23.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-only-warn": "^1.0.2",
+    "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-promise": "^4.3.1",
     "jest": "^27.0.4",
+    "prettier": "^2.3.2",
     "ts-jest": "^27.0.3",
     "typescript": "^4.3.5"
   },

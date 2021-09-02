@@ -38,6 +38,72 @@ describe("LtrfNode", () => {
         expect(n2.kv).toEqual({ a: "b", x: "z", c: "d" });
         expect(n2.elems).toEqual(["d", "e", "!"]);
     });
+
+    it("can be updated by replacing parts", () => {
+        const n = LtrfNode.make("abc", { a: "b" }, ["d"]);
+
+        const n2 = n.withTag("def");
+
+        expect(n2.tag).toEqual("def");
+        expect(n2.elems).toBe(n.elems);
+        expect(n2.kv).toBe(n.kv);
+
+        const n3 = n2.withKv({ c: "d" });
+        expect(n3.tag).toBe(n2.tag);
+        expect(n3.elems).toBe(n2.elems);
+        expect(n3.kv).toEqual({ c: "d" });
+
+        const n4 = n3.withElems(["d", "e"]);
+        expect(n4.elems).toEqual(["d", "e"]);
+        expect(n4.tag).toBe(n3.tag);
+        expect(n4.kv).toBe(n3.kv);
+    });
+
+    it("can be updated by replacing parts using a function", () => {
+        const n = LtrfNode.make("abc", { a: "b" }, ["d"]);
+
+        const n2 = n.updateTag((t) => t + "def");
+
+        expect(n2.tag).toEqual("abcdef");
+        expect(n2.elems).toBe(n.elems);
+        expect(n2.kv).toBe(n.kv);
+
+        const n3 = n2.updateKv((r) => {
+            return { ...r, c: "d" };
+        });
+        expect(n3.tag).toBe(n2.tag);
+        expect(n3.elems).toBe(n2.elems);
+        expect(n3.kv).toEqual({ a: "b", c: "d" });
+
+        const n4 = n3.updateElems((a) => [...a, "e"]);
+        expect(n4.elems).toEqual(["d", "e"]);
+        expect(n4.tag).toBe(n3.tag);
+        expect(n4.kv).toBe(n3.kv);
+
+        const n5 = n4.update(
+            (t) => t + "ghi",
+            (k) => {
+                return { ...k, e: "f" };
+            },
+            (e) => [...e, "f"]
+        );
+
+        expect(n5.tag).toEqual("abcdefghi");
+        expect(n5.kv).toEqual({ a: "b", c: "d", e: "f" });
+        expect(n5.elems).toEqual(["d", "e", "f"]);
+    });
+
+    it("allows mapping over elements", () => {
+        const n = LtrfNode.make("a", {}, ["x", "y", "z"]);
+        const n2 = n.mapElems(ltrf.ltrfObjLift((s) => s.toUpperCase(), ltrf.id));
+        expect(n2.elems).toEqual(["X", "Y", "Z"]);
+    });
+
+    it("allows flat-mapping over elements", () => {
+        const n = LtrfNode.make("a", {}, ["x", "y", "z"]);
+        const n2 = n.flatMapElems(ltrf.ltrfObjLiftArr((s) => [s, s], ltrf.flatMapId));
+        expect(n2.elems).toEqual(["x", "x", "y", "y", "z", "z"]);
+    });
 });
 
 describe("Ltrf Complex Operations", () => {

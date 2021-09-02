@@ -1,7 +1,7 @@
 # This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
-name: Node.js CI
+name: LaPoL CI
 
 on:
   push:
@@ -10,27 +10,42 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-
+  test-core:
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ./lapol-core
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x, 16.x]
+        node-version: [12.x]
+        # node-version: [12.x, 14.x, 16.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v2
+    
+    - name: Use Wasm-Pack
+      uses: jetli/wasm-pack-action@v0.3.0
+      with:
+        version: v0.10.0
+        
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        cache-dependency-path: ./lapol-core/package-lock.json
+    
+    - name: Build lapol-rs
+      run: wasm-pack build --target nodejs
+      working-directory: ./lapol-rs
+      
     - run: npm ci
+      working-directory: ./lapol-core
+      
     - run: npm run lint
-    - run: npm run build --if-present
+      working-directory: ./lapol-core
+      
+    - run: npm build
+      working-directory: ./lapol-core
+      
     - run: npm test
+      working-directory: ./lapol-core
