@@ -1,0 +1,17 @@
+{
+  "name": "lapol-sample-node-lib1",
+  "version": "0.0.1",
+  "description": "",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "matms",
+  "license": "MIT",
+  "private": "true",
+  "dependencies": {
+    "lapol": "file:../../lapol-core"
+  }
+}

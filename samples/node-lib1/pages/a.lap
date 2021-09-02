@@ -1,0 +1,21 @@
+@__require{std::main}
+@__using_all[from = std::main]
+
+@title{Hello World}
+
+@author{matms}
+
+@__doc{
+
+    @maketitle
+
+    Hello. This is a @it{very} simple LaPoL document! 😀
+
+    @sec{This is a section}
+
+    Cool!
+
+    @count;
+    @count;
+    @count;
+}

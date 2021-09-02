@@ -25,7 +25,9 @@ LaPoL's architecture is meant to be flexible. Specifically, we lapol-core
 is written such that it can be used as a library (as opposed to as framework).
 That is, you call LaPoL, instead of LaPoL calling you :smile:
 
-For an example of a LaPoL project, see (TODO ADD LINK).
+For an example of a LaPoL project, see the folder `samples/node-lib1`. This
+shows how lapol can be used together with NodeJS. Note how we use npm file
+based packages to reduce the space taken on disk.
 
 LaPoL offers HTML and LaTeX export out of the box. But it should not be too
 difficult for an user to add support for other output targets.
