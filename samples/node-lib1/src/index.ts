@@ -17,34 +17,38 @@ import { mod as mainMod } from "lapol/build/lapol/std/main";
 assert(isLapolGloballyInitialized());
 
 async function main() {
+  const t0 = Date.now();
+
   const rootFolder = `${__dirname}/..`;
   const pagesFolder = `${rootFolder}/pages`;
   const filesToCompile = [
     { s: new LaPath(`${pagesFolder}/a.lap`), t: "a" },
     { s: new LaPath(`${pagesFolder}/b.lap`), t: "b" },
   ];
-
-  const t0 = Date.now();
+  const targets = [
+    ["html", ".html"],
+    ["latex", ".tex"],
+  ];
 
   const lc: LapolCompiler = await new LapolCompilerBuilder()
     .withModule("std::main", mainMod)
-    .withTargets("html", "latex")
+    .withTargets(...targets.map(([t, f]) => t))
     .toFolder(new LaPath(`${rootFolder}/out`))
     .build();
 
-  await Promise.all(
-    filesToCompile.map(({ s, t }) => lc.compile(s, t + ".html", "html"))
-  );
-
   const t1 = Date.now();
-  console.log(`<<< Finished rendering HTML after ${t1 - t0} ms. >>>`);
-
-  await Promise.all(
-    filesToCompile.map(({ s, t }) => lc.compile(s, t + ".tex", "latex"))
-  );
-
+  for (const [target, fileEnd] of targets) {
+    await Promise.all(
+      filesToCompile.map(({ s, t }) => lc.compile(s, t + fileEnd, target))
+    );
+  }
   const t2 = Date.now();
-  console.log(`<<< Finished rendering LaTeX after ${t2 - t1} ms. >>>`);
+
+  console.log(
+    `Finished compiling after ${t1 - t0} ms setup and ${
+      t2 - t1
+    } ms compile (cumulative ${t2 - t0} ms).`
+  );
 }
 
 main();

@@ -95,12 +95,33 @@ export class LapolCompiler {
 
     /** Renders a file to a given target (e.g. "html"). */
     public async compile(file: LaPath, outRelativePath: string, target: string): Promise<void> {
+        // Note: There is still room for optimization here, e.g. by sharing the steps that
+        // don't depend on the target language.
+        const t0 = Date.now();
         const read = await this.readFile(file);
+        const t1 = Date.now();
         const parsed = this.parse(read);
+        const t2 = Date.now();
         const evaluated = this.evaluate(parsed);
+        const t3 = Date.now();
         const processed = this.process(evaluated);
+        const t4 = Date.now();
         const pout = this.prepareOutput(processed, target);
+        const t5 = Date.now();
         await this.finalizeOutput(pout, outRelativePath);
+        const t6 = Date.now();
+
+        // Change to print timing info.
+        // eslint-disable-next-line no-constant-condition
+        if (false) {
+            console.log(`[TIMING (${file.parsed.base}=>${target})] ${t1 - t0} ms - Read *`);
+            console.log(`[TIMING (${file.parsed.base}=>${target})] ${t2 - t1} ms - Parse`);
+            console.log(`[TIMING (${file.parsed.base}=>${target})] ${t3 - t2} ms - Evaluate`);
+            console.log(`[TIMING (${file.parsed.base}=>${target})] ${t4 - t3} ms - Process`);
+            console.log(`[TIMING (${file.parsed.base}=>${target})] ${t5 - t4} ms - Prepare out`);
+            console.log(`[TIMING (${file.parsed.base}=>${target})] ${t6 - t5} ms - Finalize out *`);
+            console.log(`[TIMING (${file.parsed.base}=>${target})] ${t6 - t0} ms - Cumulative *`);
+        }
     }
 
     private async readFile(path: LaPath): Promise<ReadLapFile> {
