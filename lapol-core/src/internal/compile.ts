@@ -11,7 +11,7 @@ import { isLtrfNode, LtrfObj } from "./ltrf/ltrf";
 import { outputPass } from "./out/out";
 import { Output } from "./out/common";
 import { makeOutputDispatcher } from "./out/dispatcher";
-import { OutputRequirementReceiver } from "./out/outRequirements/outRequirements";
+import { OutputRequirementReceiver } from "./out/outRequirements";
 
 const COMPILE_DBG_PRINT = true;
 export interface CompileInput {

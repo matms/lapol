@@ -3,7 +3,7 @@ import { LapolContext } from "../context/lapolContext";
 import { LapolError } from "../errors";
 import { isLtrfNode, isLtrfStr, LtrfNode, LtrfObj } from "../ltrf/ltrf";
 import { Output, OutputCtx, OutputDispatcher } from "./common";
-import { OutputRequirementReceiver } from "./outRequirements/outRequirements";
+import { OutputRequirementReceiver } from "./outRequirements";
 
 export function composeOutput(...os: Output[]): Output {
     return { code: os.map((o) => o.code).join("") };

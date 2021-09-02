@@ -3,7 +3,7 @@ import { LapolContext } from "../context/lapolContext";
 import { LapolError } from "../errors";
 import { LtrfNode, LtrfStr } from "../ltrf/ltrf";
 import { FileModuleStorage } from "../module/module";
-import { OutputRequirementReceiver } from "./outRequirements/outRequirements";
+import { OutputRequirementReceiver } from "./outRequirements";
 
 export type LtrfStrOutputter = (obj: LtrfStr, ctx: OutputCtx) => Output;
 export type LtrfNodeOutputter = (obj: LtrfNode, ctx: OutputCtx) => Output;

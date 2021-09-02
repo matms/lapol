@@ -1,5 +1,5 @@
-import { LapolError } from "../../errors";
-import { LaPath } from "../../laPath";
+import { LapolError } from "../errors";
+import { LaPath } from "../laPath";
 
 import * as path from "path";
 
