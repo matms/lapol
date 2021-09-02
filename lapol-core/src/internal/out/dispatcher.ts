@@ -8,18 +8,22 @@ import {
     StringOutputterProvider,
 } from "./common";
 
-class DefaultOutputDispatcher implements OutputDispatcher {
+export class DefaultOutputDispatcher implements OutputDispatcher {
     targetLanguage: string;
     lctx: LapolContext;
     lazyNodeOutputters: Map<string, LtrfNodeOutputter>;
     stringOutputterProvider: StringOutputterProvider;
 
-    constructor(lctx: LapolContext, targetLanguage: string) {
+    private constructor(lctx: LapolContext, targetLanguage: string) {
         this.targetLanguage = targetLanguage;
         this.lctx = lctx;
         this.lazyNodeOutputters = new Map();
         this.stringOutputterProvider = this.retreiveStringOutputterProvider();
         // TODO: How to fill?
+    }
+
+    public static make(lctx: LapolContext, targetLanguage: string): DefaultOutputDispatcher {
+        return new DefaultOutputDispatcher(lctx, targetLanguage);
     }
 
     public getDefaultLtrfStrOutputter(_str: string): LtrfStrOutputter {
@@ -75,8 +79,4 @@ class DefaultOutputDispatcher implements OutputDispatcher {
             );
         return found[0];
     }
-}
-
-export function makeOutputDispatcher(lctx: LapolContext, targetLanguage: string): OutputDispatcher {
-    return new DefaultOutputDispatcher(lctx, targetLanguage);
 }
