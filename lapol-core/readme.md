@@ -7,5 +7,3 @@ See `../readme.md` for info on building and running.
 ## Testing
 
 For now, run `npm run test`.
-
-TODO: Write more tests!

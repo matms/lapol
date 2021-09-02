@@ -37,5 +37,8 @@
     "iterare": "^1.2.1",
     "lapol-rs": "file:../lapol-rs/pkg",
     "mkdirp": "^1.0.4"
-  }
+  },
+  "bundledDependencies": [
+    "lapol-rs"
+  ]
 }

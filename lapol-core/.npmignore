@@ -1,0 +1,10 @@
+.vscode
+coverage
+src
+.*
+*.md
+jest.config.js
+**/*.test.ts
+**/*.test.js
+**/*.tgz
+tsconfig.**
